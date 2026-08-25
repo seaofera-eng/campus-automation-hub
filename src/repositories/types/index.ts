@@ -1,11 +1,15 @@
 import type {
   AutomationDemand,
+  DemandAttachment,
+  DemandComment,
   DemandMatch,
   DemandParticipant,
   DemandStatus,
 } from '@/domain/demand/types';
 import type { EvaluationHistoryEntry, ToolEvaluation } from '@/domain/evaluation/types';
 import type { Campus, Profile } from '@/domain/identity/types';
+import type { Notice } from '@/domain/notice/types';
+import type { RewardEntry } from '@/domain/reward/types';
 import type {
   ImprovementRequest,
   ImprovementRequestHistoryEntry,
@@ -146,6 +150,41 @@ export interface DemandRepository {
 
   listParticipants(demandId: DemandId): Promise<DemandParticipant[]>;
   insertParticipant(participant: DemandParticipant): Promise<DemandParticipant>;
+
+  /** 참여 신청과 별개로 남기는 문의 (리뷰 6.4절) */
+  listComments(demandId: DemandId): Promise<DemandComment[]>;
+  insertComment(comment: DemandComment): Promise<DemandComment>;
+  softDeleteComment(id: string, at: string): Promise<void>;
+
+  listAttachments(demandId: DemandId): Promise<DemandAttachment[]>;
+  insertAttachment(attachment: DemandAttachment): Promise<DemandAttachment>;
+  deleteAttachment(id: string): Promise<void>;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 토큰                                                                        */
+/* -------------------------------------------------------------------------- */
+
+export interface RewardRepository {
+  /**
+   * 한 사람이 받은 기록 전부. 잔액은 도메인의 `sumBalance()` 가 계산한다.
+   * 저장소는 기록만 돌려준다 — 계산 규칙이 두 곳에 있으면 어긋난다.
+   */
+  listByUser(userId: UserId): Promise<RewardEntry[]>;
+  /** 이 수요에 이미 수여했는지 확인한다. 한 수요에 한 번만 준다. */
+  findAwardForDemand(demandId: DemandId): Promise<RewardEntry | null>;
+  /** append-only. 수정·삭제 메서드를 두지 않는다. */
+  insert(entry: RewardEntry): Promise<RewardEntry>;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 공지                                                                        */
+/* -------------------------------------------------------------------------- */
+
+export interface NoticeRepository {
+  list(campusId: CampusId, includeUnpublished: boolean): Promise<Notice[]>;
+  get(id: string): Promise<Notice | null>;
+  upsert(notice: Notice): Promise<Notice>;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -244,5 +283,7 @@ export interface Repositories {
   evaluations: EvaluationRepository;
   improvements: ImprovementRepository;
   observability: ObservabilityRepository;
+  rewards: RewardRepository;
+  notices: NoticeRepository;
   files: FileStorage;
 }

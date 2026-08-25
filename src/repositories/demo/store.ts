@@ -2,9 +2,17 @@ import 'server-only';
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
-import type { AutomationDemand, DemandMatch, DemandParticipant } from '@/domain/demand/types';
+import type {
+  AutomationDemand,
+  DemandAttachment,
+  DemandComment,
+  DemandMatch,
+  DemandParticipant,
+} from '@/domain/demand/types';
 import type { EvaluationHistoryEntry, ToolEvaluation } from '@/domain/evaluation/types';
 import type { Campus, Profile } from '@/domain/identity/types';
+import type { Notice } from '@/domain/notice/types';
+import type { RewardEntry } from '@/domain/reward/types';
 import type {
   ImprovementRequest,
   ImprovementRequestHistoryEntry,
@@ -47,6 +55,8 @@ export interface DemoDatabase {
   demands: AutomationDemand[];
   demandMatches: DemandMatch[];
   demandParticipants: DemandParticipant[];
+  demandComments: DemandComment[];
+  demandAttachments: DemandAttachment[];
   evaluations: ToolEvaluation[];
   evaluationHistory: EvaluationHistoryEntry[];
   improvementRequests: ImprovementRequest[];
@@ -54,6 +64,8 @@ export interface DemoDatabase {
   auditLogs: AuditLog[];
   usageEvents: UsageEvent[];
   notifications: Notification[];
+  rewardEntries: RewardEntry[];
+  notices: Notice[];
 }
 
 function dataDir(): string {

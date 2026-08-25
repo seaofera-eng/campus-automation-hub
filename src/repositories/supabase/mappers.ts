@@ -2,9 +2,17 @@ import type { AdminPermission } from '@/domain/authz/accounts';
 import { isAdminPermission, isMemberType } from '@/domain/authz/accounts';
 import type { MemberType } from '@/domain/authz/accounts';
 import { isRuntimeKind } from '@/domain/tool/types';
-import type { AutomationDemand, DemandMatch, DemandParticipant } from '@/domain/demand/types';
+import type {
+  AutomationDemand,
+  DemandAttachment,
+  DemandComment,
+  DemandMatch,
+  DemandParticipant,
+} from '@/domain/demand/types';
 import type { EvaluationHistoryEntry, ToolEvaluation } from '@/domain/evaluation/types';
 import type { Campus, Profile } from '@/domain/identity/types';
+import type { Notice } from '@/domain/notice/types';
+import type { RewardEntry } from '@/domain/reward/types';
 import type {
   ImprovementRequest,
   ImprovementRequestHistoryEntry,
@@ -12,6 +20,7 @@ import type {
 import type { AuditLog, Notification } from '@/domain/observability/types';
 import type { ReviewAssignment, ReviewComment } from '@/domain/review/types';
 import { asId } from '@/domain/shared/ids';
+import type { DemandId, ToolId, UserId } from '@/domain/shared/ids';
 import type { RiskChecklist, RiskChecklistItem } from '@/domain/tool/risk-checklist-rules';
 import type {
   AutomationTool,
@@ -639,5 +648,68 @@ export function fromNotification(notification: Notification): Row {
     body: notification.body,
     link_path: notification.linkPath,
     read_at: notification.readAt,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* 수요 문의 · 첨부                                                            */
+/* -------------------------------------------------------------------------- */
+
+export function toDemandComment(row: Row): DemandComment {
+  return {
+    id: asId(row.id),
+    campusId: asId(row.campus_id),
+    demandId: asId(row.demand_id),
+    authorUserId: asId(row.author_user_id),
+    body: str(row.body),
+    createdAt: str(row.created_at),
+    deletedAt: row.deleted_at ?? null,
+  };
+}
+
+export function toDemandAttachment(row: Row): DemandAttachment {
+  return {
+    id: asId(row.id),
+    campusId: asId(row.campus_id),
+    demandId: asId(row.demand_id),
+    fileName: str(row.file_name),
+    storagePath: str(row.storage_path),
+    contentType: str(row.content_type),
+    byteSize: Number(row.byte_size ?? 0),
+    uploadedBy: asId(row.uploaded_by),
+    createdAt: str(row.created_at),
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* 토큰 · 공지                                                                 */
+/* -------------------------------------------------------------------------- */
+
+export function toRewardEntry(row: Row): RewardEntry {
+  return {
+    id: asId(row.id),
+    campusId: asId(row.campus_id),
+    userId: asId(row.user_id),
+    kind: row.kind === 'AWARD' ? 'AWARD' : 'GRANT',
+    amount: Number(row.amount ?? 0),
+    demandId: row.demand_id ? asId<DemandId>(row.demand_id) : null,
+    toolId: row.tool_id ? asId<ToolId>(row.tool_id) : null,
+    awardedBy: row.awarded_by ? asId<UserId>(row.awarded_by) : null,
+    note: str(row.note),
+    createdAt: str(row.created_at),
+  };
+}
+
+export function toNotice(row: Row): Notice {
+  return {
+    id: asId(row.id),
+    campusId: asId(row.campus_id),
+    title: str(row.title),
+    body: str(row.body),
+    pinned: row.pinned === true,
+    isPublished: row.is_published !== false,
+    authorUserId: asId(row.author_user_id),
+    createdAt: str(row.created_at),
+    updatedAt: str(row.updated_at),
   };
 }

@@ -5,9 +5,11 @@ import { joinDemand, linkToolToDemand, unlinkToolFromDemand } from '@/applicatio
 import { saveDemandDraft, transitionDemand } from '@/application/demands/register';
 import { withAudit } from '@/application/shared/audit';
 import { DEMAND_STATUS_LABELS, MATCH_TYPE_LABELS } from '@/domain/demand/types';
+import { addDemandComment, deleteDemandComment } from '@/application/demands/comments';
 import { run, type ActionResult } from '@/lib/actions/result';
 import { requireUser } from '@/lib/auth/current-user';
 import { parseOrThrow } from '@/lib/validation/common';
+import { addDemandCommentSchema, deleteDemandCommentSchema } from '@/lib/validation/demand';
 import {
   demandTransitionSchema,
   joinDemandSchema,
@@ -185,6 +187,34 @@ export async function joinDemandAction(input: unknown): Promise<ActionResult<nul
     );
 
     revalidateDemand(data.demandId);
+    return null;
+  });
+}
+
+/**
+ * 수요 문의 남기기 (리뷰 6.4절).
+ *
+ * 참여 신청과 별개다. 물어보고 나서 참여할지 정하면 된다.
+ * 감사 로그를 남기지 않는다 — 글을 쓰는 일이지 상태를 바꾸는 일이 아니다.
+ */
+export async function addDemandCommentAction(input: unknown): Promise<ActionResult<null>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const data = parseOrThrow(addDemandCommentSchema, input);
+
+    await addDemandComment(actor, data);
+    revalidateDemand(data.demandId);
+    return null;
+  });
+}
+
+export async function deleteDemandCommentAction(input: unknown): Promise<ActionResult<null>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const data = parseOrThrow(deleteDemandCommentSchema, input);
+
+    await deleteDemandComment(actor, data.commentId);
+    revalidatePath('/demands', 'layout');
     return null;
   });
 }

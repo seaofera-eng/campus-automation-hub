@@ -11,7 +11,9 @@ import {
   createSupabaseIdentityRepository,
   createSupabaseReferenceRepository,
 } from './identity-repository';
+import { createSupabaseNoticeRepository } from './notice-repository';
 import { createSupabaseObservabilityRepository } from './observability-repository';
+import { createSupabaseRewardRepository } from './reward-repository';
 import { createSupabaseReviewRepository } from './review-repository';
 import { createSupabaseToolRepository } from './tool-repository';
 
@@ -37,6 +39,8 @@ export function createSupabaseRepositories(): Repositories {
     evaluations: createSupabaseEvaluationRepository(),
     improvements: createSupabaseImprovementRepository(),
     observability: createSupabaseObservabilityRepository(),
+    rewards: createSupabaseRewardRepository(),
+    notices: createSupabaseNoticeRepository(),
     files: createSupabaseFileStorage(),
   };
 }

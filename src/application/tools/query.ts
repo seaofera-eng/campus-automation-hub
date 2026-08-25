@@ -101,6 +101,22 @@ export async function listTools(query: ToolQuery): Promise<ToolListResult> {
   };
 }
 
+/**
+ * 도구에 카테고리·평가·사용량을 붙여 목록 항목으로 만든다.
+ * 랜딩에서도 같은 형태를 쓰므로 밖으로 연다.
+ */
+export async function toListItems(tools: readonly AutomationTool[]): Promise<ToolListItem[]> {
+  const repositories = getRepositories();
+  const campusId = tools[0]?.campusId;
+  if (!campusId) return [];
+
+  const [categories, profiles] = await Promise.all([
+    repositories.reference.listCategories(campusId),
+    repositories.identity.listProfiles(campusId),
+  ]);
+  return enrich(tools, categories, profiles);
+}
+
 async function enrich(
   tools: readonly AutomationTool[],
   categories: readonly ToolCategory[],

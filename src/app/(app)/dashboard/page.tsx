@@ -1,5 +1,6 @@
 import {
   BadgeCheck,
+  Coins,
   Ban,
   ClipboardCheck,
   FlaskConical,
@@ -11,6 +12,7 @@ import {
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { loadDashboard } from '@/application/admin/dashboard';
+import { loadMyBalance } from '@/application/rewards/tokens';
 import { BarList } from '@/components/dashboard/bar-list';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +24,7 @@ export const metadata: Metadata = { title: '대시보드' };
 
 export default async function DashboardPage() {
   const { profile, stats, activity } = await loadDashboard();
+  const balance = await loadMyBalance();
 
   // 이용자는 수요와 도구를 함께 쓰므로 둘 다 강조한다.
   // 검토 권한이 있는 사람에게만 검토 지표를 앞세운다.
@@ -61,6 +64,13 @@ export default async function DashboardPage() {
             href="/improvements"
           />
           <StatCard label="남긴 평가" value={stats.totalEvaluations} icon={Star} />
+          {/* 리뷰 3절: "[부서별 도구] 항목이 필요 없음. [보유 토큰]을 표기" */}
+          <StatCard
+            label="보유 토큰"
+            value={balance.total}
+            icon={Coins}
+            hint={balance.awarded > 0 ? `수여로 받은 것 ${balance.awarded}` : '아직 받은 수여 없음'}
+          />
         </div>
       </section>
 

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { listLoginOptions } from '@/application/shared/login-options';
@@ -11,7 +12,7 @@ export const metadata: Metadata = { title: '로그인' };
 
 export default async function LoginPage() {
   if (await getCurrentProfile()) {
-    redirect('/dashboard');
+    redirect('/home');
   }
 
   const demo = isDemoMode();
@@ -31,6 +32,12 @@ export default async function LoginPage() {
 
         {demo ? <DemoLoginForm accounts={accounts} /> : <PasswordLoginForm />}
       </main>
+      <p className="mt-6 text-sm text-fg-muted">
+        아직 계정이 없으신가요?{' '}
+        <Link href="/signup" className="font-medium text-primary hover:underline">
+          가입하기
+        </Link>
+      </p>
     </div>
   );
 }

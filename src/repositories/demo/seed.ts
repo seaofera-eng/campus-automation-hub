@@ -1,4 +1,9 @@
-import type { AutomationDemand, DemandMatch, DemandParticipant } from '@/domain/demand/types';
+import type {
+  AutomationDemand,
+  DemandComment,
+  DemandMatch,
+  DemandParticipant,
+} from '@/domain/demand/types';
 import type { ToolEvaluation } from '@/domain/evaluation/types';
 import type { Campus, Profile } from '@/domain/identity/types';
 import type { ImprovementRequest } from '@/domain/improvement/types';
@@ -7,6 +12,7 @@ import { asId } from '@/domain/shared/ids';
 import type { AuditLog } from '@/domain/observability/types';
 import type {
   AuditLogId,
+  DemandId,
   DemandMatchId,
   EvaluationId,
   ImprovementRequestId,
@@ -14,9 +20,12 @@ import type {
   ReviewCommentId,
   RiskChecklistId,
   StatusHistoryId,
+  ToolId,
   ToolVersionId,
   UserId,
 } from '@/domain/shared/ids';
+import type { Notice } from '@/domain/notice/types';
+import type { RewardEntry } from '@/domain/reward/types';
 import type { RiskChecklist } from '@/domain/tool/risk-checklist-rules';
 import { emptyChecklistItems } from '@/domain/tool/risk-checklist-rules';
 import type {
@@ -1282,5 +1291,143 @@ export function buildDemoSeed(): DemoDatabase {
     auditLogs: buildAuditLogs(),
     usageEvents: [],
     notifications: [],
+    demandComments: buildDemandComments(),
+    demandAttachments: [],
+    rewardEntries: buildRewardEntries(),
+    notices: buildNotices(),
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/* 5단계에서 추가된 것 — 댓글 · 토큰 · 공지                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * 수요 댓글.
+ *
+ * 참여 신청 전에 물어보는 대화를 보여준다. 리뷰 6.4절이 요청한 흐름이
+ * 실제로 어떻게 보이는지 데모에서 확인할 수 있어야 한다.
+ */
+function buildDemandComments(): DemandComment[] {
+  const rows: { index: number; demandId: DemandId; author: keyof typeof DEMO_USER_IDS; body: string; daysAgo: number }[] = [
+    {
+      index: 1,
+      demandId: DEMO_DEMAND_IDS.departmentReports,
+      author: 'developer',
+      body: '엑셀 서식이 학과마다 많이 다른가요? 열 이름만 다른 정도면 금방 될 것 같습니다.',
+      daysAgo: 9,
+    },
+    {
+      index: 2,
+      demandId: DEMO_DEMAND_IDS.departmentReports,
+      author: 'requester',
+      body: '열 이름은 비슷한데 순서가 제각각입니다. 샘플 파일을 첨부해 두겠습니다.',
+      daysAgo: 8,
+    },
+    {
+      index: 3,
+      demandId: DEMO_DEMAND_IDS.grantAlerts,
+      author: 'developer2',
+      body: '알림을 메일로 받으시는 게 편한가요, 아니면 화면에서 모아 보시는 게 편한가요?',
+      daysAgo: 5,
+    },
+  ];
+
+  return rows.map((row) => ({
+    id: seedId(18, row.index),
+    campusId: DEMO_CAMPUS_ID,
+    demandId: row.demandId,
+    authorUserId: DEMO_USER_IDS[row.author],
+    body: row.body,
+    createdAt: daysAgo(row.daysAgo),
+    deletedAt: null,
+  }));
+}
+
+/**
+ * 토큰 기록.
+ *
+ * 원장은 append-only 다. 잔액을 따로 저장하지 않고 기록을 더해서 낸다.
+ * 처음 계정에 들어온 지급(GRANT)과, 도구를 완성해 받은 수여(AWARD)를 함께 둔다.
+ */
+function buildRewardEntries(): RewardEntry[] {
+  const rows: {
+    index: number;
+    user: keyof typeof DEMO_USER_IDS;
+    kind: RewardEntry['kind'];
+    amount: number;
+    demandId: DemandId | null;
+    toolId: ToolId | null;
+    awardedBy: keyof typeof DEMO_USER_IDS | null;
+    note: string;
+    daysAgo: number;
+  }[] = [
+    { index: 1, user: 'developer', kind: 'GRANT', amount: 1000, demandId: null, toolId: null, awardedBy: null, note: '가입 축하 토큰', daysAgo: 300 },
+    { index: 2, user: 'developer2', kind: 'GRANT', amount: 1000, demandId: null, toolId: null, awardedBy: null, note: '가입 축하 토큰', daysAgo: 300 },
+    { index: 3, user: 'requester', kind: 'GRANT', amount: 1000, demandId: null, toolId: null, awardedBy: null, note: '가입 축하 토큰', daysAgo: 300 },
+    { index: 4, user: 'requester2', kind: 'GRANT', amount: 1000, demandId: null, toolId: null, awardedBy: null, note: '가입 축하 토큰', daysAgo: 300 },
+    {
+      index: 5,
+      user: 'developer',
+      kind: 'AWARD',
+      amount: 300,
+      demandId: DEMO_DEMAND_IDS.meetingTasks,
+      toolId: DEMO_TOOL_IDS.meetingNotes,
+      awardedBy: 'requester',
+      note: '회의록 정리가 바로 쓸 수 있는 형태로 나와서 좋았습니다.',
+      daysAgo: 12,
+    },
+  ];
+
+  return rows.map((row) => ({
+    id: seedId(19, row.index),
+    campusId: DEMO_CAMPUS_ID,
+    userId: DEMO_USER_IDS[row.user],
+    kind: row.kind,
+    amount: row.amount,
+    demandId: row.demandId,
+    toolId: row.toolId,
+    awardedBy: row.awardedBy ? DEMO_USER_IDS[row.awardedBy] : null,
+    note: row.note,
+    createdAt: daysAgo(row.daysAgo),
+  }));
+}
+
+/** 공지. 랜딩 맨 위에 몇 건 보인다. */
+function buildNotices(): Notice[] {
+  const rows: { index: number; title: string; body: string; pinned: boolean; daysAgo: number }[] = [
+    {
+      index: 1,
+      title: '도구를 올릴 때 개인정보를 다루면 꼭 표시해 주세요',
+      body: '이름·학번처럼 사람을 특정할 수 있는 정보를 다루는 도구는 검토 단계가 한 번 더 있습니다.\n등록 화면의 "다루는 데이터" 항목에서 해당하는 것을 골라 주세요.',
+      pinned: true,
+      daysAgo: 20,
+    },
+    {
+      index: 2,
+      title: '토큰은 이렇게 씁니다',
+      body: '업무 수요를 올릴 때 "희망 수여 토큰"을 걸어 두면, 완성된 도구 가운데 하나를 골라 그 토큰을 줄 수 있습니다.\n한 수요에 한 번만 줄 수 있으니 천천히 써 보고 정하세요.',
+      pinned: false,
+      daysAgo: 14,
+    },
+    {
+      index: 3,
+      title: '평가는 익명으로 남습니다',
+      body: '도구를 만든 사람에게 누가 평가를 썼는지 보이지 않습니다. 아쉬웠던 점을 편하게 적어 주세요.',
+      pinned: false,
+      daysAgo: 7,
+    },
+  ];
+
+  return rows.map((row) => ({
+    id: seedId(20, row.index),
+    campusId: DEMO_CAMPUS_ID,
+    title: row.title,
+    body: row.body,
+    pinned: row.pinned,
+    isPublished: true,
+    authorUserId: DEMO_USER_IDS.admin,
+    createdAt: daysAgo(row.daysAgo),
+    updatedAt: daysAgo(row.daysAgo),
+  }));
 }

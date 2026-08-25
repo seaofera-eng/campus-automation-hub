@@ -7,6 +7,8 @@ import {
   Settings,
   Wrench,
   Wand2,
+  Home,
+  Megaphone,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -34,11 +36,13 @@ interface NavItem {
 }
 
 const NAV_ITEMS: readonly NavItem[] = [
+  { href: '/home', label: '홈', icon: Home },
   { href: '/dashboard', label: '대시보드', icon: LayoutDashboard },
   { href: '/tools', label: '자동화 도구', icon: Wrench },
   { href: '/demands', label: '업무 수요', icon: Lightbulb },
   { href: '/reviews', label: '검토 작업', icon: ClipboardCheck, requires: 'REVIEW' },
   { href: '/improvements', label: '개선 요청', icon: Wand2 },
+  { href: '/notices', label: '공지', icon: Megaphone },
   { href: '/admin', label: '관리', icon: Settings, requires: 'ANY_ADMIN' },
 ];
 

@@ -1,6 +1,8 @@
 import 'server-only';
 import type {
   AutomationDemand,
+  DemandAttachment,
+  DemandComment,
   DemandMatch,
   DemandParticipant,
   DemandStatus,
@@ -15,6 +17,8 @@ import {
   fromDemandMatch,
   toDemand,
   toDemandMatch,
+  toDemandAttachment,
+  toDemandComment,
   toDemandParticipant,
 } from './mappers';
 
@@ -183,6 +187,83 @@ export function createSupabaseDemandRepository(): DemandRepository {
         .single();
       throwOnError(error, '개발 참여 신청');
       return toDemandParticipant(data);
+    },
+
+    async listComments(demandId: DemandId): Promise<DemandComment[]> {
+      const supabase = await getUserClient();
+      const { data, error } = await supabase
+        .from('demand_comments')
+        .select('*')
+        .eq('demand_id', demandId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true });
+      throwOnError(error, '문의 조회');
+      return (data ?? []).map(toDemandComment);
+    },
+
+    async insertComment(comment: DemandComment): Promise<DemandComment> {
+      const supabase = await getUserClient();
+      const { data, error } = await supabase
+        .from('demand_comments')
+        .insert({
+          id: comment.id,
+          campus_id: comment.campusId,
+          demand_id: comment.demandId,
+          author_user_id: comment.authorUserId,
+          body: comment.body,
+          created_at: comment.createdAt,
+        })
+        .select('*')
+        .single();
+      throwOnError(error, '문의 등록');
+      return toDemandComment(data);
+    },
+
+    async softDeleteComment(id: string, at: string): Promise<void> {
+      const supabase = await getUserClient();
+      const { error } = await supabase
+        .from('demand_comments')
+        .update({ deleted_at: at })
+        .eq('id', id);
+      throwOnError(error, '문의 삭제');
+    },
+
+    async listAttachments(demandId: DemandId): Promise<DemandAttachment[]> {
+      const supabase = await getUserClient();
+      const { data, error } = await supabase
+        .from('demand_attachments')
+        .select('*')
+        .eq('demand_id', demandId)
+        .order('created_at', { ascending: true });
+      throwOnError(error, '첨부 조회');
+      return (data ?? []).map(toDemandAttachment);
+    },
+
+    async insertAttachment(attachment: DemandAttachment): Promise<DemandAttachment> {
+      const supabase = await getUserClient();
+      const { data, error } = await supabase
+        .from('demand_attachments')
+        .insert({
+          id: attachment.id,
+          campus_id: attachment.campusId,
+          demand_id: attachment.demandId,
+          file_name: attachment.fileName,
+          storage_path: attachment.storagePath,
+          content_type: attachment.contentType,
+          byte_size: attachment.byteSize,
+          uploaded_by: attachment.uploadedBy,
+          created_at: attachment.createdAt,
+        })
+        .select('*')
+        .single();
+      throwOnError(error, '첨부 저장');
+      return toDemandAttachment(data);
+    },
+
+    async deleteAttachment(id: string): Promise<void> {
+      const supabase = await getUserClient();
+      const { error } = await supabase.from('demand_attachments').delete().eq('id', id);
+      throwOnError(error, '첨부 삭제');
     },
   };
 }

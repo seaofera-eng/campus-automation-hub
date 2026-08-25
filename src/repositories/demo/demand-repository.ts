@@ -1,6 +1,8 @@
 import 'server-only';
 import type {
   AutomationDemand,
+  DemandAttachment,
+  DemandComment,
   DemandMatch,
   DemandParticipant,
   DemandStatus,
@@ -124,6 +126,52 @@ export function createDemoDemandRepository(): DemandRepository {
       return mutateDb((db) => {
         db.demandParticipants.push(clone(participant));
         return clone(participant);
+      });
+    },
+
+    async listComments(demandId: DemandId): Promise<DemandComment[]> {
+      const db = await loadDb();
+      return clone(
+        db.demandComments
+          .filter((comment) => comment.demandId === demandId && comment.deletedAt === null)
+          .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+      );
+    },
+
+    async insertComment(comment: DemandComment): Promise<DemandComment> {
+      return mutateDb((db) => {
+        db.demandComments.push(clone(comment));
+        return clone(comment);
+      });
+    },
+
+    async softDeleteComment(id: string, at: string): Promise<void> {
+      await mutateDb((db) => {
+        const found = db.demandComments.find((comment) => comment.id === id);
+        if (found) found.deletedAt = at;
+      });
+    },
+
+    async listAttachments(demandId: DemandId): Promise<DemandAttachment[]> {
+      const db = await loadDb();
+      return clone(
+        db.demandAttachments
+          .filter((attachment) => attachment.demandId === demandId)
+          .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+      );
+    },
+
+    async insertAttachment(attachment: DemandAttachment): Promise<DemandAttachment> {
+      return mutateDb((db) => {
+        db.demandAttachments.push(clone(attachment));
+        return clone(attachment);
+      });
+    },
+
+    async deleteAttachment(id: string): Promise<void> {
+      await mutateDb((db) => {
+        const index = db.demandAttachments.findIndex((attachment) => attachment.id === id);
+        if (index >= 0) db.demandAttachments.splice(index, 1);
       });
     },
   };

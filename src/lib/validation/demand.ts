@@ -179,3 +179,13 @@ export function buildDemandHref(
   const queryString = params.toString();
   return queryString ? `/demands?${queryString}` : '/demands';
 }
+
+/** 수요 문의 (리뷰 6.4절) */
+export const addDemandCommentSchema = z.object({
+  demandId: z.string().min(1),
+  body: requiredText('문의 내용', 2, 2000),
+});
+
+export const deleteDemandCommentSchema = z.object({
+  commentId: z.string().min(1),
+});

@@ -1,7 +1,11 @@
 import { Lock, Pencil } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { listDemandComments } from '@/application/demands/comments';
 import { loadDemandDetail } from '@/application/demands/query';
+import { loadAwardState } from '@/application/rewards/tokens';
+import { AwardTokensPanel } from '@/components/demands/award-tokens-panel';
+import { DemandComments } from '@/components/demands/demand-comments';
 import { PhaseNotice } from '@/components/common/phase-notice';
 import { DemandStatusBadge, ToolStatusBadge } from '@/components/common/status-badge';
 import { DemandActionsPanel } from '@/components/demands/demand-actions-panel';
@@ -26,6 +30,8 @@ export const metadata: Metadata = { title: '수요 상세' };
 export default async function DemandDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const detail = await guardPage(() => loadDemandDetail(id));
+  const comments = await guardPage(() => listDemandComments(id));
+  const awardState = await guardPage(() => loadAwardState(detail.actor, id));
   const { demand, permissions } = detail;
 
   return (
@@ -235,6 +241,12 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ i
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardContent className="pt-5">
+              <DemandComments demandId={demand.id} comments={comments} />
+            </CardContent>
+          </Card>
         </div>
 
         <div className="flex flex-col gap-5">
@@ -242,6 +254,24 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ i
             <Alert tone="info" title="아직 공개되지 않았습니다">
               공개해야 다른 구성원이 이 수요를 볼 수 있고, 도구 연결이나 참여 신청을 받을 수
               있습니다.
+            </Alert>
+          ) : null}
+
+          {/* 토큰 수여 (리뷰 6.4절). 수요를 올린 본인에게만 보인다. */}
+          {awardState.canAward ? (
+            <AwardTokensPanel
+              demandId={demand.id}
+              offeredTokens={awardState.offeredTokens ?? 0}
+              candidates={detail.matches.map((match) => ({
+                id: match.toolId,
+                name: match.toolName,
+              }))}
+            />
+          ) : null}
+
+          {awardState.alreadyAwarded ? (
+            <Alert tone="success" title="토큰을 이미 수여했습니다">
+              {awardState.alreadyAwarded.amount.toLocaleString('ko-KR')} 토큰이 전달되었습니다.
             </Alert>
           ) : null}
 

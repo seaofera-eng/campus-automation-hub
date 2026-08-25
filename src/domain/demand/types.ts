@@ -139,3 +139,45 @@ export interface DemandListItem {
   matchCount: number;
   participantCount: number;
 }
+
+/**
+ * 수요에 달리는 댓글 (리뷰 6.4절).
+ *
+ * "참여 신청을 하지 않고 댓글만 다는 기능이 있었으면 좋겠음. 개발자가 추가적인
+ * 내용을 보고 개발여부를 판단할 수도 있기에 참여 신청을 바로 하지 않아도
+ * 수요자에게 문의를 할 수 있어야 함."
+ *
+ * 참여 신청과 별개다. 물어보고 나서 참여할지 정한다.
+ */
+export interface DemandComment {
+  id: string;
+  campusId: CampusId;
+  demandId: DemandId;
+  authorUserId: UserId;
+  body: string;
+  createdAt: string;
+  /** 지운 댓글. 목록에서 감추되 기록은 남긴다. */
+  deletedAt: string | null;
+}
+
+/**
+ * 수요에 붙이는 자료 (리뷰 6.4절).
+ *
+ * "자동화하려는 업무와 관련된 자료를 업로드 할 수 있도록 첨부파일을 넣을 수
+ * 있으면 좋겠음." 엑셀 서식 하나를 보는 것이 설명 열 줄보다 빠르다.
+ *
+ * 저장 경로에 사용자가 정한 파일명을 쓰지 않는다. 도구 첨부와 같은 규칙이다.
+ */
+export interface DemandAttachment {
+  id: string;
+  campusId: CampusId;
+  demandId: DemandId;
+  /** 화면에 보여줄 이름 */
+  fileName: string;
+  /** 저장 경로 — `{demandId}/{attachmentId}.{확장자}` 형태로만 만든다 */
+  storagePath: string;
+  contentType: string;
+  byteSize: number;
+  uploadedBy: UserId;
+  createdAt: string;
+}

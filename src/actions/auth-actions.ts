@@ -5,11 +5,14 @@ import { z } from 'zod';
 import { validationFailed } from '@/domain/shared/errors';
 import { asId } from '@/domain/shared/ids';
 import type { UserId } from '@/domain/shared/ids';
+import { signUpDemoUser } from '@/application/identity/signup';
 import { run, type ActionResult } from '@/lib/actions/result';
 import { signOut } from '@/lib/auth/current-user';
 import { signInAsDemoUser } from '@/lib/auth/demo-auth';
 import { signInWithPassword } from '@/lib/auth/supabase-auth';
 import { isDemoMode } from '@/lib/config/env';
+import { parseOrThrow } from '@/lib/validation/common';
+import { signUpSchema } from '@/lib/validation/signup';
 
 /**
  * 인증 서버 액션.
@@ -73,4 +76,19 @@ export async function signInAction(input: unknown): Promise<ActionResult<null>> 
 export async function signOutAction(): Promise<void> {
   await signOut();
   redirect('/login');
+}
+
+/**
+ * 회원가입 (리뷰 2절).
+ *
+ * 신분만 받아 이용자 계정을 만들고 바로 로그인시킨다.
+ * 관리 권한은 주지 않는다 — 관리자가 나중에 부여한다.
+ */
+export async function signUpAction(input: unknown): Promise<ActionResult<null>> {
+  return run(async () => {
+    const data = parseOrThrow(signUpSchema, input);
+    const profile = await signUpDemoUser(data);
+    await signInAsDemoUser(profile.id);
+    return null;
+  });
 }
