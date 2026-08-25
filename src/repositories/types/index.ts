@@ -1,0 +1,258 @@
+import type {
+  AutomationDemand,
+  DemandMatch,
+  DemandParticipant,
+  DemandStatus,
+} from '@/domain/demand/types';
+import type { EvaluationHistoryEntry, ToolEvaluation } from '@/domain/evaluation/types';
+import type { Campus, Department, Profile } from '@/domain/identity/types';
+import type {
+  ImprovementRequest,
+  ImprovementRequestHistoryEntry,
+  ImprovementStatus,
+} from '@/domain/improvement/types';
+import type { ActivityEntry, AuditLog, Notification, UsageEvent } from '@/domain/observability/types';
+import type { ReviewAssignment, ReviewComment } from '@/domain/review/types';
+import type { RiskChecklist } from '@/domain/tool/risk-checklist-rules';
+import type {
+  AutomationTool,
+  AutomationToolVersion,
+  DataClassification,
+  IntegrationSystem,
+  ToolAttachment,
+  ToolCategory,
+  ToolStatus,
+  ToolStatusHistoryEntry,
+} from '@/domain/tool/types';
+import type {
+  CampusId,
+  CategoryId,
+  DemandId,
+  DepartmentId,
+  EvaluationId,
+  ImprovementRequestId,
+  ToolId,
+  ToolVersionId,
+  UserId,
+} from '@/domain/shared/ids';
+import type { Page, PageRequest } from '@/domain/shared/pagination';
+
+/**
+ * 저장소 인터페이스.
+ *
+ * DEMO(파일) 구현과 Supabase 구현이 이 계약을 함께 만족한다.
+ * application 계층은 이 인터페이스만 알고, 어떤 구현이 주입되는지는 모른다.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* 조직 · 사용자                                                               */
+/* -------------------------------------------------------------------------- */
+
+export interface IdentityRepository {
+  getCampus(id: CampusId): Promise<Campus | null>;
+  getDefaultCampus(): Promise<Campus>;
+
+  listDepartments(campusId: CampusId): Promise<Department[]>;
+  getDepartment(id: DepartmentId): Promise<Department | null>;
+  upsertDepartment(department: Department): Promise<Department>;
+  softDeleteDepartment(id: DepartmentId, at: string): Promise<void>;
+
+  listProfiles(campusId: CampusId): Promise<Profile[]>;
+  getProfile(id: UserId): Promise<Profile | null>;
+  getProfileByEmail(email: string): Promise<Profile | null>;
+  updateProfile(profile: Profile): Promise<Profile>;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 도구                                                                        */
+/* -------------------------------------------------------------------------- */
+
+export interface ToolQueryFilters {
+  campusId: CampusId;
+  keyword?: string;
+  statuses?: readonly ToolStatus[];
+  categoryIds?: readonly CategoryId[];
+  departmentIds?: readonly DepartmentId[];
+  dataClassifications?: readonly DataClassification[];
+  /** 특정 사용자가 담당자·개발자인 도구만 */
+  involvingUserId?: UserId;
+  includeDeleted?: boolean;
+}
+
+export type ToolSortKey = 'RECENT' | 'NAME' | 'EVALUATION' | 'STATUS';
+
+export interface ToolRepository {
+  listTools(
+    filters: ToolQueryFilters,
+    sort: ToolSortKey,
+    page: PageRequest,
+  ): Promise<Page<AutomationTool>>;
+  countByStatus(campusId: CampusId): Promise<Record<ToolStatus, number>>;
+  getTool(id: ToolId): Promise<AutomationTool | null>;
+  getToolByName(campusId: CampusId, name: string): Promise<AutomationTool | null>;
+  insertTool(tool: AutomationTool): Promise<AutomationTool>;
+  updateTool(tool: AutomationTool): Promise<AutomationTool>;
+
+  getVersion(id: ToolVersionId): Promise<AutomationToolVersion | null>;
+  listVersions(toolId: ToolId): Promise<AutomationToolVersion[]>;
+  insertVersion(version: AutomationToolVersion): Promise<AutomationToolVersion>;
+  updateVersion(version: AutomationToolVersion): Promise<AutomationToolVersion>;
+
+  listStatusHistory(toolId: ToolId): Promise<ToolStatusHistoryEntry[]>;
+  insertStatusHistory(entry: ToolStatusHistoryEntry): Promise<ToolStatusHistoryEntry>;
+
+  listAttachments(toolVersionId: ToolVersionId): Promise<ToolAttachment[]>;
+  insertAttachment(attachment: ToolAttachment): Promise<ToolAttachment>;
+  deleteAttachment(id: string): Promise<void>;
+}
+
+export interface ReferenceDataRepository {
+  listCategories(campusId: CampusId): Promise<ToolCategory[]>;
+  getCategory(id: CategoryId): Promise<ToolCategory | null>;
+  upsertCategory(category: ToolCategory): Promise<ToolCategory>;
+
+  listIntegrationSystems(campusId: CampusId): Promise<IntegrationSystem[]>;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 검토                                                                        */
+/* -------------------------------------------------------------------------- */
+
+export interface ReviewRepository {
+  listAssignments(campusId: CampusId, reviewerUserId?: UserId): Promise<ReviewAssignment[]>;
+  getAssignmentForVersion(toolVersionId: ToolVersionId): Promise<ReviewAssignment | null>;
+  upsertAssignment(assignment: ReviewAssignment): Promise<ReviewAssignment>;
+
+  listComments(toolId: ToolId): Promise<ReviewComment[]>;
+  insertComment(comment: ReviewComment): Promise<ReviewComment>;
+
+  getChecklist(toolVersionId: ToolVersionId): Promise<RiskChecklist | null>;
+  upsertChecklist(checklist: RiskChecklist): Promise<RiskChecklist>;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 수요                                                                        */
+/* -------------------------------------------------------------------------- */
+
+export interface DemandQueryFilters {
+  campusId: CampusId;
+  keyword?: string;
+  statuses?: readonly DemandStatus[];
+  departmentIds?: readonly DepartmentId[];
+  requesterUserId?: UserId;
+}
+
+export interface DemandRepository {
+  listDemands(filters: DemandQueryFilters, page: PageRequest): Promise<Page<AutomationDemand>>;
+  countByStatus(campusId: CampusId): Promise<Record<DemandStatus, number>>;
+  getDemand(id: DemandId): Promise<AutomationDemand | null>;
+  insertDemand(demand: AutomationDemand): Promise<AutomationDemand>;
+  updateDemand(demand: AutomationDemand): Promise<AutomationDemand>;
+
+  listMatches(demandId: DemandId): Promise<DemandMatch[]>;
+  listMatchesForTool(toolId: ToolId): Promise<DemandMatch[]>;
+  insertMatch(match: DemandMatch): Promise<DemandMatch>;
+  deleteMatch(id: string): Promise<void>;
+
+  listParticipants(demandId: DemandId): Promise<DemandParticipant[]>;
+  insertParticipant(participant: DemandParticipant): Promise<DemandParticipant>;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 평가                                                                        */
+/* -------------------------------------------------------------------------- */
+
+export interface EvaluationRepository {
+  listByTool(toolId: ToolId): Promise<ToolEvaluation[]>;
+  listByUser(userId: UserId): Promise<ToolEvaluation[]>;
+  countAll(campusId: CampusId): Promise<number>;
+  getById(id: EvaluationId): Promise<ToolEvaluation | null>;
+  /** 요구사항 9번: 같은 사용자가 같은 버전에 중복 평가하지 못하게 하는 조회 */
+  findByUserAndVersion(userId: UserId, toolVersionId: ToolVersionId): Promise<ToolEvaluation | null>;
+  insert(evaluation: ToolEvaluation): Promise<ToolEvaluation>;
+  update(evaluation: ToolEvaluation): Promise<ToolEvaluation>;
+
+  listHistory(evaluationId: EvaluationId): Promise<EvaluationHistoryEntry[]>;
+  insertHistory(entry: EvaluationHistoryEntry): Promise<EvaluationHistoryEntry>;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 개선 요청                                                                   */
+/* -------------------------------------------------------------------------- */
+
+export interface ImprovementQueryFilters {
+  campusId: CampusId;
+  keyword?: string;
+  statuses?: readonly ImprovementStatus[];
+  toolId?: ToolId;
+  assigneeUserId?: UserId;
+  requesterUserId?: UserId;
+}
+
+export interface ImprovementRepository {
+  list(filters: ImprovementQueryFilters, page: PageRequest): Promise<Page<ImprovementRequest>>;
+  listByTool(toolId: ToolId): Promise<ImprovementRequest[]>;
+  countByStatus(campusId: CampusId): Promise<Record<ImprovementStatus, number>>;
+  getById(id: ImprovementRequestId): Promise<ImprovementRequest | null>;
+  insert(request: ImprovementRequest): Promise<ImprovementRequest>;
+  update(request: ImprovementRequest): Promise<ImprovementRequest>;
+
+  listHistory(id: ImprovementRequestId): Promise<ImprovementRequestHistoryEntry[]>;
+  insertHistory(entry: ImprovementRequestHistoryEntry): Promise<ImprovementRequestHistoryEntry>;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 감사 · 알림 · 사용현황                                                       */
+/* -------------------------------------------------------------------------- */
+
+export interface AuditLogFilters {
+  campusId: CampusId;
+  action?: string;
+  actorUserId?: UserId;
+  targetType?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface ObservabilityRepository {
+  insertAuditLog(log: AuditLog): Promise<AuditLog>;
+  listAuditLogs(filters: AuditLogFilters, page: PageRequest): Promise<Page<AuditLog>>;
+
+  insertUsageEvent(event: UsageEvent): Promise<void>;
+  countUsageByTool(toolId: ToolId): Promise<{ views: number; launches: number }>;
+
+  listNotifications(userId: UserId, onlyUnread: boolean): Promise<Notification[]>;
+  insertNotification(notification: Notification): Promise<Notification>;
+  markNotificationRead(id: string, at: string): Promise<void>;
+  markAllNotificationsRead(userId: UserId, at: string): Promise<void>;
+
+  listRecentActivity(campusId: CampusId, limit: number): Promise<ActivityEntry[]>;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 첨부파일 저장소                                                             */
+/* -------------------------------------------------------------------------- */
+
+export interface FileStorage {
+  /** 저장 후 내부 경로를 돌려준다. */
+  save(path: string, data: Uint8Array, contentType: string): Promise<string>;
+  /** 브라우저에서 열 수 있는 URL. DEMO 모드에서는 앱 내부 라우트를 돌려준다. */
+  getUrl(path: string): Promise<string>;
+  remove(path: string): Promise<void>;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 통합 컨테이너                                                               */
+/* -------------------------------------------------------------------------- */
+
+export interface Repositories {
+  identity: IdentityRepository;
+  tools: ToolRepository;
+  reference: ReferenceDataRepository;
+  reviews: ReviewRepository;
+  demands: DemandRepository;
+  evaluations: EvaluationRepository;
+  improvements: ImprovementRepository;
+  observability: ObservabilityRepository;
+  files: FileStorage;
+}

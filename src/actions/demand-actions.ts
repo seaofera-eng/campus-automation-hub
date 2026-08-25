@@ -1,0 +1,190 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { joinDemand, linkToolToDemand, unlinkToolFromDemand } from '@/application/demands/match';
+import { saveDemandDraft, transitionDemand } from '@/application/demands/register';
+import { withAudit } from '@/application/shared/audit';
+import { DEMAND_STATUS_LABELS, MATCH_TYPE_LABELS } from '@/domain/demand/types';
+import { run, type ActionResult } from '@/lib/actions/result';
+import { requireUser } from '@/lib/auth/current-user';
+import { parseOrThrow } from '@/lib/validation/common';
+import {
+  demandTransitionSchema,
+  joinDemandSchema,
+  linkToolSchema,
+  publishDemandSchema,
+  saveDemandDraftSchema,
+  unlinkToolSchema,
+} from '@/lib/validation/demand';
+
+/** 수요 서버 액션. 모든 작업이 감사 로그를 남긴다. */
+
+function revalidateDemand(demandId: string): void {
+  revalidatePath('/demands');
+  revalidatePath(`/demands/${demandId}`);
+  revalidatePath('/dashboard');
+}
+
+export async function saveDemandDraftAction(
+  input: unknown,
+): Promise<ActionResult<{ demandId: string; created: boolean }>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const data = parseOrThrow(saveDemandDraftSchema, input);
+
+    const result = await withAudit(
+      actor,
+      {
+        action: data.demandId ? 'demand.update' : 'demand.create',
+        targetType: 'demand',
+        targetId: data.demandId ?? null,
+        changedFields: data.demandId ? ['form'] : ['(신규)'],
+        summary: data.demandId ? '수요 내용을 수정했습니다.' : '수요를 등록했습니다.',
+      },
+      () => saveDemandDraft(actor, { demandId: data.demandId, form: data.form }),
+    );
+
+    revalidateDemand(result.demandId);
+    return { demandId: result.demandId as string, created: result.created };
+  });
+}
+
+/**
+ * 공개.
+ *
+ * 공개 기준 검증을 통과해야 하므로 임시저장과 액션을 나눴다.
+ * 마지막 수정 내용을 함께 저장한 뒤 상태를 바꾼다.
+ */
+export async function publishDemandAction(input: unknown): Promise<ActionResult<null>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const data = parseOrThrow(publishDemandSchema, input);
+
+    await withAudit(
+      actor,
+      {
+        action: 'demand.publish',
+        targetType: 'demand',
+        targetId: data.demandId,
+        changedFields: ['status'],
+        summary: '수요를 공개했습니다.',
+      },
+      async () => {
+        await saveDemandDraft(actor, { demandId: data.demandId, form: data.form });
+        return transitionDemand(actor, {
+          demandId: data.demandId,
+          toStatus: 'OPEN',
+          reason: '수요를 공개합니다.',
+        });
+      },
+    );
+
+    revalidateDemand(data.demandId);
+    return null;
+  });
+}
+
+export async function transitionDemandAction(input: unknown): Promise<ActionResult<null>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const data = parseOrThrow(demandTransitionSchema, input);
+
+    await withAudit(
+      actor,
+      {
+        action: `demand.status.${data.toStatus.toLowerCase()}`,
+        targetType: 'demand',
+        targetId: data.demandId,
+        changedFields: ['status'],
+        summary: `수요 상태를 '${DEMAND_STATUS_LABELS[data.toStatus]}'(으)로 변경했습니다.`,
+      },
+      () =>
+        transitionDemand(actor, {
+          demandId: data.demandId,
+          toStatus: data.toStatus,
+          reason: data.reason,
+        }),
+    );
+
+    revalidateDemand(data.demandId);
+    return null;
+  });
+}
+
+export async function linkToolAction(input: unknown): Promise<ActionResult<null>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const data = parseOrThrow(linkToolSchema, input);
+
+    await withAudit(
+      actor,
+      {
+        action: 'demand.match',
+        targetType: 'demand',
+        targetId: data.demandId,
+        changedFields: ['matches'],
+        summary: `수요에 도구를 연결했습니다. (${MATCH_TYPE_LABELS[data.matchType]})`,
+      },
+      () =>
+        linkToolToDemand(actor, {
+          demandId: data.demandId,
+          toolId: data.toolId,
+          matchType: data.matchType,
+          rationale: data.rationale,
+        }),
+    );
+
+    revalidateDemand(data.demandId);
+    revalidatePath(`/tools/${data.toolId}`);
+    return null;
+  });
+}
+
+export async function unlinkToolAction(input: unknown): Promise<ActionResult<null>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const data = parseOrThrow(unlinkToolSchema, input);
+
+    await withAudit(
+      actor,
+      {
+        action: 'demand.unmatch',
+        targetType: 'demand',
+        targetId: data.demandId,
+        changedFields: ['matches'],
+        summary: '수요-도구 연결을 해제했습니다.',
+      },
+      () => unlinkToolFromDemand(actor, data.demandId, data.matchId),
+    );
+
+    revalidateDemand(data.demandId);
+    return null;
+  });
+}
+
+export async function joinDemandAction(input: unknown): Promise<ActionResult<null>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const data = parseOrThrow(joinDemandSchema, input);
+
+    await withAudit(
+      actor,
+      {
+        action: 'demand.participate',
+        targetType: 'demand',
+        targetId: data.demandId,
+        changedFields: ['participants'],
+        summary: '개발 참여를 신청했습니다.',
+      },
+      () =>
+        joinDemand(actor, {
+          demandId: data.demandId,
+          participantRole: data.participantRole,
+          message: data.message,
+        }),
+    );
+
+    revalidateDemand(data.demandId);
+    return null;
+  });
+}

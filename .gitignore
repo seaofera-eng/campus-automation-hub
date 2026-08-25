@@ -1,0 +1,44 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# production
+build/
+dist/
+
+# DEMO 모드 로컬 데이터 (가상 데이터이지만 커밋하지 않는다)
+.data/
+
+# 환경변수 — 실제 비밀값은 절대 커밋하지 않는다
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# 테스트 산출물
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# 로그
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# 에디터 / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
