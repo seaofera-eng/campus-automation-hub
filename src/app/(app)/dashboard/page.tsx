@@ -15,7 +15,7 @@ import { BarList } from '@/components/dashboard/bar-list';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
-import { USER_ROLE_LABELS } from '@/domain/authz/roles';
+import { ACCOUNT_TYPE_LABELS, hasAdminPermission } from '@/domain/authz/accounts';
 import { formatDateTime } from '@/lib/utils/datetime';
 
 export const metadata: Metadata = { title: '대시보드' };
@@ -23,11 +23,13 @@ export const metadata: Metadata = { title: '대시보드' };
 export default async function DashboardPage() {
   const { profile, stats, activity } = await loadDashboard();
 
-  // 역할마다 먼저 봐야 할 지표가 다르다.
+  // 이용자는 수요와 도구를 함께 쓰므로 둘 다 강조한다.
+  // 검토 권한이 있는 사람에게만 검토 지표를 앞세운다.
+  const canReview = hasAdminPermission(profile.accountType, profile.adminPermissions, 'REVIEW');
   const emphasis = {
-    review: profile.role === 'REVIEWER' || profile.role === 'ADMIN',
-    tools: profile.role === 'DEVELOPER',
-    demands: profile.role === 'REQUESTER',
+    review: canReview,
+    tools: true,
+    demands: true,
   };
 
   return (
@@ -35,7 +37,7 @@ export default async function DashboardPage() {
       <div>
         <h1 className="text-xl font-bold text-fg">대시보드</h1>
         <p className="mt-1 text-sm text-fg-muted">
-          {profile.name} 님({USER_ROLE_LABELS[profile.role]})의 현재 현황입니다.
+          {profile.name} 님({ACCOUNT_TYPE_LABELS[profile.accountType]})의 현재 현황입니다.
         </p>
       </div>
 

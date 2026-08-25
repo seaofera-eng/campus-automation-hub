@@ -34,8 +34,8 @@ export async function requireUser(): Promise<Profile> {
 export function toActor(profile: Profile): Actor {
   return {
     id: profile.id,
-    role: profile.role,
-    departmentId: profile.departmentId,
+    accountType: profile.accountType,
+    adminPermissions: profile.adminPermissions,
     campusId: profile.campusId,
   };
 }

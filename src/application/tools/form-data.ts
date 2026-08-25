@@ -80,7 +80,6 @@ export async function loadToolEditForm(toolId: string): Promise<ToolFormPageData
   assertCan(toActor(actor), 'tool:update', {
     ownerId: tool.ownerUserId,
     developerIds: tool.developerUserIds,
-    departmentId: tool.departmentId,
   });
 
   const version = await repositories.tools.getVersion(tool.currentVersionId);

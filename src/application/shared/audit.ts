@@ -53,7 +53,7 @@ async function write(
     campusId: actor.campusId,
     action: context.action,
     actorUserId: actor.id,
-    actorRole: actor.role,
+    actorRole: actor.accountType,
     targetType: context.targetType,
     targetId: context.targetId ?? null,
     outcome,

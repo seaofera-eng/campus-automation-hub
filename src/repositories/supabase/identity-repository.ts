@@ -128,14 +128,33 @@ export function createSupabaseIdentityRepository(): IdentityRepository {
         .single();
       throwOnError(error, '사용자 정보 저장');
 
-      // 역할은 별도 테이블이므로 함께 갱신한다.
-      const { error: roleError } = await supabase
+      // 권한은 별도 테이블이므로 함께 갱신한다.
+      // 세부 권한이 줄어드는 경우가 있으므로 지우고 다시 넣는다.
+      const { error: deleteError } = await supabase
         .from('user_roles')
-        .upsert(
-          { user_id: profile.id, campus_id: profile.campusId, role: profile.role },
-          { onConflict: 'user_id,role' },
-        );
-      throwOnError(roleError, '역할 저장');
+        .delete()
+        .eq('user_id', profile.id);
+      throwOnError(deleteError, '기존 권한 정리');
+
+      const rows: { user_id: string; campus_id: string; role: string; admin_permission: string | null }[] =
+        profile.accountType === 'ADMIN'
+          ? profile.adminPermissions.map((permission) => ({
+              user_id: profile.id,
+              campus_id: profile.campusId,
+              role: 'ADMIN',
+              admin_permission: permission,
+            }))
+          : [
+              {
+                user_id: profile.id,
+                campus_id: profile.campusId,
+                role: 'USER',
+                admin_permission: null,
+              },
+            ];
+
+      const { error: roleError } = await supabase.from('user_roles').insert(rows);
+      throwOnError(roleError, '권한 저장');
 
       return toProfile(data);
     },

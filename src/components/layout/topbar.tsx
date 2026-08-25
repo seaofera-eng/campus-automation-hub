@@ -2,7 +2,7 @@ import { LogOut } from 'lucide-react';
 import type { Notification } from '@/domain/observability/types';
 import type { Profile } from '@/domain/identity/types';
 import { signOutAction } from '@/actions/auth-actions';
-import { RoleBadge } from './role-badge';
+import { AccountTypeBadge } from './account-badge';
 import { NotificationBell } from './notification-bell';
 
 export interface TopbarProps {
@@ -24,7 +24,10 @@ export function Topbar({ profile, departmentName, notifications }: TopbarProps) 
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        <RoleBadge role={profile.role} />
+        <AccountTypeBadge
+          accountType={profile.accountType}
+          adminPermissions={profile.adminPermissions}
+        />
         {profile.isDemoAccount ? (
           // 요구사항 18번: 데모 계정과 운영 계정을 구분해 표시한다.
           <span className="rounded-full border border-warning/30 bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">

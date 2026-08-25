@@ -4,6 +4,7 @@ import { loadDashboard } from '@/application/admin/dashboard';
 import { BarList } from '@/components/dashboard/bar-list';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { hasAdminPermission } from '@/domain/authz/accounts';
 import { guardPage } from '@/lib/auth/page-guard';
 import { formatDateTime } from '@/lib/utils/datetime';
 
@@ -14,7 +15,14 @@ import { formatDateTime } from '@/lib/utils/datetime';
  * 관리자는 "전체가 어느 단계에 몰려 있는지"를 봐야 하기 때문이다.
  */
 export default async function AdminOverviewPage() {
-  const { stats, activity } = await guardPage(loadDashboard);
+  const { profile, stats, activity } = await guardPage(loadDashboard);
+  // 감사 로그 열람 권한이 없으면 링크를 걸지 않는다.
+  // 눌렀는데 404 가 나면 고장 난 것처럼 보인다.
+  const canViewAudit = hasAdminPermission(
+    profile.accountType,
+    profile.adminPermissions,
+    'VIEW_AUDIT',
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -84,9 +92,14 @@ export default async function AdminOverviewPage() {
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle>최근 활동</CardTitle>
-          <Link href="/admin/audit-logs" className="text-sm font-medium text-primary hover:underline">
-            감사 로그 전체 보기 →
-          </Link>
+          {canViewAudit ? (
+            <Link
+              href="/admin/audit-logs"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              감사 로그 전체 보기 →
+            </Link>
+          ) : null}
         </CardHeader>
         <CardContent>
           {activity.length === 0 ? (

@@ -1,4 +1,6 @@
-import type { UserRole } from '../authz/roles';
+import type { AdminPermission } from '../authz/accounts';
+import { ADMIN_PERMISSION_LABELS, hasAdminPermission } from '../authz/accounts';
+import type { PermissionHolder } from '../authz/accounts';
 import { DomainError } from '../shared/errors';
 import type { RiskLevel, ToolStatus } from './types';
 import { TOOL_STATUS_LABELS } from './types';
@@ -14,10 +16,10 @@ import { josa } from '../shared/josa';
 export interface TransitionRule {
   from: ToolStatus;
   to: ToolStatus;
-  /** 이 전환을 수행할 수 있는 역할 */
-  allowedRoles: readonly UserRole[];
-  /** 도구의 소유자/개발자만 수행할 수 있는가 */
-  requiresOwnership: boolean;
+  /** 이 도구를 만든 사람이 직접 할 수 있는 전환인가 */
+  allowsOwner: boolean;
+  /** 관리 권한이 있어야 하는 전환이면 그 권한. 소유자만의 전환이면 null. */
+  requiredPermission: AdminPermission | null;
   /** 사용자에게 보여줄 동작 이름 */
   label: string;
   /** 되돌리기 어려운 동작인가 — UI에서 확인 절차를 강제한다 */
@@ -28,80 +30,80 @@ export const TOOL_TRANSITIONS: readonly TransitionRule[] = [
   {
     from: 'DRAFT',
     to: 'SUBMITTED',
-    allowedRoles: ['DEVELOPER', 'ADMIN'],
-    requiresOwnership: true,
+    allowsOwner: true,
+    requiredPermission: null,
     label: '등록 신청',
     destructive: false,
   },
   {
     from: 'SUBMITTED',
     to: 'HUMAN_REVIEW',
-    allowedRoles: ['REVIEWER', 'ADMIN'],
-    requiresOwnership: false,
+    allowsOwner: false,
+    requiredPermission: 'REVIEW',
     label: '검토 시작',
     destructive: false,
   },
   {
     from: 'HUMAN_REVIEW',
     to: 'REVISION_REQUIRED',
-    allowedRoles: ['REVIEWER', 'ADMIN'],
-    requiresOwnership: false,
+    allowsOwner: false,
+    requiredPermission: 'REVIEW',
     label: '보완 요청',
     destructive: false,
   },
   {
     from: 'REVISION_REQUIRED',
     to: 'SUBMITTED',
-    allowedRoles: ['DEVELOPER', 'ADMIN'],
-    requiresOwnership: true,
+    allowsOwner: true,
+    requiredPermission: null,
     label: '보완 후 재신청',
     destructive: false,
   },
   {
     from: 'HUMAN_REVIEW',
     to: 'PILOT',
-    allowedRoles: ['REVIEWER', 'ADMIN'],
-    requiresOwnership: false,
+    allowsOwner: false,
+    requiredPermission: 'REVIEW',
     label: '시범운영 승인',
     destructive: false,
   },
   {
     from: 'PILOT',
     to: 'APPROVED',
-    allowedRoles: ['ADMIN'],
-    requiresOwnership: false,
+    allowsOwner: false,
+    requiredPermission: 'MANAGE_TOOLS',
     label: '정식 승인',
     destructive: false,
   },
   {
     from: 'APPROVED',
     to: 'SUSPENDED',
-    allowedRoles: ['ADMIN'],
-    requiresOwnership: false,
+    allowsOwner: false,
+    requiredPermission: 'MANAGE_TOOLS',
     label: '사용 중지',
     destructive: true,
   },
   {
     from: 'SUSPENDED',
     to: 'APPROVED',
-    allowedRoles: ['ADMIN'],
-    requiresOwnership: false,
+    allowsOwner: false,
+    requiredPermission: 'MANAGE_TOOLS',
     label: '사용 재개',
     destructive: false,
   },
   {
     from: 'APPROVED',
     to: 'RETIRED',
-    allowedRoles: ['ADMIN'],
-    requiresOwnership: false,
+    allowsOwner: false,
+    requiredPermission: 'MANAGE_TOOLS',
     label: '폐기',
     destructive: true,
   },
   {
     from: 'SUSPENDED',
     to: 'RETIRED',
-    allowedRoles: ['ADMIN'],
-    requiresOwnership: false,
+    allowsOwner: false,
+    requiredPermission: 'MANAGE_TOOLS',
     label: '폐기',
     destructive: true,
   },
@@ -113,8 +115,7 @@ export const TOOL_TRANSITIONS: readonly TransitionRule[] = [
  */
 const STATUSES_BLOCKED_FOR_CRITICAL_RISK: readonly ToolStatus[] = ['PILOT', 'APPROVED'];
 
-export interface TransitionContext {
-  actorRole: UserRole;
+export interface TransitionContext extends PermissionHolder {
   /** 행위자가 이 도구의 소유자 또는 개발자인가 */
   isOwner: boolean;
   /** 사람이 작성한 위험 체크리스트의 등급. 아직 없으면 null. */
@@ -142,12 +143,16 @@ export function availableTransitions(
 
 /** 전환이 불가능하면 사유 메시지를, 가능하면 null을 반환한다. */
 function checkTransition(rule: TransitionRule, context: TransitionContext): string | null {
-  if (!rule.allowedRoles.includes(context.actorRole)) {
-    return `'${rule.label}'${josa(rule.label, '은는')} ${rule.allowedRoles.map(roleLabel).join(' 또는 ')} 역할만 수행할 수 있습니다.`;
-  }
+  const byOwner = rule.allowsOwner && context.isOwner;
+  const byPermission =
+    rule.requiredPermission !== null &&
+    hasAdminPermission(context.accountType, context.adminPermissions, rule.requiredPermission);
 
-  if (rule.requiresOwnership && !context.isOwner && context.actorRole !== 'ADMIN') {
-    return `'${rule.label}'${josa(rule.label, '은는')} 이 도구의 담당자 또는 개발자만 수행할 수 있습니다. 담당자에게 요청해 주세요.`;
+  if (!byOwner && !byPermission) {
+    if (rule.requiredPermission === null) {
+      return `'${rule.label}'${josa(rule.label, '은는')} 이 도구를 만든 사람만 할 수 있습니다. 담당자에게 요청해 주세요.`;
+    }
+    return `'${rule.label}'${josa(rule.label, '은는')} '${ADMIN_PERMISSION_LABELS[rule.requiredPermission]}' 권한이 있어야 할 수 있습니다. 관리자에게 요청해 주세요.`;
   }
 
   if (STATUSES_BLOCKED_FOR_CRITICAL_RISK.includes(rule.to)) {
@@ -160,16 +165,6 @@ function checkTransition(rule: TransitionRule, context: TransitionContext): stri
   }
 
   return null;
-}
-
-function roleLabel(role: UserRole): string {
-  const labels: Record<UserRole, string> = {
-    REQUESTER: '수요자',
-    DEVELOPER: '개발자',
-    REVIEWER: '검토자',
-    ADMIN: '관리자',
-  };
-  return labels[role];
 }
 
 /**

@@ -67,7 +67,7 @@ async function AuditLogSection({ query }: { query: AuditQueryInput }) {
           <EmptyState
             icon={FileClock}
             title="아직 기록된 작업이 없습니다"
-            description="도구 상태 변경이나 역할 변경 같은 작업을 하면 여기에 남습니다."
+            description="도구 상태 변경이나 권한 변경 같은 작업을 하면 여기에 남습니다."
           />
         )
       ) : (

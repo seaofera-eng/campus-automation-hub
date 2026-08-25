@@ -78,11 +78,13 @@ describe('임시저장', () => {
     await expect(saveDraft(developer, { form })).rejects.toThrowError(/이미 등록/);
   });
 
-  it('수요자는 도구를 등록할 수 없다', async () => {
+  /** 수요를 올리는 사람이 직접 도구를 만들 수도 있어야 한다. */
+  it('관리 권한이 없어도 도구를 등록할 수 있다', async () => {
     const requester = await demoProfile('requester');
-    await expect(
-      saveDraft(requester, { form: { ...emptyToolForm(), name: '권한 없는 등록' } }),
-    ).rejects.toThrowError(DomainError);
+    const result = await saveDraft(requester, {
+      form: { ...emptyToolForm(), name: '이용자가 만든 도구' },
+    });
+    expect(result.created).toBe(true);
   });
 
   it('이어서 저장하면 새로 만들지 않고 같은 도구를 수정한다', async () => {

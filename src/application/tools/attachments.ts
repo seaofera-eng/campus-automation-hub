@@ -43,7 +43,6 @@ export async function addAttachment(
   assertCan(toActor(actor), 'tool:attach', {
     ownerId: tool.ownerUserId,
     developerIds: tool.developerUserIds,
-    departmentId: tool.departmentId,
   });
 
   // 클라이언트가 보낸 크기·형식을 믿지 않고 실제 바이트로 다시 확인한다.
@@ -101,7 +100,6 @@ export async function removeAttachment(
   assertCan(toActor(actor), 'tool:attach', {
     ownerId: tool.ownerUserId,
     developerIds: tool.developerUserIds,
-    departmentId: tool.departmentId,
   });
 
   const attachments = await repositories.tools.listAttachments(tool.currentVersionId);

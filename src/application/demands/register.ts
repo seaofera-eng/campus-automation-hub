@@ -160,7 +160,8 @@ export async function transitionDemand(
 
   // 상태머신이 최종 판단한다.
   assertDemandTransitionAllowed(demand.status, input.toStatus, {
-    actorRole: actor.role,
+    accountType: actor.accountType,
+    adminPermissions: actor.adminPermissions,
     isRequester: demand.requesterUserId === actor.id,
   });
 

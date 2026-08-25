@@ -8,7 +8,8 @@ import type { DemandTransitionContext } from '@/domain/demand/status-machine';
 import { DomainError } from '@/domain/shared/errors';
 
 function context(overrides: Partial<DemandTransitionContext> = {}): DemandTransitionContext {
-  return { actorRole: 'ADMIN', isRequester: false, ...overrides };
+  return { accountType: 'ADMIN',
+    adminPermissions: ['REVIEW', 'MANAGE_USERS', 'MANAGE_CATEGORIES', 'MANAGE_TOOLS', 'MANAGE_NOTICES', 'VIEW_AUDIT'], isRequester: false, ...overrides };
 }
 
 describe('수요 상태 전환', () => {
@@ -34,7 +35,7 @@ describe('수요 상태 전환', () => {
       assertDemandTransitionAllowed(
         'DRAFT',
         'OPEN',
-        context({ actorRole: 'REQUESTER', isRequester: true }),
+        context({ accountType: 'USER', adminPermissions: [], isRequester: true }),
       ),
     ).not.toThrow();
   });
@@ -44,7 +45,7 @@ describe('수요 상태 전환', () => {
       assertDemandTransitionAllowed(
         'DRAFT',
         'OPEN',
-        context({ actorRole: 'REQUESTER', isRequester: false }),
+        context({ accountType: 'USER', adminPermissions: [], isRequester: false }),
       ),
     ).toThrowError(DomainError);
   });
@@ -54,7 +55,7 @@ describe('수요 상태 전환', () => {
       assertDemandTransitionAllowed(
         'OPEN',
         'IN_DEVELOPMENT',
-        context({ actorRole: 'REQUESTER', isRequester: true }),
+        context({ accountType: 'USER', adminPermissions: [], isRequester: true }),
       ),
     ).toThrowError(DomainError);
   });
@@ -64,7 +65,7 @@ describe('수요 상태 전환', () => {
       assertDemandTransitionAllowed(
         'OPEN',
         'CLOSED',
-        context({ actorRole: 'REQUESTER', isRequester: true }),
+        context({ accountType: 'USER', adminPermissions: [], isRequester: true }),
       ),
     ).not.toThrow();
   });

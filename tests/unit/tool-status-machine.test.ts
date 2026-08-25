@@ -15,7 +15,8 @@ import type { TransitionContext } from '@/domain/tool/status-machine';
 
 function context(overrides: Partial<TransitionContext> = {}): TransitionContext {
   return {
-    actorRole: 'ADMIN',
+    accountType: 'ADMIN',
+    adminPermissions: ['REVIEW', 'MANAGE_USERS', 'MANAGE_CATEGORIES', 'MANAGE_TOOLS', 'MANAGE_NOTICES', 'VIEW_AUDIT'],
     isOwner: false,
     riskLevel: 'LOW',
     hasRiskChecklist: true,
@@ -54,42 +55,85 @@ describe('도구 상태 전환 — 거부되어야 하는 전환', () => {
   });
 });
 
-describe('도구 상태 전환 — 역할 제약', () => {
-  it('개발자는 HUMAN_REVIEW 에서 PILOT 으로 스스로 승인할 수 없다', () => {
+describe('도구 상태 전환 — 권한 제약', () => {
+  const plainUser = { accountType: 'USER', adminPermissions: [] } as const;
+  const reviewer = { accountType: 'ADMIN', adminPermissions: ['REVIEW'] } as const;
+  const operator = { accountType: 'ADMIN', adminPermissions: ['MANAGE_TOOLS'] } as const;
+
+  it('만든 사람이라도 자기 도구를 스스로 승인할 수는 없다', () => {
     expect(() =>
-      assertTransitionAllowed('HUMAN_REVIEW', 'PILOT', context({ actorRole: 'DEVELOPER' })),
-    ).toThrowError(/검토자|관리자/);
+      assertTransitionAllowed('HUMAN_REVIEW', 'PILOT', context({ ...plainUser, isOwner: true })),
+    ).toThrowError(/도구 검토/);
   });
 
-  it('검토자는 PILOT 에서 APPROVED 로 정식 승인할 수 없다 (관리자 전용)', () => {
+  it('검토 권한이 있으면 보완 요청과 시범운영 승인을 할 수 있다', () => {
     expect(() =>
-      assertTransitionAllowed('PILOT', 'APPROVED', context({ actorRole: 'REVIEWER' })),
-    ).toThrowError(DomainError);
+      assertTransitionAllowed('HUMAN_REVIEW', 'PILOT', context(reviewer)),
+    ).not.toThrow();
+    expect(() =>
+      assertTransitionAllowed('HUMAN_REVIEW', 'REVISION_REQUIRED', context(reviewer)),
+    ).not.toThrow();
   });
 
-  it('수요자는 어떤 도구 상태도 바꿀 수 없다', () => {
-    const requester = context({ actorRole: 'REQUESTER', isOwner: true });
-    expect(availableTransitions('DRAFT', requester)).toHaveLength(0);
-    expect(availableTransitions('HUMAN_REVIEW', requester)).toHaveLength(0);
+  /**
+   * 검토와 정식 승인을 일부러 다른 권한으로 나눠 둔다.
+   * 검토한 사람이 혼자 정식 승인까지 끝내지 못하게 하는 이중 확인이다.
+   * (예전 모델에서 '정식 승인'이 관리자 전용이던 것과 같은 취지다.)
+   */
+  it('검토 권한만으로는 정식 승인을 할 수 없다', () => {
+    expect(() => assertTransitionAllowed('PILOT', 'APPROVED', context(reviewer))).toThrowError(
+      /도구 운영/,
+    );
+    expect(() => assertTransitionAllowed('PILOT', 'APPROVED', context(operator))).not.toThrow();
   });
 
-  it('담당자가 아닌 개발자는 남의 도구를 제출할 수 없다', () => {
-    expect(() =>
-      assertTransitionAllowed(
-        'DRAFT',
-        'SUBMITTED',
-        context({ actorRole: 'DEVELOPER', isOwner: false }),
-      ),
-    ).toThrowError(/담당자/);
+  it('검토 권한만으로는 사용 중지·폐기를 할 수 없다', () => {
+    expect(() => assertTransitionAllowed('APPROVED', 'SUSPENDED', context(reviewer))).toThrowError(
+      /도구 운영/,
+    );
+    expect(() => assertTransitionAllowed('APPROVED', 'RETIRED', context(reviewer))).toThrowError(
+      /도구 운영/,
+    );
   });
 
-  it('담당 개발자는 자기 도구를 제출할 수 있다', () => {
+  it('도구 운영 권한이 있으면 사용 중지·폐기를 할 수 있다', () => {
+    expect(() => assertTransitionAllowed('APPROVED', 'SUSPENDED', context(operator))).not.toThrow();
+    expect(() => assertTransitionAllowed('SUSPENDED', 'RETIRED', context(operator))).not.toThrow();
+  });
+
+  /**
+   * 예전에는 '수요자'가 도구 상태를 아예 못 바꿨다. 지금은 이용자와 개발자를
+   * 나누지 않으므로, 판단 기준은 역할이 아니라 **자기 도구인가**이다.
+   */
+  it('남의 도구는 권한 없는 이용자가 손댈 수 없다', () => {
+    const stranger = context({ ...plainUser, isOwner: false });
+    expect(availableTransitions('DRAFT', stranger)).toHaveLength(0);
+    expect(availableTransitions('HUMAN_REVIEW', stranger)).toHaveLength(0);
+  });
+
+  it('자기 도구라면 이용자도 신청과 재신청은 할 수 있다', () => {
+    const owner = context({ ...plainUser, isOwner: true });
+    expect(availableTransitions('DRAFT', owner).map((rule) => rule.to)).toEqual(['SUBMITTED']);
+    expect(availableTransitions('REVISION_REQUIRED', owner).map((rule) => rule.to)).toEqual([
+      'SUBMITTED',
+    ]);
+  });
+
+  it('자기 도구라도 검토 단계의 전환은 할 수 없다', () => {
+    const owner = context({ ...plainUser, isOwner: true });
+    expect(availableTransitions('HUMAN_REVIEW', owner)).toHaveLength(0);
+    expect(availableTransitions('APPROVED', owner)).toHaveLength(0);
+  });
+
+  it('담당자가 아니면 남의 도구를 제출할 수 없다', () => {
     expect(() =>
-      assertTransitionAllowed(
-        'DRAFT',
-        'SUBMITTED',
-        context({ actorRole: 'DEVELOPER', isOwner: true }),
-      ),
+      assertTransitionAllowed('DRAFT', 'SUBMITTED', context({ ...plainUser, isOwner: false })),
+    ).toThrowError(/만든 사람/);
+  });
+
+  it('만든 사람은 자기 도구를 제출할 수 있다', () => {
+    expect(() =>
+      assertTransitionAllowed('DRAFT', 'SUBMITTED', context({ ...plainUser, isOwner: true })),
     ).not.toThrow();
   });
 });

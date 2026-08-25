@@ -1,6 +1,7 @@
 import 'server-only';
 import { assertCan } from '@/domain/authz/policies';
 import type { Profile } from '@/domain/identity/types';
+import { hasAdminPermission } from '@/domain/authz/accounts';
 import { notFound } from '@/domain/shared/errors';
 import { asId } from '@/domain/shared/ids';
 import type { ToolId } from '@/domain/shared/ids';
@@ -189,14 +190,15 @@ export async function loadReviewDetail(toolId: string): Promise<ReviewDetail> {
     })),
     transitions: [
       ...availableTransitions(tool.status, {
-        actorRole: actor.role,
+        accountType: actor.accountType,
+    adminPermissions: actor.adminPermissions,
         isOwner: tool.ownerUserId === actor.id || tool.developerUserIds.includes(actor.id),
         riskLevel: checklist?.riskLevel ?? null,
         hasRiskChecklist: checklist !== null,
       }),
     ],
     reviewers: profiles
-      .filter((profile) => profile.role === 'REVIEWER' || profile.role === 'ADMIN')
+      .filter((profile) => hasAdminPermission(profile.accountType, profile.adminPermissions, 'REVIEW'))
       .map((profile) => ({ id: profile.id as string, name: profile.name })),
     canAssignSelf:
       assignment?.reviewerUserId !== actor.id &&

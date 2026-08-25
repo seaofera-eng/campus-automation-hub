@@ -268,7 +268,6 @@ async function updateExistingDraft(
   assertCan(toActor(actor), 'tool:update', {
     ownerId: tool.ownerUserId,
     developerIds: tool.developerUserIds,
-    departmentId: tool.departmentId,
   });
 
   // 검토 중인 도구는 내용이 바뀌면 안 된다. 검토자가 본 것과 달라지기 때문이다.
@@ -354,7 +353,6 @@ export async function submitTool(actor: Profile, input: SubmitToolInput): Promis
   assertCan(toActor(actor), 'tool:submit', {
     ownerId: tool.ownerUserId,
     developerIds: tool.developerUserIds,
-    departmentId: tool.departmentId,
   });
 
   const isResubmission = tool.status === 'REVISION_REQUIRED';
@@ -366,7 +364,8 @@ export async function submitTool(actor: Profile, input: SubmitToolInput): Promis
 
   // 상태머신이 최종 판단한다. UI 에서 버튼을 감췄는지 여부와 무관하다.
   assertTransitionAllowed(tool.status, 'SUBMITTED', {
-    actorRole: actor.role,
+    accountType: actor.accountType,
+    adminPermissions: actor.adminPermissions,
     isOwner: tool.ownerUserId === actor.id || tool.developerUserIds.includes(actor.id),
     riskLevel: null,
     hasRiskChecklist: false,

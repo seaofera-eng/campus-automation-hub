@@ -17,6 +17,7 @@ import { assertReasonProvided, assertTransitionAllowed } from '@/domain/tool/sta
 import type { AutomationTool, RiskLevel, ToolStatus } from '@/domain/tool/types';
 import { TOOL_STATUS_LABELS } from '@/domain/tool/types';
 import { toActor } from '@/lib/auth/current-user';
+import { hasAdminPermission } from '@/domain/authz/accounts';
 import { getRepositories } from '@/lib/di/container';
 import { notifyMany } from '../shared/notify';
 
@@ -51,7 +52,6 @@ export async function transitionToolStatus(
   assertCan(toActor(actor), 'tool:transition', {
     ownerId: tool.ownerUserId,
     developerIds: tool.developerUserIds,
-    departmentId: tool.departmentId,
   });
 
   // 사용 중지·폐기는 관리자 전용이라 별도 권한을 한 번 더 확인한다.
@@ -64,7 +64,8 @@ export async function transitionToolStatus(
   const checklist = await repositories.reviews.getChecklist(tool.currentVersionId);
 
   assertTransitionAllowed(tool.status, input.toStatus, {
-    actorRole: actor.role,
+    accountType: actor.accountType,
+    adminPermissions: actor.adminPermissions,
     isOwner: tool.ownerUserId === actor.id || tool.developerUserIds.includes(actor.id),
     riskLevel: checklist?.riskLevel ?? null,
     hasRiskChecklist: checklist !== null,
@@ -150,9 +151,9 @@ export async function assignReviewer(
 
   const reviewer = await repositories.identity.getProfile(targetReviewer);
   if (!reviewer) throw notFound('검토자');
-  if (reviewer.role !== 'REVIEWER' && reviewer.role !== 'ADMIN') {
+  if (!hasAdminPermission(reviewer.accountType, reviewer.adminPermissions, 'REVIEW')) {
     throw preconditionFailed(
-      '검토자 또는 관리자 역할을 가진 사용자에게만 검토를 배정할 수 있습니다.',
+      '도구 검토 권한을 가진 관리자에게만 검토를 배정할 수 있습니다. 관리 > 사용자에서 권한을 먼저 부여해 주세요.',
     );
   }
 

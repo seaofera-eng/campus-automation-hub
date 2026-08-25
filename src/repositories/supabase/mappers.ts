@@ -1,3 +1,5 @@
+import type { AdminPermission } from '@/domain/authz/accounts';
+import { isAdminPermission, isMemberType } from '@/domain/authz/accounts';
 import type { AutomationDemand, DemandMatch, DemandParticipant } from '@/domain/demand/types';
 import type { EvaluationHistoryEntry, ToolEvaluation } from '@/domain/evaluation/types';
 import type { Campus, Department, Profile } from '@/domain/identity/types';
@@ -97,7 +99,20 @@ export function fromDepartment(department: Department): Row {
 
 /** profiles 행 + user_roles 조인 결과를 하나의 Profile 로 합친다. */
 export function toProfile(row: Row): Profile {
-  const roleRow = Array.isArray(row.user_roles) ? row.user_roles[0] : row.user_roles;
+  // 권한 행은 여러 개일 수 있다. 계정 종류는 하나, 세부 권한은 여러 줄로 들어온다.
+  const roleRows = Array.isArray(row.user_roles)
+    ? row.user_roles
+    : row.user_roles
+      ? [row.user_roles]
+      : [];
+  const accountType = roleRows.some((entry) => entry?.role === 'ADMIN') ? 'ADMIN' : 'USER';
+  const adminPermissions =
+    accountType === 'ADMIN'
+      ? roleRows
+          .map((entry) => entry?.admin_permission)
+          .filter((value): value is AdminPermission => isAdminPermission(value))
+      : [];
+
   return {
     id: asId(row.id),
     campusId: asId(row.campus_id),
@@ -105,7 +120,9 @@ export function toProfile(row: Row): Profile {
     name: str(row.name),
     departmentId: optId(row.department_id),
     title: str(row.title),
-    role: roleRow?.role ?? 'REQUESTER',
+    accountType,
+    adminPermissions,
+    memberType: isMemberType(row.member_type) ? row.member_type : 'STAFF',
     isActive: row.is_active !== false,
     isDemoAccount: row.is_demo_account === true,
     createdAt: str(row.created_at),

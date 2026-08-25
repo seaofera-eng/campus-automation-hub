@@ -121,7 +121,9 @@ function buildProfiles(): Profile[] {
     email: string;
     name: string;
     title: string;
-    role: Profile['role'];
+    accountType: Profile['accountType'];
+    adminPermissions: Profile['adminPermissions'];
+    memberType: Profile['memberType'];
     departmentId: Department['id'];
   }[] = [
     {
@@ -129,15 +131,20 @@ function buildProfiles(): Profile[] {
       email: 'developer@demo.university.test',
       name: '김개발',
       title: '주무관',
-      role: 'DEVELOPER',
+      accountType: 'USER',
+      adminPermissions: [],
+      memberType: 'STAFF',
       departmentId: DEMO_DEPARTMENT_IDS.informationCenter,
     },
     {
+      // 검토만 맡은 관리자. "관리자라고 전부 할 수 있는 게 아니다"를 보여준다.
       id: DEMO_USER_IDS.reviewer,
       email: 'reviewer@demo.university.test',
       name: '이검토',
       title: '팀장',
-      role: 'REVIEWER',
+      accountType: 'ADMIN',
+      adminPermissions: ['REVIEW'],
+      memberType: 'STAFF',
       departmentId: DEMO_DEPARTMENT_IDS.informationCenter,
     },
     {
@@ -145,15 +152,27 @@ function buildProfiles(): Profile[] {
       email: 'requester@demo.university.test',
       name: '박수요',
       title: '주무관',
-      role: 'REQUESTER',
+      accountType: 'USER',
+      adminPermissions: [],
+      memberType: 'STAFF',
       departmentId: DEMO_DEPARTMENT_IDS.academicAffairs,
     },
     {
+      // 모든 관리 권한을 가진 관리자.
       id: DEMO_USER_IDS.admin,
       email: 'admin@demo.university.test',
       name: '최관리',
       title: '과장',
-      role: 'ADMIN',
+      accountType: 'ADMIN',
+      adminPermissions: [
+        'REVIEW',
+        'MANAGE_USERS',
+        'MANAGE_CATEGORIES',
+        'MANAGE_TOOLS',
+        'MANAGE_NOTICES',
+        'VIEW_AUDIT',
+      ],
+      memberType: 'STAFF',
       departmentId: DEMO_DEPARTMENT_IDS.informationCenter,
     },
     {
@@ -161,7 +180,9 @@ function buildProfiles(): Profile[] {
       email: 'developer2@demo.university.test',
       name: '정연구',
       title: '연구원',
-      role: 'DEVELOPER',
+      accountType: 'USER',
+      adminPermissions: [],
+      memberType: 'PROFESSOR',
       departmentId: DEMO_DEPARTMENT_IDS.researchSupport,
     },
     {
@@ -169,7 +190,9 @@ function buildProfiles(): Profile[] {
       email: 'requester2@demo.university.test',
       name: '한상담',
       title: '상담사',
-      role: 'REQUESTER',
+      accountType: 'USER',
+      adminPermissions: [],
+      memberType: 'STUDENT',
       departmentId: DEMO_DEPARTMENT_IDS.studentCounseling,
     },
   ];

@@ -128,13 +128,11 @@ describe('목록 조회', () => {
     }
   });
 
-  it('수요자는 도구를 등록할 수 없으므로 등록 버튼이 보이지 않는다', async () => {
-    await signInAs('requester');
-    const result = await listTools(parseToolQuery({}));
-    expect(result.canCreate).toBe(false);
-
-    await signInAs('developer');
-    expect((await listTools(parseToolQuery({}))).canCreate).toBe(true);
+  it('누구나 도구를 등록할 수 있으므로 등록 버튼이 항상 보인다', async () => {
+    for (const account of ['requester', 'developer', 'admin'] as const) {
+      await signInAs(account);
+      expect((await listTools(parseToolQuery({}))).canCreate).toBe(true);
+    }
   });
 });
 

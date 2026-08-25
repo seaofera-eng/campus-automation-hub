@@ -123,10 +123,13 @@ describe('평가 수정과 이력', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
-  it('관리자는 남의 평가도 수정할 수 있지만 이력은 남는다', async () => {
+  /**
+   * 관리 권한은 운영 권한이지 저작 권한이 아니다.
+   * 평가는 사람에 대한 판단이 섞이는 글이라 남이 고쳐서는 안 된다.
+   */
+  it('남이 쓴 평가는 관리자도 수정할 수 없다', async () => {
     const owner = await demoProfile('requester2');
     const admin = await demoProfile('admin');
-    const repositories = getRepositories();
 
     const created = await submitEvaluation(owner, {
       toolId: APPROVED_TOOL,
@@ -134,15 +137,13 @@ describe('평가 수정과 이력', () => {
       comment: '',
     });
 
-    await updateEvaluation(admin, {
-      evaluationId: created.id,
-      scores: scores(2),
-      comment: '내용 정정',
-    });
-
-    const history = await repositories.evaluations.listHistory(created.id);
-    expect(history).toHaveLength(1);
-    expect(history[0]?.changedBy).toBe(admin.id);
+    await expect(
+      updateEvaluation(admin, {
+        evaluationId: created.id,
+        scores: scores(2),
+        comment: '내용 정정',
+      }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 });
 
@@ -301,7 +302,8 @@ describe('개선 요청 처리 흐름', () => {
 });
 
 describe('담당자 배정', () => {
-  it('개발자가 아닌 사람에게는 배정할 수 없다', async () => {
+  /** 누구나 개발자이므로 배정 대상에 제한을 두지 않는다. */
+  it('누구에게나 개선 요청을 배정할 수 있다', async () => {
     const admin = await demoProfile('admin');
     const requester = await demoProfile('requester');
     const request = await createImprovement(requester, {
@@ -313,13 +315,12 @@ describe('담당자 배정', () => {
       urgency: 'LOW',
     });
 
-    await expect(
-      assignImprovement(admin, {
-        improvementId: request.id,
-        developerUserId: requester.id,
-        targetCompletionDate: '',
-      }),
-    ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' });
+    const assigned = await assignImprovement(admin, {
+      improvementId: request.id,
+      developerUserId: requester.id,
+      targetCompletionDate: '',
+    });
+    expect(assigned.assignedDeveloperUserId).toBe(requester.id);
   });
 
   it('배정하면 담당자에게 알림이 간다', async () => {

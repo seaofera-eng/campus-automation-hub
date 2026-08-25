@@ -2,18 +2,18 @@
 
 import { revalidatePath } from 'next/cache';
 import {
-  changeUserRole,
+  changeAccountPermissions,
   deleteDepartment,
   updateUser,
   upsertCategory,
   upsertDepartment,
 } from '@/application/admin/manage';
 import { withAudit } from '@/application/shared/audit';
-import { USER_ROLE_LABELS } from '@/domain/authz/roles';
+import { ACCOUNT_TYPE_LABELS, ADMIN_PERMISSION_LABELS } from '@/domain/authz/accounts';
 import { run, type ActionResult } from '@/lib/actions/result';
 import { requireUser } from '@/lib/auth/current-user';
 import {
-  changeUserRoleSchema,
+  changeAccountPermissionsSchema,
   deleteDepartmentSchema,
   updateUserSchema,
   upsertCategorySchema,
@@ -28,23 +28,35 @@ import { parseOrThrow } from '@/lib/validation/common';
  * 특히 역할 변경은 권한 자체를 바꾸는 일이라 사유까지 함께 남긴다.
  */
 
-export async function changeUserRoleAction(input: unknown): Promise<ActionResult<null>> {
+export async function changeAccountPermissionsAction(
+  input: unknown,
+): Promise<ActionResult<null>> {
   return run(async () => {
     const actor = await requireUser();
-    const data = parseOrThrow(changeUserRoleSchema, input);
+    const data = parseOrThrow(changeAccountPermissionsSchema, input);
+
+    const granted =
+      data.adminPermissions.length > 0
+        ? data.adminPermissions.map((permission) => ADMIN_PERMISSION_LABELS[permission]).join(', ')
+        : '없음';
 
     await withAudit(
       actor,
       {
-        action: 'admin.changeUserRole',
+        action: 'admin.changeAccountPermissions',
         targetType: 'user',
         targetId: data.userId,
-        changedFields: ['role'],
-        // 역할과 사유는 값 자체가 감사 기록의 목적이므로 요약에 넣는다.
+        changedFields: ['accountType', 'adminPermissions'],
+        // 바뀐 권한과 사유는 값 자체가 감사 기록의 목적이므로 요약에 넣는다.
         // 개인정보가 아니라 권한 변경 근거다.
-        summary: `역할을 '${USER_ROLE_LABELS[data.role]}'(으)로 변경했습니다. 사유: ${data.reason}`,
+        summary: `계정을 '${ACCOUNT_TYPE_LABELS[data.accountType]}'로 바꾸고 권한을 ${granted}(으)로 설정했습니다. 사유: ${data.reason}`,
       },
-      () => changeUserRole(actor, data.userId, data.role),
+      () =>
+        changeAccountPermissions(actor, {
+          userId: data.userId,
+          accountType: data.accountType,
+          adminPermissions: data.adminPermissions,
+        }),
     );
 
     revalidatePath('/admin/users');

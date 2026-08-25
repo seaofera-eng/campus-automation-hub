@@ -129,14 +129,14 @@ export async function loadImprovementDetail(improvementId: string): Promise<Impr
     })),
     transitions: [
       ...availableImprovementTransitions(request.status, {
-        actorRole: actor.role,
+        accountType: actor.accountType,
+    adminPermissions: actor.adminPermissions,
         isRequester: request.requesterUserId === actor.id,
         isAssignee: request.assignedDeveloperUserId === actor.id,
       }),
     ],
-    developers: profiles
-      .filter((profile) => profile.role === 'DEVELOPER' || profile.role === 'ADMIN')
-      .map((profile) => ({ id: profile.id as string, name: profile.name })),
+    // 이용자와 개발자를 나누지 않는다. 누구나 개선 요청을 맡을 수 있다.
+    developers: profiles.map((profile) => ({ id: profile.id as string, name: profile.name })),
     permissions: {
       canAssign: can(toActor(actor), 'improvement:assign', {
         ownerId: tool?.ownerUserId ?? null,

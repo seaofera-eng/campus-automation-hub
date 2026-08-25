@@ -10,7 +10,8 @@ import { DomainError } from '@/domain/shared/errors';
 function context(
   overrides: Partial<ImprovementTransitionContext> = {},
 ): ImprovementTransitionContext {
-  return { actorRole: 'ADMIN', isRequester: false, isAssignee: false, ...overrides };
+  return { accountType: 'ADMIN',
+    adminPermissions: ['REVIEW', 'MANAGE_USERS', 'MANAGE_CATEGORIES', 'MANAGE_TOOLS', 'MANAGE_NOTICES', 'VIEW_AUDIT'], isRequester: false, isAssignee: false, ...overrides };
 }
 
 describe('개선 요청 상태 전환', () => {
@@ -36,7 +37,7 @@ describe('개선 요청 상태 전환', () => {
       assertImprovementTransitionAllowed(
         'OPEN',
         'REVIEWING',
-        context({ actorRole: 'DEVELOPER', isAssignee: true }),
+        context({ accountType: 'USER', adminPermissions: [], isAssignee: true }),
       ),
     ).not.toThrow();
   });
@@ -46,7 +47,7 @@ describe('개선 요청 상태 전환', () => {
       assertImprovementTransitionAllowed(
         'OPEN',
         'REVIEWING',
-        context({ actorRole: 'DEVELOPER', isAssignee: false }),
+        context({ accountType: 'USER', adminPermissions: [], isAssignee: false }),
       ),
     ).toThrowError(DomainError);
   });
@@ -56,7 +57,7 @@ describe('개선 요청 상태 전환', () => {
       assertImprovementTransitionAllowed(
         'OPEN',
         'CLOSED',
-        context({ actorRole: 'REQUESTER', isRequester: true }),
+        context({ accountType: 'USER', adminPermissions: [], isRequester: true }),
       ),
     ).not.toThrow();
   });
@@ -66,7 +67,7 @@ describe('개선 요청 상태 전환', () => {
       assertImprovementTransitionAllowed(
         'REVIEWING',
         'ACCEPTED',
-        context({ actorRole: 'REQUESTER', isRequester: true }),
+        context({ accountType: 'USER', adminPermissions: [], isRequester: true }),
       ),
     ).toThrowError(DomainError);
   });

@@ -4,9 +4,9 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { signInDemoAction } from '@/actions/auth-actions';
 import type { LoginOption } from '@/application/shared/login-options';
-import { RoleBadge } from '@/components/layout/role-badge';
+import { AccountTypeBadge, MemberTypeBadge } from '@/components/layout/account-badge';
 import { Alert } from '@/components/ui/alert';
-import { USER_ROLE_DESCRIPTIONS } from '@/domain/authz/roles';
+import { ACCOUNT_TYPE_DESCRIPTIONS } from '@/domain/authz/accounts';
 import { cn } from '@/lib/utils/cn';
 
 /**
@@ -76,7 +76,13 @@ export function DemoLoginForm({ accounts }: { accounts: readonly LoginOption[] }
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold text-fg">{account.name}</span>
-                  <RoleBadge role={account.role} />
+                  <span className="flex shrink-0 items-center gap-1">
+                    <MemberTypeBadge memberType={account.memberType} />
+                    <AccountTypeBadge
+                      accountType={account.accountType}
+                      adminPermissions={account.adminPermissions}
+                    />
+                  </span>
                 </div>
 
                 <p className="text-xs text-fg-muted">
@@ -85,7 +91,7 @@ export function DemoLoginForm({ accounts }: { accounts: readonly LoginOption[] }
                 </p>
                 <p className="text-xs text-fg-subtle">{account.email}</p>
                 <p className="mt-auto pt-1 text-xs text-fg-muted">
-                  {USER_ROLE_DESCRIPTIONS[account.role]}
+                  {ACCOUNT_TYPE_DESCRIPTIONS[account.accountType]}
                 </p>
 
                 <span className="text-xs font-medium text-primary">

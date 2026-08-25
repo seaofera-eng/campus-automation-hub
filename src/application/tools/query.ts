@@ -50,9 +50,7 @@ function readContext(tool: AutomationTool) {
   return {
     ownerId: tool.ownerUserId,
     developerIds: tool.developerUserIds,
-    departmentId: tool.departmentId,
     toolStatus: tool.status,
-    visibility: tool.visibility,
   };
 }
 
@@ -374,7 +372,8 @@ export async function loadToolDetail(toolId: string): Promise<ToolDetail> {
       ) ?? null,
     transitions: [
       ...availableTransitions(tool.status, {
-        actorRole: profile.role,
+        accountType: profile.accountType,
+    adminPermissions: profile.adminPermissions,
         isOwner: isOwnerOrDeveloper,
         riskLevel: riskChecklist?.riskLevel ?? null,
         hasRiskChecklist: riskChecklist !== null,

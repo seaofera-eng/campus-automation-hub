@@ -1,5 +1,5 @@
 import 'server-only';
-import type { UserRole } from '@/domain/authz/roles';
+import type { AccountType, AdminPermission, MemberType } from '@/domain/authz/accounts';
 import type { UserId } from '@/domain/shared/ids';
 import { listDemoAccounts } from '@/lib/auth/demo-auth';
 import { getRepositories } from '@/lib/di/container';
@@ -16,7 +16,9 @@ export interface LoginOption {
   id: UserId;
   name: string;
   email: string;
-  role: UserRole;
+  accountType: AccountType;
+  adminPermissions: readonly AdminPermission[];
+  memberType: MemberType;
   title: string;
   departmentName: string | null;
 }
@@ -32,19 +34,24 @@ export async function listLoginOptions(): Promise<LoginOption[]> {
     : [];
   const departmentNames = new Map(departments.map((department) => [department.id, department.name]));
 
-  // 역할 순서를 고정해 화면이 매번 같은 순서로 보이게 한다.
-  const order: Record<UserRole, number> = { DEVELOPER: 0, REVIEWER: 1, REQUESTER: 2, ADMIN: 3 };
+  // 계정 종류 순서를 고정해 화면이 매번 같은 순서로 보이게 한다.
+  const order: Record<AccountType, number> = { USER: 0, ADMIN: 1 };
 
   return accounts
     .map((account) => ({
       id: account.id,
       name: account.name,
       email: account.email,
-      role: account.role,
+      accountType: account.accountType,
+      adminPermissions: account.adminPermissions,
+      memberType: account.memberType,
       title: account.title,
       departmentName: account.departmentId
         ? (departmentNames.get(account.departmentId) ?? null)
         : null,
     }))
-    .sort((a, b) => order[a.role] - order[b.role] || a.name.localeCompare(b.name));
+    .sort(
+      (a, b) =>
+        order[a.accountType] - order[b.accountType] || a.name.localeCompare(b.name, 'ko'),
+    );
 }

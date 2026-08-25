@@ -1,7 +1,11 @@
 import { CircleCheck, CircleSlash } from 'lucide-react';
 import { listUsers } from '@/application/admin/manage';
-import { ChangeRoleDialog, EditUserDialog } from '@/components/admin/user-row-actions';
-import { RoleBadge } from '@/components/layout/role-badge';
+import { ChangePermissionsDialog, EditUserDialog } from '@/components/admin/user-row-actions';
+import {
+  AccountTypeBadge,
+  AdminPermissionBadge,
+  MemberTypeBadge,
+} from '@/components/layout/account-badge';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -21,8 +25,9 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Alert tone="info" title="역할 변경은 감사 로그에 남습니다">
-        누가 언제 누구의 역할을 왜 바꿨는지 기록됩니다. 자신의 역할은 직접 바꿀 수 없습니다.
+      <Alert tone="info" title="권한 변경은 감사 로그에 남습니다">
+        누가 언제 누구의 권한을 왜 바꿨는지 기록됩니다. 자신의 권한은 직접 바꿀 수 없습니다.
+        이용자는 누구나 수요를 올리고 도구를 만들 수 있습니다. 관리 권한만 따로 부여합니다.
       </Alert>
 
       <TableWrapper>
@@ -31,7 +36,7 @@ export default async function AdminUsersPage() {
           <TableHead>
             <TableRow>
               <TableHeaderCell>이름</TableHeaderCell>
-              <TableHeaderCell>역할</TableHeaderCell>
+              <TableHeaderCell>권한</TableHeaderCell>
               <TableHeaderCell>소속</TableHeaderCell>
               <TableHeaderCell className="text-right">담당 도구</TableHeaderCell>
               <TableHeaderCell>상태</TableHeaderCell>
@@ -48,6 +53,7 @@ export default async function AdminUsersPage() {
                   <TableCell>
                     <span className="flex flex-wrap items-center gap-1.5">
                       <span className="font-medium">{row.profile.name}</span>
+                      <MemberTypeBadge memberType={row.profile.memberType} />
                       {isSelf ? <Badge tone="primary">나</Badge> : null}
                       {row.profile.isDemoAccount ? (
                         <Badge tone="warning">데모 계정</Badge>
@@ -56,7 +62,17 @@ export default async function AdminUsersPage() {
                     <p className="text-xs text-fg-subtle">{row.profile.email}</p>
                   </TableCell>
                   <TableCell>
-                    <RoleBadge role={row.profile.role} />
+                    <AccountTypeBadge
+                      accountType={row.profile.accountType}
+                      adminPermissions={row.profile.adminPermissions}
+                    />
+                    {row.profile.adminPermissions.length > 0 ? (
+                      <span className="mt-1 flex flex-wrap gap-1">
+                        {row.profile.adminPermissions.map((permission) => (
+                          <AdminPermissionBadge key={permission} permission={permission} />
+                        ))}
+                      </span>
+                    ) : null}
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-sm text-fg-muted">
                     {row.departmentName ?? '소속 없음'}
@@ -91,10 +107,11 @@ export default async function AdminUsersPage() {
                         currentIsActive={row.profile.isActive}
                         isSelf={isSelf}
                       />
-                      <ChangeRoleDialog
+                      <ChangePermissionsDialog
                         userId={row.profile.id}
                         userName={row.profile.name}
-                        currentRole={row.profile.role}
+                        currentAccountType={row.profile.accountType}
+                        currentPermissions={row.profile.adminPermissions}
                         isSelf={isSelf}
                       />
                     </span>

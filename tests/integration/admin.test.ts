@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AdminPermission } from '@/domain/authz/accounts';
 import type { Profile } from '@/domain/identity/types';
 import type * as CurrentUserModule from '@/lib/auth/current-user';
 
@@ -20,7 +21,7 @@ vi.mock('@/lib/auth/current-user', async (importOriginal) => {
 
 const { listAuditLogs } = await import('@/application/admin/audit');
 const {
-  changeUserRole,
+  changeAccountPermissions,
   deleteDepartment,
   listUsers,
   updateUser,
@@ -66,56 +67,108 @@ describe('접근 제어', () => {
   });
 });
 
-describe('역할 변경', () => {
-  it('관리자는 다른 사용자의 역할을 바꿀 수 있다', async () => {
+describe('권한 변경', () => {
+  const ALL: AdminPermission[] = [
+    'REVIEW',
+    'MANAGE_USERS',
+    'MANAGE_CATEGORIES',
+    'MANAGE_TOOLS',
+    'MANAGE_NOTICES',
+    'VIEW_AUDIT',
+  ];
+
+  it('계정 관리 권한이 있으면 다른 사람을 관리자로 올릴 수 있다', async () => {
     const admin = await signInAs('admin');
     const requester = await demoProfile('requester');
 
-    const updated = await changeUserRole(admin, requester.id, 'DEVELOPER');
-    expect(updated.role).toBe('DEVELOPER');
+    const updated = await changeAccountPermissions(admin, {
+      userId: requester.id,
+      accountType: 'ADMIN',
+      adminPermissions: ['REVIEW'],
+    });
+    expect(updated.accountType).toBe('ADMIN');
+    expect(updated.adminPermissions).toEqual(['REVIEW']);
   });
 
-  it('자기 역할은 스스로 바꿀 수 없다', async () => {
+  it('이용자로 내리면 관리 권한도 함께 비워진다', async () => {
+    const admin = await signInAs('admin');
+    const reviewer = await demoProfile('reviewer');
+
+    // 권한을 넘겨도 이용자로 내리면 서버가 비운다.
+    const updated = await changeAccountPermissions(admin, {
+      userId: reviewer.id,
+      accountType: 'USER',
+      adminPermissions: ['REVIEW'],
+    });
+    expect(updated.accountType).toBe('USER');
+    expect(updated.adminPermissions).toEqual([]);
+  });
+
+  it('자기 권한은 스스로 바꿀 수 없다', async () => {
     const admin = await signInAs('admin');
 
-    await expect(changeUserRole(admin, admin.id, 'REQUESTER')).rejects.toMatchObject({
-      code: 'PRECONDITION_FAILED',
-    });
+    await expect(
+      changeAccountPermissions(admin, {
+        userId: admin.id,
+        accountType: 'USER',
+        adminPermissions: [],
+      }),
+    ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' });
   });
 
-  it('자기 역할을 못 바꾸므로 관리자가 0명이 되는 일은 없다', async () => {
+  it('자기 권한을 못 바꾸므로 관리자가 0명이 되는 일은 없다', async () => {
     const admin = await signInAs('admin');
     const requester = await demoProfile('requester');
 
     // 다른 사람을 관리자로 올린 뒤, 그 사람이 원래 관리자를 내릴 수 있다.
     // 이때도 내리는 쪽이 관리자로 남으므로 관리자가 사라지지 않는다.
-    await changeUserRole(admin, requester.id, 'ADMIN');
+    await changeAccountPermissions(admin, {
+      userId: requester.id,
+      accountType: 'ADMIN',
+      adminPermissions: ALL,
+    });
     const newAdmin = await demoProfile('requester');
-    expect(newAdmin.role).toBe('ADMIN');
+    expect(newAdmin.accountType).toBe('ADMIN');
 
-    const demoted = await changeUserRole(newAdmin, admin.id, 'DEVELOPER');
-    expect(demoted.role).toBe('DEVELOPER');
+    const demoted = await changeAccountPermissions(newAdmin, {
+      userId: admin.id,
+      accountType: 'USER',
+      adminPermissions: [],
+    });
+    expect(demoted.accountType).toBe('USER');
 
     const remaining = await getRepositories().identity.listProfiles(admin.campusId);
-    expect(remaining.filter((item) => item.role === 'ADMIN').length).toBeGreaterThan(0);
+    expect(remaining.filter((item) => item.accountType === 'ADMIN').length).toBeGreaterThan(0);
   });
 
-  it('같은 역할로는 바꿀 수 없다', async () => {
+  it('같은 권한으로는 바꿀 수 없다', async () => {
     const admin = await signInAs('admin');
     const developer = await demoProfile('developer');
 
-    await expect(changeUserRole(admin, developer.id, 'DEVELOPER')).rejects.toMatchObject({
-      code: 'CONFLICT',
-    });
+    await expect(
+      changeAccountPermissions(admin, {
+        userId: developer.id,
+        accountType: 'USER',
+        adminPermissions: [],
+      }),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
   });
 
-  it('검토자는 역할을 바꿀 수 없다', async () => {
+  /**
+   * 검토 권한만 받은 관리자는 계정을 건드리지 못한다.
+   * 권한을 세분화한 이유가 바로 이것이다.
+   */
+  it('검토 권한만 있는 관리자는 남의 권한을 바꿀 수 없다', async () => {
     const reviewer = await signInAs('reviewer');
     const requester = await demoProfile('requester');
 
-    await expect(changeUserRole(reviewer, requester.id, 'ADMIN')).rejects.toMatchObject({
-      code: 'FORBIDDEN',
-    });
+    await expect(
+      changeAccountPermissions(reviewer, {
+        userId: requester.id,
+        accountType: 'ADMIN',
+        adminPermissions: ALL,
+      }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 });
 
@@ -276,17 +329,22 @@ describe('감사 로그 (요구사항 18번)', () => {
     await withAudit(
       admin,
       {
-        action: 'admin.changeUserRole',
+        action: 'admin.changeAccountPermissions',
         targetType: 'user',
         targetId: requester.id,
-        changedFields: ['role'],
-        summary: '역할 변경 테스트',
+        changedFields: ['accountType', 'adminPermissions'],
+        summary: '권한 변경 테스트',
       },
-      () => changeUserRole(admin, requester.id, 'DEVELOPER'),
+      () =>
+        changeAccountPermissions(admin, {
+          userId: requester.id,
+          accountType: 'ADMIN',
+          adminPermissions: ['REVIEW'],
+        }),
     );
 
     const result = await listAuditLogs(parseAuditQuery({}));
-    const entry = result.page.items.find((row) => row.log.action === 'admin.changeUserRole');
+    const entry = result.page.items.find((row) => row.log.action === 'admin.changeAccountPermissions');
 
     expect(entry).toBeTruthy();
     expect(entry?.log.actorUserId).toBe(admin.id);
@@ -300,13 +358,18 @@ describe('감사 로그 (요구사항 18번)', () => {
       withAudit(
         admin,
         {
-          action: 'admin.changeUserRole',
+          action: 'admin.changeAccountPermissions',
           targetType: 'user',
           targetId: admin.id,
-          changedFields: ['role'],
+          changedFields: ['accountType', 'adminPermissions'],
         },
-        // 자기 역할 변경은 막히는 작업이다.
-        () => changeUserRole(admin, admin.id, 'REQUESTER'),
+        // 자기 권한 변경은 막히는 작업이다.
+        () =>
+          changeAccountPermissions(admin, {
+            userId: admin.id,
+            accountType: 'USER',
+            adminPermissions: [],
+          }),
       ),
     ).rejects.toBeTruthy();
 

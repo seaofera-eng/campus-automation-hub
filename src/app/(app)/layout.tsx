@@ -38,7 +38,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 캠퍼스 자동화 관제
               </Link>
             </div>
-            <Sidebar role={context.profile.role} />
+            <Sidebar accountType={context.profile.accountType}
+              adminPermissions={context.profile.adminPermissions} />
             {context.campusName ? (
               <p className="px-5 py-3 text-xs text-fg-subtle">{context.campusName}</p>
             ) : null}
@@ -53,7 +54,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
             {/* 좁은 화면에서는 사이드바 대신 상단 가로 스크롤 메뉴를 쓴다. */}
             <div className="border-b border-border bg-surface md:hidden">
-              <Sidebar role={context.profile.role} orientation="horizontal" />
+              <Sidebar accountType={context.profile.accountType}
+              adminPermissions={context.profile.adminPermissions} orientation="horizontal" />
             </div>
 
             <main id="main-content" className="min-w-0 flex-1 p-4 sm:p-6">

@@ -1,17 +1,36 @@
 import { z } from 'zod';
-import { USER_ROLES } from '@/domain/authz/roles';
+import { ACCOUNT_TYPES, ADMIN_PERMISSIONS } from '@/domain/authz/accounts';
 import { optionalText, requiredText } from './common';
 
 /**
  * 관리자 작업 폼 검증 (요구사항 11번).
  */
 
-export const changeUserRoleSchema = z.object({
-  userId: z.string().min(1),
-  role: z.enum(USER_ROLES),
-  /** 왜 역할을 바꾸는지. 감사 로그에 남는다. */
-  reason: requiredText('변경 사유', 5, 500),
-});
+export const changeAccountPermissionsSchema = z
+  .object({
+    userId: z.string().min(1),
+    accountType: z.enum(ACCOUNT_TYPES),
+    /** 관리자에게 줄 세부 권한. 이용자로 바꾸면 비어 있어야 한다. */
+    adminPermissions: z.array(z.enum(ADMIN_PERMISSIONS)).default([]),
+    /** 왜 권한을 바꾸는지. 감사 로그에 남는다. */
+    reason: requiredText('변경 사유', 5, 500),
+  })
+  .superRefine((value, context) => {
+    if (value.accountType === 'USER' && value.adminPermissions.length > 0) {
+      context.addIssue({
+        code: 'custom',
+        path: ['adminPermissions'],
+        message: '이용자 계정에는 관리 권한을 줄 수 없습니다. 계정 종류를 관리자로 바꾸거나 권한을 모두 해제해 주세요.',
+      });
+    }
+    if (value.accountType === 'ADMIN' && value.adminPermissions.length === 0) {
+      context.addIssue({
+        code: 'custom',
+        path: ['adminPermissions'],
+        message: '관리자로 지정하려면 권한을 하나 이상 골라 주세요. 권한이 없는 관리자는 이용자와 같습니다.',
+      });
+    }
+  });
 
 export const updateUserSchema = z.object({
   userId: z.string().min(1),

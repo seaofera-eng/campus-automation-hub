@@ -11,7 +11,8 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { UserRole } from '@/domain/authz/roles';
+import type { AccountType, AdminPermission } from '@/domain/authz/accounts';
+import { canEnterAdminArea, hasAdminPermission } from '@/domain/authz/accounts';
 import { cn } from '@/lib/utils/cn';
 
 /**
@@ -25,17 +26,20 @@ interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  /** 지정하지 않으면 모든 역할에게 보인다 */
-  roles?: readonly UserRole[];
+  /**
+   * 이 메뉴를 보려면 필요한 관리 권한. 지정하지 않으면 모두에게 보인다.
+   * 'ANY_ADMIN' 은 관리 권한을 하나라도 가진 경우를 뜻한다.
+   */
+  requires?: AdminPermission | 'ANY_ADMIN';
 }
 
 const NAV_ITEMS: readonly NavItem[] = [
   { href: '/dashboard', label: '대시보드', icon: LayoutDashboard },
   { href: '/tools', label: '자동화 도구', icon: Wrench },
   { href: '/demands', label: '업무 수요', icon: Lightbulb },
-  { href: '/reviews', label: '검토 작업', icon: ClipboardCheck, roles: ['REVIEWER', 'ADMIN'] },
+  { href: '/reviews', label: '검토 작업', icon: ClipboardCheck, requires: 'REVIEW' },
   { href: '/improvements', label: '개선 요청', icon: Wand2 },
-  { href: '/admin', label: '관리', icon: Settings, roles: ['ADMIN'] },
+  { href: '/admin', label: '관리', icon: Settings, requires: 'ANY_ADMIN' },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -43,14 +47,19 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 export interface SidebarProps {
-  role: UserRole;
+  accountType: AccountType;
+  adminPermissions: readonly AdminPermission[];
   /** 좁은 화면에서는 가로 스크롤 메뉴로 쓴다. */
   orientation?: 'vertical' | 'horizontal';
 }
 
-export function Sidebar({ role, orientation = 'vertical' }: SidebarProps) {
+export function Sidebar({ accountType, adminPermissions, orientation = 'vertical' }: SidebarProps) {
   const pathname = usePathname();
-  const items = NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(role));
+  const items = NAV_ITEMS.filter((item) => {
+    if (!item.requires) return true;
+    if (item.requires === 'ANY_ADMIN') return canEnterAdminArea(accountType, adminPermissions);
+    return hasAdminPermission(accountType, adminPermissions, item.requires);
+  });
 
   return (
     <nav

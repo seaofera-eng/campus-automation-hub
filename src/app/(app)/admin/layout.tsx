@@ -12,18 +12,18 @@ export const metadata: Metadata = { title: '관리' };
  * 각 페이지의 조회 서비스와 서버 액션이 다시 `assertCan()` 을 통과한다.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  await guardPage(() => requirePermission('admin:dashboard'));
+  const profile = await guardPage(() => requirePermission('admin:dashboard'));
 
   return (
     <div className="flex flex-col gap-5">
       <div>
         <h1 className="text-xl font-bold text-fg">관리</h1>
         <p className="mt-1 text-sm text-fg-muted">
-          사용자 역할, 조직, 카테고리, 감사 로그를 관리합니다.
+          계정 권한, 조직, 카테고리, 감사 로그를 관리합니다.
         </p>
       </div>
 
-      <AdminNav />
+      <AdminNav permissions={profile.adminPermissions} />
       {children}
     </div>
   );

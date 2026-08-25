@@ -3,7 +3,7 @@
 import { Settings2, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import { changeUserRoleAction, updateUserAction } from '@/actions/admin-actions';
+import { changeAccountPermissionsAction, updateUserAction } from '@/actions/admin-actions';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,41 +18,74 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Field, Input, NativeSelect, Textarea, fieldAria } from '@/components/ui/field';
-import { USER_ROLES, USER_ROLE_DESCRIPTIONS, USER_ROLE_LABELS } from '@/domain/authz/roles';
-import type { UserRole } from '@/domain/authz/roles';
+import {
+  ACCOUNT_TYPES,
+  ACCOUNT_TYPE_DESCRIPTIONS,
+  ACCOUNT_TYPE_LABELS,
+  ADMIN_PERMISSIONS,
+  ADMIN_PERMISSION_DESCRIPTIONS,
+  ADMIN_PERMISSION_LABELS,
+} from '@/domain/authz/accounts';
+import type { AccountType, AdminPermission } from '@/domain/authz/accounts';
 import type { Department } from '@/domain/identity/types';
 
 /**
- * 역할 변경.
+ * 권한 변경.
  *
+ * 계정 종류(이용자/관리자)와, 관리자라면 어떤 관리 권한을 줄지 함께 정한다.
  * 사유 입력을 필수로 받는다. 권한을 바꾸는 일이라 나중에 "왜 바꿨는지"를
  * 확인할 수 있어야 한다. 사유는 감사 로그에 그대로 남는다.
  */
-export function ChangeRoleDialog({
+export function ChangePermissionsDialog({
   userId,
   userName,
-  currentRole,
+  currentAccountType,
+  currentPermissions,
   isSelf,
 }: {
   userId: string;
   userName: string;
-  currentRole: UserRole;
+  currentAccountType: AccountType;
+  currentPermissions: readonly AdminPermission[];
   isSelf: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [role, setRole] = useState<UserRole>(currentRole);
+  const [accountType, setAccountType] = useState<AccountType>(currentAccountType);
+  const [permissions, setPermissions] = useState<AdminPermission[]>([...currentPermissions]);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
+
+  function toggle(permission: AdminPermission, checked: boolean) {
+    setPermissions((current) =>
+      checked ? [...current, permission] : current.filter((value) => value !== permission),
+    );
+  }
+
+  function changeAccountType(next: AccountType) {
+    setAccountType(next);
+    // 이용자로 내리면 권한도 함께 비운다. 서버도 같은 규칙으로 다시 검사한다.
+    if (next === 'USER') setPermissions([]);
+  }
+
+  const unchanged =
+    accountType === currentAccountType &&
+    permissions.length === currentPermissions.length &&
+    permissions.every((value) => currentPermissions.includes(value));
 
   function submit() {
     setError(null);
     setFieldErrors({});
 
     startTransition(async () => {
-      const result = await changeUserRoleAction({ userId, role, reason });
+      const result = await changeAccountPermissionsAction({
+        userId,
+        accountType,
+        adminPermissions: permissions,
+        reason,
+      });
       if (result.ok) {
         setOpen(false);
         setReason('');
@@ -67,54 +100,85 @@ export function ChangeRoleDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" disabled={isSelf} aria-label={`${userName} 역할 변경`}>
+        <Button variant="ghost" size="sm" disabled={isSelf} aria-label={`${userName} 권한 변경`}>
           <ShieldCheck aria-hidden="true" />
-          역할
+          권한
         </Button>
       </DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>역할 변경</DialogTitle>
+          <DialogTitle>권한 변경</DialogTitle>
           <DialogDescription>
-            {userName} 님의 역할을 바꿉니다. 역할에 따라 할 수 있는 작업이 달라집니다.
+            {userName} 님의 권한을 바꿉니다. 이용자는 누구나 수요를 올리고 도구를 만들 수 있습니다.
+            관리 권한은 필요한 것만 골라 주세요.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
           {error ? <Alert tone="danger">{error}</Alert> : null}
 
-          <Field label="역할" htmlFor="new-role" required>
+          <Field label="계정 종류" htmlFor="new-account-type" required>
             <NativeSelect
-              id="new-role"
-              value={role}
-              onChange={(event) => setRole(event.target.value as UserRole)}
+              id="new-account-type"
+              value={accountType}
+              onChange={(event) => changeAccountType(event.target.value as AccountType)}
             >
-              {USER_ROLES.map((value) => (
+              {ACCOUNT_TYPES.map((value) => (
                 <option key={value} value={value}>
-                  {USER_ROLE_LABELS[value]}
+                  {ACCOUNT_TYPE_LABELS[value]}
                 </option>
               ))}
             </NativeSelect>
           </Field>
 
           <p className="rounded-md bg-surface-muted p-3 text-sm text-fg-muted">
-            {USER_ROLE_DESCRIPTIONS[role]}
+            {ACCOUNT_TYPE_DESCRIPTIONS[accountType]}
           </p>
+
+          {accountType === 'ADMIN' ? (
+            <fieldset className="flex flex-col gap-2">
+              <legend className="text-sm font-medium text-fg">관리 권한</legend>
+              <p className="text-xs text-fg-muted">
+                하나 이상 골라 주세요. 고른 것만 할 수 있습니다.
+              </p>
+              {fieldErrors.adminPermissions ? (
+                <p className="text-xs text-danger">{fieldErrors.adminPermissions}</p>
+              ) : null}
+              <div className="flex flex-col gap-2">
+                {ADMIN_PERMISSIONS.map((permission) => (
+                  <label key={permission} className="flex items-start gap-2 text-sm">
+                    <Checkbox
+                      checked={permissions.includes(permission)}
+                      onCheckedChange={(checked) => toggle(permission, checked === true)}
+                    />
+                    <span>
+                      <span className="font-medium text-fg">
+                        {ADMIN_PERMISSION_LABELS[permission]}
+                      </span>
+                      <span className="block text-xs text-fg-muted">
+                        {ADMIN_PERMISSION_DESCRIPTIONS[permission]}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
 
           <Field
             label="변경 사유"
-            htmlFor="role-reason"
+            htmlFor="permission-reason"
             required
             hint="감사 로그에 남습니다. 5자 이상 적어 주세요."
             error={fieldErrors.reason}
           >
             <Textarea
-              {...fieldAria('role-reason', 'hint', fieldErrors.reason)}
+              {...fieldAria('permission-reason', 'hint', fieldErrors.reason)}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               rows={3}
-              placeholder="예: 학사관리과 자동화 담당자로 지정"
+              placeholder="예: 도구 검토 담당자로 지정"
             />
           </Field>
         </div>
@@ -125,8 +189,8 @@ export function ChangeRoleDialog({
               취소
             </Button>
           </DialogClose>
-          <Button onClick={submit} disabled={pending || role === currentRole}>
-            {pending ? '변경 중…' : '역할 변경'}
+          <Button onClick={submit} disabled={pending || unchanged}>
+            {pending ? '변경 중…' : '권한 변경'}
           </Button>
         </DialogFooter>
       </DialogContent>

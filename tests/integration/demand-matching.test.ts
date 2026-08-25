@@ -268,14 +268,21 @@ describe('개발 참여 신청', () => {
     expect(notifications.every((item) => !item.body.includes('취합 도구를 만들어'))).toBe(true);
   });
 
-  it('수요자는 참여를 신청할 수 없다', async () => {
+  /**
+   * 이용자와 개발자를 나누지 않는다. 수요를 올린 사람도 다른 수요의 개발에 참여한다.
+   * (예전에는 '수요자' 역할이 참여 자체를 못 했다.)
+   */
+  it('수요를 올리는 사람도 남의 수요 개발에 참여할 수 있다', async () => {
     const requester = await demoProfile('requester');
     const other = await demoProfile('requester2');
     const demandId = await openDemand(requester);
 
-    await expect(
-      joinDemand(other, { demandId, participantRole: 'DEVELOPER', message: '돕고 싶습니다.' }),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    const joined = await joinDemand(other, {
+      demandId,
+      participantRole: 'DEVELOPER',
+      message: '돕고 싶습니다.',
+    });
+    expect(joined.userId).toBe(other.id);
   });
 
   it('공개되지 않은 수요에는 신청할 수 없다', async () => {

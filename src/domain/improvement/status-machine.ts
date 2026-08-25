@@ -1,4 +1,6 @@
-import type { UserRole } from '../authz/roles';
+import type { AdminPermission } from '../authz/accounts';
+import { hasAdminPermission } from '../authz/accounts';
+import type { PermissionHolder } from '../authz/accounts';
 import { DomainError } from '../shared/errors';
 import type { ImprovementStatus } from './types';
 import { IMPROVEMENT_STATUS_LABELS } from './types';
@@ -14,7 +16,8 @@ import { josa } from '../shared/josa';
 export interface ImprovementTransitionRule {
   from: ImprovementStatus;
   to: ImprovementStatus;
-  allowedRoles: readonly UserRole[];
+  /** 관리 권한이 있어야 하는 전환이면 그 권한. 당사자만의 전환이면 null. */
+  requiredPermission: AdminPermission | null;
   /** 요청을 올린 본인도 수행할 수 있는가 */
   allowRequester: boolean;
   /** 배정된 담당 개발자도 수행할 수 있는가 */
@@ -27,7 +30,7 @@ export const IMPROVEMENT_TRANSITIONS: readonly ImprovementTransitionRule[] = [
   {
     from: 'OPEN',
     to: 'REVIEWING',
-    allowedRoles: ['REVIEWER', 'ADMIN'],
+    requiredPermission: 'REVIEW',
     allowRequester: false,
     allowAssignee: true,
     label: '검토 시작',
@@ -36,7 +39,7 @@ export const IMPROVEMENT_TRANSITIONS: readonly ImprovementTransitionRule[] = [
   {
     from: 'REVIEWING',
     to: 'ACCEPTED',
-    allowedRoles: ['REVIEWER', 'ADMIN'],
+    requiredPermission: 'REVIEW',
     allowRequester: false,
     allowAssignee: true,
     label: '반영 확정',
@@ -45,7 +48,7 @@ export const IMPROVEMENT_TRANSITIONS: readonly ImprovementTransitionRule[] = [
   {
     from: 'REVIEWING',
     to: 'REJECTED',
-    allowedRoles: ['REVIEWER', 'ADMIN'],
+    requiredPermission: 'REVIEW',
     allowRequester: false,
     allowAssignee: true,
     label: '반려',
@@ -54,7 +57,7 @@ export const IMPROVEMENT_TRANSITIONS: readonly ImprovementTransitionRule[] = [
   {
     from: 'ACCEPTED',
     to: 'IN_PROGRESS',
-    allowedRoles: ['ADMIN'],
+    requiredPermission: 'REVIEW',
     allowRequester: false,
     allowAssignee: true,
     label: '처리 시작',
@@ -63,7 +66,7 @@ export const IMPROVEMENT_TRANSITIONS: readonly ImprovementTransitionRule[] = [
   {
     from: 'IN_PROGRESS',
     to: 'RELEASED',
-    allowedRoles: ['ADMIN'],
+    requiredPermission: 'REVIEW',
     allowRequester: false,
     allowAssignee: true,
     label: '반영 완료',
@@ -72,7 +75,7 @@ export const IMPROVEMENT_TRANSITIONS: readonly ImprovementTransitionRule[] = [
   {
     from: 'RELEASED',
     to: 'CLOSED',
-    allowedRoles: ['REVIEWER', 'ADMIN'],
+    requiredPermission: 'REVIEW',
     allowRequester: true,
     allowAssignee: true,
     label: '종료',
@@ -81,7 +84,7 @@ export const IMPROVEMENT_TRANSITIONS: readonly ImprovementTransitionRule[] = [
   {
     from: 'REJECTED',
     to: 'CLOSED',
-    allowedRoles: ['REVIEWER', 'ADMIN'],
+    requiredPermission: 'REVIEW',
     allowRequester: true,
     allowAssignee: false,
     label: '종료',
@@ -90,7 +93,7 @@ export const IMPROVEMENT_TRANSITIONS: readonly ImprovementTransitionRule[] = [
   {
     from: 'OPEN',
     to: 'CLOSED',
-    allowedRoles: ['ADMIN'],
+    requiredPermission: 'REVIEW',
     allowRequester: true,
     allowAssignee: false,
     label: '요청 철회',
@@ -98,8 +101,7 @@ export const IMPROVEMENT_TRANSITIONS: readonly ImprovementTransitionRule[] = [
   },
 ];
 
-export interface ImprovementTransitionContext {
-  actorRole: UserRole;
+export interface ImprovementTransitionContext extends PermissionHolder {
   isRequester: boolean;
   isAssignee: boolean;
 }
@@ -128,10 +130,10 @@ function isAllowed(
   rule: ImprovementTransitionRule,
   context: ImprovementTransitionContext,
 ): boolean {
-  if (rule.allowedRoles.includes(context.actorRole)) return true;
   if (rule.allowRequester && context.isRequester) return true;
   if (rule.allowAssignee && context.isAssignee) return true;
-  return false;
+  if (rule.requiredPermission === null) return false;
+  return hasAdminPermission(context.accountType, context.adminPermissions, rule.requiredPermission);
 }
 
 export function assertImprovementTransitionAllowed(
@@ -162,7 +164,7 @@ export function assertImprovementTransitionAllowed(
   if (!isAllowed(rule, context)) {
     throw new DomainError(
       'FORBIDDEN',
-      `'${rule.label}'${josa(rule.label, '을를')} 수행할 권한이 없습니다. 담당 개발자 또는 검토자·관리자에게 요청해 주세요.`,
+      `'${rule.label}'${josa(rule.label, '을를')} 수행할 권한이 없습니다. 담당 개발자나 검토 권한을 가진 관리자에게 요청해 주세요.`,
     );
   }
 

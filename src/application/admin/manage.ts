@@ -1,7 +1,6 @@
 import 'server-only';
+import type { AccountType, AdminPermission } from '@/domain/authz/accounts';
 import { assertCan } from '@/domain/authz/policies';
-import type { UserRole } from '@/domain/authz/roles';
-import { USER_ROLE_LABELS } from '@/domain/authz/roles';
 import type { Department, Profile } from '@/domain/identity/types';
 import { conflict, notFound, preconditionFailed } from '@/domain/shared/errors';
 import { asId, newId } from '@/domain/shared/ids';
@@ -70,42 +69,53 @@ export async function listUsers(): Promise<{
   };
 }
 
-export async function changeUserRole(
+export interface ChangeAccountPermissionsInput {
+  userId: string;
+  accountType: AccountType;
+  adminPermissions: readonly AdminPermission[];
+}
+
+export async function changeAccountPermissions(
   actor: Profile,
-  userId: string,
-  role: UserRole,
+  input: ChangeAccountPermissionsInput,
 ): Promise<Profile> {
   assertCan(toActor(actor), 'admin:users');
 
-  const targetId = asId<UserId>(userId);
+  const targetId = asId<UserId>(input.userId);
 
-  // 자기 역할은 스스로 바꿀 수 없다. 관리자가 실수로 자기 권한을 낮춰
+  // 자기 권한은 스스로 바꿀 수 없다. 관리자가 실수로 자기 권한을 낮춰
   // 아무도 관리할 수 없게 되는 상황을 막고, 권한 상승을 혼자 처리하지 못하게 한다.
   // (Supabase RLS 의 user_roles_admin_write 정책도 같은 조건을 건다.)
   if (targetId === actor.id) {
-    throw preconditionFailed(
-      '자신의 역할은 직접 바꿀 수 없습니다. 다른 관리자에게 요청해 주세요.',
-    );
+    throw preconditionFailed('자신의 권한은 직접 바꿀 수 없습니다. 다른 관리자에게 요청해 주세요.');
   }
 
   const repositories = getRepositories();
   const profile = await repositories.identity.getProfile(targetId);
   if (!profile || profile.deletedAt !== null) throw notFound('사용자');
 
-  if (profile.role === role) {
-    throw conflict(`이미 '${USER_ROLE_LABELS[role]}' 역할입니다.`);
+  // 이용자로 내리면 관리 권한은 함께 비운다. 둘이 어긋난 상태를 만들지 않는다.
+  const permissions = input.accountType === 'USER' ? [] : [...input.adminPermissions];
+
+  if (profile.accountType === input.accountType && sameSet(profile.adminPermissions, permissions)) {
+    throw conflict('이미 같은 권한입니다. 바꿀 내용이 없습니다.');
   }
 
   // "마지막 관리자를 내리지 못하게" 하는 검사는 따로 두지 않는다.
-  // 이 함수를 부르려면 행위자가 관리자여야 하고 자기 역할은 못 바꾸므로,
+  // 이 함수를 부르려면 행위자가 계정 관리 권한을 가져야 하고 자기 권한은 못 바꾸므로,
   // 어떤 경우에도 행위자 본인이 관리자로 남는다. 검사를 넣으면 오히려
   // 비활성 관리자를 정리하는 정상적인 작업까지 막힌다.
 
   return repositories.identity.updateProfile({
     ...profile,
-    role,
+    accountType: input.accountType,
+    adminPermissions: permissions,
     updatedAt: new Date().toISOString(),
   });
+}
+
+function sameSet(a: readonly AdminPermission[], b: readonly AdminPermission[]): boolean {
+  return a.length === b.length && a.every((value) => b.includes(value));
 }
 
 export interface UpdateUserInput {

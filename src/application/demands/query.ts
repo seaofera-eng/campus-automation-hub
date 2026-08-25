@@ -15,6 +15,7 @@ import type { DemandId, DepartmentId } from '@/domain/shared/ids';
 import type { Page } from '@/domain/shared/pagination';
 import { MAX_PAGE_SIZE, paginate } from '@/domain/shared/pagination';
 import { requireUser, toActor } from '@/lib/auth/current-user';
+import { hasAdminPermission } from '@/domain/authz/accounts';
 import { getRepositories } from '@/lib/di/container';
 import type { DemandQueryInput } from '@/lib/validation/demand';
 import { formFromDemand } from './register';
@@ -42,7 +43,8 @@ export interface DemandListResult {
 
 function canSee(actor: Profile, demand: AutomationDemand): boolean {
   if (demand.status !== 'DRAFT') return true;
-  return demand.requesterUserId === actor.id || actor.role === 'ADMIN';
+  if (demand.requesterUserId === actor.id) return true;
+  return hasAdminPermission(actor.accountType, actor.adminPermissions, 'REVIEW');
 }
 
 export async function listDemands(query: DemandQueryInput): Promise<DemandListResult> {
@@ -172,7 +174,8 @@ export async function loadDemandDetail(demandId: string): Promise<DemandDetail> 
     }),
     transitions: [
       ...availableDemandTransitions(demand.status, {
-        actorRole: actor.role,
+        accountType: actor.accountType,
+    adminPermissions: actor.adminPermissions,
         isRequester: demand.requesterUserId === actor.id,
       }),
     ],

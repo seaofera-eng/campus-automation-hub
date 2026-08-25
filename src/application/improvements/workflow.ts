@@ -106,7 +106,8 @@ export async function transitionImprovement(
   });
 
   assertImprovementTransitionAllowed(request.status, input.toStatus, {
-    actorRole: actor.role,
+    accountType: actor.accountType,
+    adminPermissions: actor.adminPermissions,
     isRequester: request.requesterUserId === actor.id,
     isAssignee: request.assignedDeveloperUserId === actor.id,
   });
@@ -176,9 +177,6 @@ export async function assignImprovement(
   if (assignee) {
     const profile = await repositories.identity.getProfile(assignee);
     if (!profile) throw notFound('담당자');
-    if (profile.role !== 'DEVELOPER' && profile.role !== 'ADMIN') {
-      throw preconditionFailed('개발자 또는 관리자에게만 개선 요청을 배정할 수 있습니다.');
-    }
   }
 
   const updated = await repositories.improvements.update({
