@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { submitEvaluation, updateEvaluation } from '@/application/evaluations/submit';
 import {
-  assignImprovement,
   createImprovement,
   transitionImprovement,
 } from '@/application/improvements/workflow';
@@ -154,7 +153,8 @@ describe('개선 요청 등록', () => {
     });
 
     expect(request.status).toBe('OPEN');
-    expect(request.assignedDeveloperUserId).toBeNull();
+    // 등록되는 순간 도구를 만든 사람에게 자동으로 붙는다 (리뷰 8.2절).
+    expect(request.assignedDeveloperUserId).not.toBeNull();
   });
 
   it('도구 담당자에게 알림이 간다', async () => {
@@ -228,16 +228,15 @@ describe('개선 요청 처리 흐름', () => {
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
-  it('배정된 개발자는 처리 단계를 진행할 수 있다', async () => {
-    const admin = await demoProfile('admin');
+  /**
+   * 개선 요청은 등록되는 순간 도구를 만든 사람에게 자동으로 붙는다.
+   * 따로 배정하는 절차를 두지 않는다 (리뷰 8.2절).
+   */
+  it('도구를 만든 사람이 자동으로 담당자가 되어 처리 단계를 진행할 수 있다', async () => {
     const developer = await demoProfile('developer');
     const request = await openRequest();
 
-    await assignImprovement(admin, {
-      improvementId: request.id,
-      developerUserId: developer.id,
-      targetCompletionDate: '2026-09-30',
-    });
+    expect(request.assignedDeveloperUserId).toBe(developer.id);
 
     await expect(
       transitionImprovement(developer, {
@@ -292,55 +291,5 @@ describe('개선 요청 처리 흐름', () => {
         comment: '',
       }),
     ).rejects.toMatchObject({ code: 'INVALID_STATUS_TRANSITION' });
-  });
-});
-
-describe('담당자 배정', () => {
-  /** 누구나 개발자이므로 배정 대상에 제한을 두지 않는다. */
-  it('누구에게나 개선 요청을 배정할 수 있다', async () => {
-    const admin = await demoProfile('admin');
-    const requester = await demoProfile('requester');
-    const request = await createImprovement(requester, {
-      toolId: APPROVED_TOOL,
-      title: '배정 확인용',
-      requestType: 'BUG_FIX',
-      detail: '배정 규칙을 확인합니다.',
-      businessImpact: 'LOW',
-      urgency: 'LOW',
-    });
-
-    const assigned = await assignImprovement(admin, {
-      improvementId: request.id,
-      developerUserId: requester.id,
-      targetCompletionDate: '',
-    });
-    expect(assigned.assignedDeveloperUserId).toBe(requester.id);
-  });
-
-  it('배정하면 담당자에게 알림이 간다', async () => {
-    const admin = await demoProfile('admin');
-    const requester = await demoProfile('requester');
-    const developer = await demoProfile('developer');
-
-    const request = await createImprovement(requester, {
-      toolId: APPROVED_TOOL,
-      title: '배정 알림 확인용',
-      requestType: 'BUG_FIX',
-      detail: '알림이 가는지 확인합니다.',
-      businessImpact: 'LOW',
-      urgency: 'LOW',
-    });
-
-    await assignImprovement(admin, {
-      improvementId: request.id,
-      developerUserId: developer.id,
-      targetCompletionDate: '',
-    });
-
-    const notifications = await getRepositories().observability.listNotifications(
-      developer.id,
-      true,
-    );
-    expect(notifications.some((item) => item.kind === 'IMPROVEMENT_ASSIGNED')).toBe(true);
   });
 });

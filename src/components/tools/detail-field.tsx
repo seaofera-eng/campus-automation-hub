@@ -26,7 +26,9 @@ export function FieldRow({
   const empty = value === null || value === undefined || value === '';
 
   return (
-    <div className="grid gap-1 border-b border-border py-3 last:border-b-0 sm:grid-cols-[200px_1fr] sm:gap-4">
+    /* 라벨 칸을 고정 200px 로 두면 좁은 2단 레이아웃 안에서 값이 눌려
+       글자가 두세 단어씩 끊긴다. 최소·최대만 정해 값 칸에 자리를 남긴다. */
+    <div className="grid gap-1 border-b border-border py-3 last:border-b-0 sm:grid-cols-[minmax(7rem,10rem)_1fr] sm:gap-4">
       <dt className="text-sm text-fg-muted">
         {label}
         {hint ? <span className="block text-xs text-fg-subtle">{hint}</span> : null}

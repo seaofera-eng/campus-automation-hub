@@ -73,18 +73,6 @@ function applyFilters(db: DemoDatabase, filters: ToolQueryFilters): AutomationTo
 }
 
 /** 상태 정렬 순서 — 검토가 필요한 것을 앞으로 */
-const STATUS_ORDER: Record<ToolStatus, number> = {
-  SUBMITTED: 0,
-  HUMAN_REVIEW: 1,
-  AI_REVIEW: 2,
-  REVISION_REQUIRED: 3,
-  PILOT: 4,
-  APPROVED: 5,
-  DRAFT: 6,
-  SUSPENDED: 7,
-  RETIRED: 8,
-};
-
 function sortTools(
   tools: AutomationTool[],
   sort: ToolSortKey,
@@ -95,11 +83,8 @@ function sortTools(
     case 'NAME':
       sorted.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
       break;
-    case 'STATUS':
-      sorted.sort(
-        (a, b) =>
-          STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || a.name.localeCompare(b.name, 'ko'),
-      );
+    case 'POPULAR':
+      // 실행 횟수는 저장소가 모른다. 애플리케이션에서 다시 정렬한다.
       break;
     case 'EVALUATION':
       sorted.sort((a, b) => {

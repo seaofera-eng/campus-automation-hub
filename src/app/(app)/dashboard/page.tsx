@@ -26,11 +26,7 @@ export default async function DashboardPage() {
   // 이용자는 수요와 도구를 함께 쓰므로 둘 다 강조한다.
   // 검토 권한이 있는 사람에게만 검토 지표를 앞세운다.
   const canReview = hasAdminPermission(profile.accountType, profile.adminPermissions, 'REVIEW');
-  const emphasis = {
-    review: canReview,
-    tools: true,
-    demands: true,
-  };
+  const emphasis = { review: canReview };
 
   return (
     <div className="flex flex-col gap-6">
@@ -41,43 +37,55 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <section aria-labelledby="stats-heading">
-        <h2 id="stats-heading" className="sr-only">
-          주요 지표
+      {/* 리뷰 3절: "[지표 카드]는 수요자 중심과 개발자 중심을 구분해서 보여줘야 함."
+          한 사람이 두 역할을 다 하므로 계정으로 나누지 않고 관점으로 나눈다. */}
+      <section aria-labelledby="demand-stats-heading">
+        <h2 id="demand-stats-heading" className="mb-2 text-sm font-semibold text-fg">
+          필요한 것을 찾을 때
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            label="등록된 도구"
-            value={stats.totalTools}
-            icon={Wrench}
+            label="쓸 수 있는 도구"
+            value={stats.approvedTools + stats.pilotTools}
+            icon={BadgeCheck}
+            hint="정식 승인 · 시범운영"
             href="/tools"
-            emphasis={emphasis.tools}
+            emphasis
           />
+          <StatCard label="등록된 도구 전체" value={stats.totalTools} icon={Wrench} href="/tools" />
+          <StatCard
+            label="내가 낸 요청"
+            value={stats.openImprovements}
+            icon={Wand2}
+            hint="처리 중인 개선 요청"
+            href="/improvements"
+          />
+          <StatCard label="남긴 평가" value={stats.totalEvaluations} icon={Star} />
+        </div>
+      </section>
+
+      <section aria-labelledby="build-stats-heading">
+        <h2 id="build-stats-heading" className="mb-2 text-sm font-semibold text-fg">
+          만들어 볼 때
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="기다리는 수요"
+            value={stats.openDemands}
+            icon={Lightbulb}
+            hint="공개 · 연결됨 · 개발 중"
+            href="/demands"
+            emphasis
+          />
+          <StatCard label="시범운영 중" value={stats.pilotTools} icon={FlaskConical} href="/tools" />
           <StatCard
             label="검토 대기"
             value={stats.awaitingReviewTools}
             icon={ClipboardCheck}
             hint="신청 · 검토 중 · 보완 요청"
-            href="/reviews"
+            href={canReview ? '/reviews' : '/tools'}
             emphasis={emphasis.review}
           />
-          <StatCard label="시범운영" value={stats.pilotTools} icon={FlaskConical} href="/tools" />
-          <StatCard label="정식 승인" value={stats.approvedTools} icon={BadgeCheck} href="/tools" />
-          <StatCard
-            label="진행 중 수요"
-            value={stats.openDemands}
-            icon={Lightbulb}
-            hint="공개 · 연결됨 · 개발 중"
-            href="/demands"
-            emphasis={emphasis.demands}
-          />
-          <StatCard
-            label="처리 중 개선 요청"
-            value={stats.openImprovements}
-            icon={Wand2}
-            href="/improvements"
-          />
-          <StatCard label="등록된 평가" value={stats.totalEvaluations} icon={Star} />
           <StatCard label="사용 중지" value={stats.suspendedTools} icon={Ban} href="/tools" />
         </div>
       </section>

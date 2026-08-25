@@ -138,10 +138,6 @@ export default async function ImprovementDetailPage({
         <ImprovementActionsPanel
           improvementId={request.id}
           transitions={detail.transitions}
-          canAssign={detail.permissions.canAssign}
-          developers={detail.developers}
-          currentAssigneeId={request.assignedDeveloperUserId}
-          currentTargetDate={request.targetCompletionDate}
         />
       </div>
     </div>

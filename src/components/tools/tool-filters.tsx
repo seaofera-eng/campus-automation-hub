@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutGrid, Search, Table2, X } from 'lucide-react';
+import { LayoutGrid, Plus, Search, Table2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -127,8 +127,10 @@ export function ToolFilters({
         </div>
 
         {canCreate ? (
-          <Button asChild>
-            <Link href="/tools/new">도구 등록</Link>
+          <Button asChild size="lg" className="ml-auto shadow-sm">
+            <Link href="/tools/new">
+              <Plus aria-hidden="true" />내 도구 공유하기
+            </Link>
           </Button>
         ) : null}
       </div>

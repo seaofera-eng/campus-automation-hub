@@ -11,14 +11,14 @@ import { DATA_CLASSIFICATIONS, TOOL_STATUSES } from '@/domain/tool/types';
  * 고칠 수 있으므로 잘못된 값에 화면이 깨져서는 안 된다.
  */
 
-export const TOOL_SORT_KEYS = ['RECENT', 'NAME', 'EVALUATION', 'STATUS'] as const;
+export const TOOL_SORT_KEYS = ['RECENT', 'POPULAR', 'EVALUATION', 'NAME'] as const;
 export type ToolSortKeyValue = (typeof TOOL_SORT_KEYS)[number];
 
 export const TOOL_SORT_LABELS: Record<ToolSortKeyValue, string> = {
-  RECENT: '최근 수정순',
+  RECENT: '최근 등록순',
+  POPULAR: '많이 쓰는 순',
+  EVALUATION: '평가 좋은 순',
   NAME: '이름순',
-  EVALUATION: '평가 높은순',
-  STATUS: '상태순',
 };
 
 export const TOOL_VIEW_MODES = ['card', 'table'] as const;

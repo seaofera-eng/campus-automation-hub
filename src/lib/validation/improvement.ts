@@ -27,16 +27,6 @@ export const transitionImprovementSchema = z.object({
   comment: optionalText.pipe(z.string().max(2000, '의견은 2000자까지 입력할 수 있습니다.')),
 });
 
-export const assignImprovementSchema = z.object({
-  improvementId: z.string().min(1),
-  /** 비우면 배정을 해제한다. */
-  developerUserId: optionalText,
-  targetCompletionDate: optionalText.refine(
-    (value) => value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value),
-    { message: '날짜를 YYYY-MM-DD 형식으로 입력해 주세요.' },
-  ),
-});
-
 /* -------------------------------------------------------------------------- */
 /* 목록 검색 조건                                                              */
 /* -------------------------------------------------------------------------- */

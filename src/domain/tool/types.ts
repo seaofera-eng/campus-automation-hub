@@ -311,6 +311,8 @@ export interface ToolListItem {
   categoryName: string;
   ownerName: string;
   evaluationCount: number;
+  /** 실제로 열어 본 횟수. "많이 쓰는 순" 정렬에 쓴다. */
+  launchCount: number;
   averageOverallScore: number | null;
   openImprovementCount: number;
 }

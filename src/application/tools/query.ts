@@ -112,10 +112,11 @@ async function enrich(
 
   return Promise.all(
     tools.map(async (tool) => {
-      const [version, evaluations, improvements] = await Promise.all([
+      const [version, evaluations, improvements, usage] = await Promise.all([
         repositories.tools.getVersion(tool.currentVersionId),
         repositories.evaluations.listByTool(tool.id),
         repositories.improvements.listByTool(tool.id),
+        repositories.observability.countUsageByTool(tool.id),
       ]);
 
       const summary = summarizeEvaluations(evaluations);
@@ -128,6 +129,7 @@ async function enrich(
         categoryName: categoryNames.get(tool.categoryId) ?? '미분류',
         ownerName: personNames.get(tool.ownerUserId) ?? '알 수 없음',
         evaluationCount: summary.count,
+        launchCount: usage.launches,
         averageOverallScore: summary.averageOverall,
         openImprovementCount: improvements.filter(
           (request) => request.status !== 'CLOSED' && request.status !== 'REJECTED',
@@ -171,28 +173,15 @@ function emptyVersion(tool: AutomationTool): AutomationToolVersion {
 }
 
 /** 상태 정렬 순서 — 진행 중인 것이 앞에 온다. */
-const STATUS_ORDER: Record<ToolStatus, number> = {
-  SUBMITTED: 0,
-  HUMAN_REVIEW: 1,
-  AI_REVIEW: 2,
-  REVISION_REQUIRED: 3,
-  PILOT: 4,
-  APPROVED: 5,
-  DRAFT: 6,
-  SUSPENDED: 7,
-  RETIRED: 8,
-};
-
 function sortItems(items: ToolListItem[], sort: ToolQuery['sort']): ToolListItem[] {
   const sorted = [...items];
   switch (sort) {
     case 'NAME':
       return sorted.sort((a, b) => a.tool.name.localeCompare(b.tool.name, 'ko'));
-    case 'STATUS':
+    case 'POPULAR':
+      // 실제로 열어 본 횟수 순. 평가가 없어도 "많이 쓰이는 것"은 알 수 있다.
       return sorted.sort(
-        (a, b) =>
-          STATUS_ORDER[a.tool.status] - STATUS_ORDER[b.tool.status] ||
-          a.tool.name.localeCompare(b.tool.name, 'ko'),
+        (a, b) => b.launchCount - a.launchCount || a.tool.name.localeCompare(b.tool.name, 'ko'),
       );
     case 'EVALUATION':
       // 평가가 없는 도구는 뒤로 보낸다. 0점으로 취급해 섞으면 오해를 부른다.

@@ -1,10 +1,8 @@
 'use client';
 
-import { UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import {
-  assignImprovementAction,
   transitionImprovementAction,
 } from '@/actions/improvement-actions';
 import { Alert } from '@/components/ui/alert';
@@ -20,24 +18,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Field, Input, NativeSelect, Textarea, fieldAria } from '@/components/ui/field';
+import { Field, Textarea, fieldAria } from '@/components/ui/field';
 import type { ImprovementTransitionRule } from '@/domain/improvement/status-machine';
 import type { ImprovementStatus } from '@/domain/improvement/types';
 
 export function ImprovementActionsPanel({
   improvementId,
   transitions,
-  canAssign,
-  developers,
-  currentAssigneeId,
-  currentTargetDate,
 }: {
   improvementId: string;
   transitions: readonly ImprovementTransitionRule[];
-  canAssign: boolean;
-  developers: readonly { id: string; name: string }[];
-  currentAssigneeId: string | null;
-  currentTargetDate: string | null;
 }) {
   const [message, setMessage] = useState<string | null>(null);
 
@@ -50,15 +40,6 @@ export function ImprovementActionsPanel({
       <CardContent className="flex flex-col gap-4">
         {message ? <Alert tone="danger">{message}</Alert> : null}
 
-        {canAssign ? (
-          <AssignDialog
-            improvementId={improvementId}
-            developers={developers}
-            currentAssigneeId={currentAssigneeId}
-            currentTargetDate={currentTargetDate}
-            onError={setMessage}
-          />
-        ) : null}
 
         <div>
           <h3 className="mb-2 text-sm font-semibold text-fg">상태 변경</h3>
@@ -156,106 +137,6 @@ function TransitionDialog({
           </DialogClose>
           <Button variant={destructive ? 'danger' : 'primary'} onClick={submit} disabled={pending}>
             {pending ? '처리 중…' : label}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function AssignDialog({
-  improvementId,
-  developers,
-  currentAssigneeId,
-  currentTargetDate,
-  onError,
-}: {
-  improvementId: string;
-  developers: readonly { id: string; name: string }[];
-  currentAssigneeId: string | null;
-  currentTargetDate: string | null;
-  onError: (message: string) => void;
-}) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [developerUserId, setDeveloperUserId] = useState(currentAssigneeId ?? '');
-  const [targetCompletionDate, setTargetCompletionDate] = useState(currentTargetDate ?? '');
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [pending, startTransition] = useTransition();
-
-  function submit() {
-    setFieldErrors({});
-    startTransition(async () => {
-      const result = await assignImprovementAction({
-        improvementId,
-        developerUserId,
-        targetCompletionDate,
-      });
-      if (result.ok) {
-        setOpen(false);
-        router.refresh();
-        return;
-      }
-      setFieldErrors(result.error.fields ?? {});
-      onError(result.error.message);
-    });
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="secondary">
-          <UserPlus aria-hidden="true" />
-          {currentAssigneeId ? '담당자 변경' : '담당자 배정'}
-        </Button>
-      </DialogTrigger>
-
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>담당자 배정</DialogTitle>
-          <DialogDescription>
-            배정된 개발자는 이 요청의 처리 단계를 직접 진행할 수 있습니다.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex flex-col gap-4">
-          <Field label="담당 개발자" htmlFor="assignee">
-            <NativeSelect
-              id="assignee"
-              value={developerUserId}
-              onChange={(event) => setDeveloperUserId(event.target.value)}
-            >
-              <option value="">배정하지 않음</option>
-              {developers.map((developer) => (
-                <option key={developer.id} value={developer.id}>
-                  {developer.name}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-
-          <Field
-            label="목표 완료일"
-            htmlFor="target-date"
-            error={fieldErrors.targetCompletionDate}
-          >
-            <Input
-              {...fieldAria('target-date', undefined, fieldErrors.targetCompletionDate)}
-              type="date"
-              value={targetCompletionDate}
-              onChange={(event) => setTargetCompletionDate(event.target.value)}
-            />
-          </Field>
-        </div>
-
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="secondary" disabled={pending}>
-              취소
-            </Button>
-          </DialogClose>
-          <Button onClick={submit} disabled={pending}>
-            {pending ? '저장 중…' : '저장'}
           </Button>
         </DialogFooter>
       </DialogContent>

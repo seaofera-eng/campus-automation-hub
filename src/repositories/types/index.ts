@@ -72,7 +72,7 @@ export interface ToolQueryFilters {
   includeDeleted?: boolean;
 }
 
-export type ToolSortKey = 'RECENT' | 'NAME' | 'EVALUATION' | 'STATUS';
+export type ToolSortKey = 'RECENT' | 'POPULAR' | 'EVALUATION' | 'NAME';
 
 export interface ToolRepository {
   listTools(

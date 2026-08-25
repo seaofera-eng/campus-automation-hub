@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache';
 import {
-  assignImprovement,
   createImprovement,
   transitionImprovement,
 } from '@/application/improvements/workflow';
@@ -12,7 +11,6 @@ import { run, type ActionResult } from '@/lib/actions/result';
 import { requireUser } from '@/lib/auth/current-user';
 import { parseOrThrow } from '@/lib/validation/common';
 import {
-  assignImprovementSchema,
   createImprovementSchema,
   transitionImprovementSchema,
 } from '@/lib/validation/improvement';
@@ -78,35 +76,6 @@ export async function transitionImprovementAction(input: unknown): Promise<Actio
           improvementId: data.improvementId,
           toStatus: data.toStatus,
           comment: data.comment,
-        }),
-    );
-
-    revalidateImprovement(data.improvementId);
-    return null;
-  });
-}
-
-export async function assignImprovementAction(input: unknown): Promise<ActionResult<null>> {
-  return run(async () => {
-    const actor = await requireUser();
-    const data = parseOrThrow(assignImprovementSchema, input);
-
-    await withAudit(
-      actor,
-      {
-        action: 'improvement.assign',
-        targetType: 'improvement',
-        targetId: data.improvementId,
-        changedFields: ['assignedDeveloperUserId', 'targetCompletionDate'],
-        summary: data.developerUserId
-          ? '개선 요청에 담당자를 배정했습니다.'
-          : '개선 요청 담당자 배정을 해제했습니다.',
-      },
-      () =>
-        assignImprovement(actor, {
-          improvementId: data.improvementId,
-          developerUserId: data.developerUserId,
-          targetCompletionDate: data.targetCompletionDate,
         }),
     );
 

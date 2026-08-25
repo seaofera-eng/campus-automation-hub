@@ -61,7 +61,8 @@ export async function createImprovement(
     businessImpact: input.businessImpact,
     urgency: input.urgency,
     requesterUserId: actor.id,
-    assignedDeveloperUserId: null,
+    // 만든 사람이 곧 담당자다. 따로 배정하는 절차를 두지 않는다 (리뷰 8.2절).
+    assignedDeveloperUserId: tool.ownerUserId,
     status: 'OPEN',
     handlingComment: '',
     targetCompletionDate: null,
@@ -152,49 +153,4 @@ export interface AssignImprovementInput {
   improvementId: string;
   developerUserId: string;
   targetCompletionDate: string;
-}
-
-export async function assignImprovement(
-  actor: Profile,
-  input: AssignImprovementInput,
-): Promise<ImprovementRequest> {
-  const repositories = getRepositories();
-  const request = await repositories.improvements.getById(
-    asId<ImprovementRequestId>(input.improvementId),
-  );
-  if (!request || request.deletedAt !== null) throw notFound('개선 요청');
-
-  const tool = await repositories.tools.getTool(request.toolId);
-  if (!tool) throw notFound('도구');
-
-  assertCan(toActor(actor), 'improvement:assign', {
-    ownerId: tool.ownerUserId,
-    developerIds: tool.developerUserIds,
-  });
-
-  const assignee = input.developerUserId ? asId<UserId>(input.developerUserId) : null;
-
-  if (assignee) {
-    const profile = await repositories.identity.getProfile(assignee);
-    if (!profile) throw notFound('담당자');
-  }
-
-  const updated = await repositories.improvements.update({
-    ...request,
-    assignedDeveloperUserId: assignee,
-    targetCompletionDate: input.targetCompletionDate || null,
-    updatedAt: new Date().toISOString(),
-  });
-
-  if (assignee && assignee !== actor.id) {
-    await notifyMany([assignee], {
-      campusId: request.campusId,
-      kind: 'IMPROVEMENT_ASSIGNED',
-      title: `개선 요청 '${request.title}'${josa(request.title, '이가')} 배정되었습니다`,
-      body: `'${tool.name}' 도구에 대한 요청입니다.`,
-      linkPath: `/improvements/${request.id}`,
-    });
-  }
-
-  return updated;
 }

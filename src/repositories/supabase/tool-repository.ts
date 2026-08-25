@@ -30,7 +30,7 @@ function sortColumn(sort: ToolSortKey): { column: string; ascending: boolean } {
   switch (sort) {
     case 'NAME':
       return { column: 'name', ascending: true };
-    case 'STATUS':
+    case 'POPULAR':
       return { column: 'status', ascending: true };
     // 평가 기준 정렬은 집계가 필요하다. 1단계에서는 최신순으로 대체하고,
     // 실제 적용 시 평균 점수를 담은 뷰를 만들어 이 부분을 교체한다.
