@@ -26,7 +26,7 @@ export function PasswordLoginForm() {
       });
 
       if (result.ok) {
-        router.replace('/dashboard');
+        router.replace('/home');
         router.refresh();
         return;
       }

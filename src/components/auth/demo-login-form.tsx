@@ -28,7 +28,7 @@ export function DemoLoginForm({ accounts }: { accounts: readonly LoginOption[] }
     startTransition(async () => {
       const result = await signInDemoAction({ userId: id });
       if (result.ok) {
-        router.replace('/dashboard');
+        router.replace('/home');
         router.refresh();
         return;
       }

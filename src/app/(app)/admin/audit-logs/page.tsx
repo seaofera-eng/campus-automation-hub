@@ -16,6 +16,7 @@ import {
   TableRow,
   TableWrapper,
 } from '@/components/ui/table';
+import { requirePermission } from '@/lib/auth/current-user';
 import { guardPage } from '@/lib/auth/page-guard';
 import { buildAuditHref, hasAuditFilter, parseAuditQuery } from '@/lib/validation/admin';
 import type { AuditQueryInput } from '@/lib/validation/admin';
@@ -27,6 +28,11 @@ export default async function AdminAuditLogsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const query = parseAuditQuery(await searchParams);
+
+  // 권한 검사는 Suspense **밖**에서 한다.
+  // 안에서 하면 응답 헤더가 먼저 나가 notFound() 가 404 대신 200 을 반환한다.
+  // (DECISIONS.md 의 loading.tsx 문제와 같은 원인이다.)
+  await guardPage(() => requirePermission('admin:auditLogs'));
 
   return (
     <div className="flex flex-col gap-4">

@@ -9,12 +9,20 @@ import { expect } from '@playwright/test';
  * DEMO 모드에는 비밀번호가 없으므로 로그인은 계정 카드를 누르는 것으로 끝난다.
  */
 
-export type DemoRole = '개발자' | '검토자' | '수요자' | '관리자';
+/**
+ * 데모 계정.
+ *
+ * 이제 역할이 아니라 **권한**으로 나뉜다.
+ *   이용자   김개발 · 박수요 — 관리 권한 없음. 도구도 만들고 수요도 올린다.
+ *   검토자   이검토 — 검토 권한만 가진 관리자
+ *   관리자   최관리 — 모든 관리 권한
+ */
+export type DemoRole = '이용자' | '다른이용자' | '검토자' | '관리자';
 
 export const DEMO_USERS: Record<DemoRole, string> = {
-  개발자: '김개발',
+  이용자: '김개발',
+  다른이용자: '박수요',
   검토자: '이검토',
-  수요자: '박수요',
   관리자: '최관리',
 };
 
@@ -26,7 +34,7 @@ export function resetE2eData(): void {
 export async function loginAs(page: Page, role: DemoRole): Promise<void> {
   await page.goto('/login');
 
-  // 이미 로그인되어 있으면 대시보드로 튕긴다. 그 경우 먼저 로그아웃한다.
+  // 이미 로그인되어 있으면 홈으로 튕긴다. 그 경우 먼저 로그아웃한다.
   if (!page.url().includes('/login')) {
     await logout(page);
     await page.goto('/login');
@@ -34,8 +42,9 @@ export async function loginAs(page: Page, role: DemoRole): Promise<void> {
 
   const name = DEMO_USERS[role];
   await page.getByRole('button', { name: new RegExp(name) }).click();
-  await page.waitForURL('**/dashboard');
-  await expect(page.getByRole('heading', { name: '대시보드' })).toBeVisible();
+  // 첫 화면은 대시보드가 아니라 랜딩이다.
+  await page.waitForURL('**/home');
+  await expect(page.getByRole('heading', { name: /필요한 도구를 찾고/ })).toBeVisible();
 }
 
 export async function logout(page: Page): Promise<void> {
@@ -47,11 +56,13 @@ export async function logout(page: Page): Promise<void> {
 }
 
 const MENU_PATHS: Record<string, string> = {
+  홈: '/home',
   대시보드: '/dashboard',
   '자동화 도구': '/tools',
   '업무 수요': '/demands',
   '검토 작업': '/reviews',
   '개선 요청': '/improvements',
+  공지: '/notices',
   관리: '/admin',
 };
 
