@@ -35,7 +35,7 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ i
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-bold text-fg">{demand.title}</h1>
             <DemandStatusBadge status={demand.status} />
-            {demand.containsPersonalData ? (
+            {demand.containsIdentifiablePersonalData ? (
               <Badge tone="danger" icon={Lock}>
                 개인정보 포함
               </Badge>
@@ -77,7 +77,6 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ i
                 <FieldRow label="가장 번거로운 단계" value={demand.mostPainfulStep} multiline />
                 <FieldRow label="다루는 자료" value={demand.inputMaterials} multiline />
                 <FieldRow label="원하는 결과물" value={demand.desiredOutcome} multiline />
-                <FieldRow label="사용 중인 시스템" value={demand.systemsInUse} />
                 <FieldRow
                   label="업무 주기"
                   value={WORK_FREQUENCY_LABELS[demand.workFrequency]}

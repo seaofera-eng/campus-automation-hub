@@ -3,7 +3,6 @@ import type {
   CampusId,
   CategoryId,
   DemandId,
-  IntegrationSystemId,
   ToolId,
   ToolVersionId,
   UserId,
@@ -39,17 +38,6 @@ export const DEMO_CATEGORY_IDS = {
   informationSearch: asId<CategoryId>(uuid(4, 4)),
   classificationRouting: asId<CategoryId>(uuid(4, 5)),
   researchSupport: asId<CategoryId>(uuid(4, 6)),
-} as const;
-
-export const DEMO_INTEGRATION_IDS = {
-  email: asId<IntegrationSystemId>(uuid(5, 1)),
-  calendar: asId<IntegrationSystemId>(uuid(5, 2)),
-  lms: asId<IntegrationSystemId>(uuid(5, 3)),
-  academicSystem: asId<IntegrationSystemId>(uuid(5, 4)),
-  researchSystem: asId<IntegrationSystemId>(uuid(5, 5)),
-  approvalSystem: asId<IntegrationSystemId>(uuid(5, 6)),
-  fileStorage: asId<IntegrationSystemId>(uuid(5, 7)),
-  externalApi: asId<IntegrationSystemId>(uuid(5, 8)),
 } as const;
 
 export const DEMO_TOOL_IDS = {

@@ -1,3 +1,4 @@
+import { MEMBER_TYPE_LABELS } from '@/domain/authz/accounts';
 import { ChevronLeft, Paperclip, Pencil, Send } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -13,19 +14,21 @@ import {
 } from '@/components/common/status-badge';
 import { EvaluationForm } from '@/components/evaluations/evaluation-form';
 import { ImprovementForm } from '@/components/improvements/improvement-form';
-import { FieldList, FieldRow, MoneyValue, NumberValue } from '@/components/tools/detail-field';
+import { DetailAccordion } from '@/components/tools/detail-accordion';
+import { FieldList, FieldRow } from '@/components/tools/detail-field';
 import { LaunchToolButton } from '@/components/tools/launch-tool-button';
 import { StatusTransitionDialog } from '@/components/tools/status-transition-dialog';
 import { ToolDetailTabs, type DetailTab } from '@/components/tools/tool-detail-tabs';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { EVALUATION_CRITERIA, EVALUATION_CRITERION_LABELS } from '@/domain/evaluation/types';
+import { SCORE_LABELS } from '@/domain/evaluation/types';
 import { REVIEW_COMMENT_KIND_LABELS } from '@/domain/review/types';
 import {
   AUTOMATION_LEVEL_LABELS,
   TOOL_STATUS_DESCRIPTIONS,
   TOOL_STATUS_LABELS,
+  RUNTIME_KIND_LABELS,
 } from '@/domain/tool/types';
 import { guardPage } from '@/lib/auth/page-guard';
 import { humanFileSize } from '@/lib/validation/attachment';
@@ -54,107 +57,107 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
   after(() => recordToolView(detail.actor, tool.id));
 
   const usedClassifications = version.security.classifications.filter((entry) => entry.inUse);
-  const integrationNames = version.integrations.map((integration) => ({
-    name:
-      detail.integrationSystems.find((system) => system.id === integration.integrationSystemId)
-        ?.name ?? '알 수 없는 시스템',
-    note: integration.note,
-  }));
 
   const tabs: DetailTab[] = [
     {
       value: 'overview',
       label: '개요',
       content: (
-        <FieldList>
-          <FieldRow label="한 줄 소개" value={tool.summary} />
-          <FieldRow label="설명" value={version.description} multiline />
-          <FieldRow label="해결하려는 문제" value={version.problemStatement} multiline />
-          <FieldRow label="카테고리" value={detail.categoryName} />
-          <FieldRow
-            label="개발자"
-            value={detail.developerNames.length > 0 ? detail.developerNames.join(', ') : ''}
-          />
-          <FieldRow
-            label="태그"
-            value={tool.tags.length > 0 ? tool.tags.join(', ') : ''}
-          />
-          <FieldRow
-            label="조회 / 실행"
-            value={`${detail.usage.views.toLocaleString('ko-KR')}회 / ${detail.usage.launches.toLocaleString('ko-KR')}회`}
-          />
-        </FieldList>
-      ),
-    },
-    {
-      value: 'features',
-      label: '기능',
-      content: (
-        <FieldList>
-          <FieldRow
-            label="주요 기능"
-            value={
-              version.keyFeatures.length > 0 ? (
-                <ul className="list-inside list-disc space-y-0.5">
-                  {version.keyFeatures.map((feature) => (
-                    <li key={feature}>{feature}</li>
-                  ))}
-                </ul>
-              ) : (
-                ''
-              )
-            }
-          />
-          <FieldRow label="자동화 수준" value={AUTOMATION_LEVEL_LABELS[version.automationLevel]} />
-          <FieldRow label="입력 자료" value={version.inputData} multiline />
-          <FieldRow label="결과물" value={version.outputData} multiline />
-          <FieldRow label="예상 사용자" value={version.expectedUsers} />
-          <FieldRow
-            label="월 예상 사용"
-            value={<NumberValue value={version.monthlyExpectedUsage} unit="회" />}
-          />
-        </FieldList>
-      ),
-    },
-    {
-      value: 'workflow',
-      label: '업무 흐름',
-      content: (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <section className="rounded-card border border-border p-4">
-            <h3 className="text-sm font-semibold text-fg">현재 업무 흐름</h3>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-fg-muted">
-              {version.currentWorkflow || '미입력'}
-            </p>
-          </section>
-          <section className="rounded-card border border-primary/30 bg-primary-soft/30 p-4">
-            <h3 className="text-sm font-semibold text-fg">자동화 후 업무 흐름</h3>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-fg-muted">
-              {version.automatedWorkflow || '미입력'}
-            </p>
-          </section>
+        /* 리뷰 4.2절: 탭을 늘어놓는 대신 한 화면에 접어 둔다.
+           기본 정보만 펼쳐 두고 나머지는 필요할 때 연다. */
+        <div className="flex flex-col gap-2">
+          <DetailAccordion title="기본 정보" defaultOpen>
+            <FieldList>
+              <FieldRow label="한 줄 소개" value={tool.summary} />
+              <FieldRow label="해결하려는 문제" value={version.problemStatement} multiline />
+              <FieldRow label="카테고리" value={detail.categoryName} />
+              <FieldRow label="실행 방식" value={RUNTIME_KIND_LABELS[tool.runtimeKind]} />
+              <FieldRow
+                label="추천 대상"
+                value={
+                  tool.recommendedFor.length > 0
+                    ? tool.recommendedFor.map((member) => MEMBER_TYPE_LABELS[member]).join(', ')
+                    : '누구나'
+                }
+              />
+              <FieldRow
+                label="개발자"
+                value={detail.developerNames.length > 0 ? detail.developerNames.join(', ') : ''}
+              />
+              <FieldRow label="태그" value={tool.tags.length > 0 ? tool.tags.join(', ') : ''} />
+              <FieldRow
+                label="조회 / 실행"
+                value={`${detail.usage.views.toLocaleString('ko-KR')}회 / ${detail.usage.launches.toLocaleString('ko-KR')}회`}
+              />
+            </FieldList>
+          </DetailAccordion>
+
+          <DetailAccordion title="기능">
+            <FieldList>
+              <FieldRow
+                label="주요 기능"
+                value={
+                  version.keyFeatures.length > 0 ? (
+                    <ul className="list-inside list-disc space-y-0.5">
+                      {version.keyFeatures.map((feature) => (
+                        <li key={feature}>{feature}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    ''
+                  )
+                }
+              />
+              <FieldRow
+                label="자동화 수준"
+                value={AUTOMATION_LEVEL_LABELS[version.automationLevel]}
+              />
+              <FieldRow label="입력 자료" value={version.inputData} multiline />
+              <FieldRow label="결과물" value={version.outputData} multiline />
+              <FieldRow label="예상 사용자" value={version.expectedUsers} />
+            </FieldList>
+          </DetailAccordion>
+
+          <DetailAccordion title="업무 흐름">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <section className="rounded-card border border-border p-4">
+                <h3 className="text-sm font-semibold text-fg">현재 업무 흐름</h3>
+                <p className="mt-2 whitespace-pre-wrap text-sm text-fg-muted">
+                  {version.currentWorkflow || '미입력'}
+                </p>
+              </section>
+              <section className="rounded-card border border-primary/30 bg-primary-soft/30 p-4">
+                <h3 className="text-sm font-semibold text-fg">자동화 후 업무 흐름</h3>
+                <p className="mt-2 whitespace-pre-wrap text-sm text-fg-muted">
+                  {version.automatedWorkflow || '미입력'}
+                </p>
+              </section>
+            </div>
+          </DetailAccordion>
+
+          <DetailAccordion title="버전" hint={`${detail.versions.length}개`}>
+            <FieldList>
+              {detail.versions.map((item) => (
+                <FieldRow
+                  key={item.id}
+                  label={item.versionLabel || '(버전 표기 없음)'}
+                  hint={formatDateTime(item.createdAt)}
+                  value={
+                    <>
+                      {item.id === tool.currentVersionId ? (
+                        <span className="mr-2 rounded-full bg-primary-soft px-2 py-0.5 text-xs text-primary">
+                          현재 버전
+                        </span>
+                      ) : null}
+                      {item.changeNote || '변경 사항이 기록되지 않았습니다.'}
+                    </>
+                  }
+                />
+              ))}
+            </FieldList>
+          </DetailAccordion>
         </div>
       ),
-    },
-    {
-      value: 'integrations',
-      label: '연동',
-      count: integrationNames.length,
-      content:
-        integrationNames.length === 0 && !version.otherIntegrationNote ? (
-          <EmptyState title="연동하는 시스템이 없습니다" description="독립적으로 동작하는 도구입니다." />
-        ) : (
-          <FieldList>
-            {integrationNames.map((integration) => (
-              <FieldRow
-                key={integration.name}
-                label={integration.name}
-                value={integration.note || '연동함'}
-              />
-            ))}
-            <FieldRow label="그 밖의 연동" value={version.otherIntegrationNote} />
-          </FieldList>
-        ),
     },
     {
       value: 'security',
@@ -234,52 +237,6 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
       ),
     },
     {
-      value: 'cost',
-      label: '비용',
-      content: (
-        <FieldList>
-          <FieldRow
-            label="초기 개발 비용"
-            value={<MoneyValue amount={version.cost.initialDevelopmentCost} />}
-          />
-          <FieldRow
-            label="월 운영 비용"
-            value={<MoneyValue amount={version.cost.monthlyOperationCost} />}
-          />
-          <FieldRow label="월 LLM 비용" value={<MoneyValue amount={version.cost.monthlyLlmCost} />} />
-          <FieldRow
-            label="외부 서비스 구독료"
-            value={<MoneyValue amount={version.cost.externalServiceCost} />}
-          />
-          <FieldRow label="1인당 비용" value={<MoneyValue amount={version.cost.costPerUser} />} />
-          <FieldRow label="산정 근거" value={version.cost.costBasis} multiline />
-        </FieldList>
-      ),
-    },
-    {
-      value: 'performance',
-      label: '성과',
-      content: (
-        <FieldList>
-          <FieldRow
-            label="현재 처리 시간"
-            value={<NumberValue value={version.performance.currentProcessingMinutes} unit="분" />}
-          />
-          <FieldRow
-            label="자동화 후 처리 시간"
-            value={<NumberValue value={version.performance.automatedProcessingMinutes} unit="분" />}
-          />
-          <FieldRow
-            label="월 절감 시간"
-            value={<NumberValue value={version.performance.monthlySavedHours} unit="시간" />}
-          />
-          <FieldRow label="오류 감소 효과" value={version.performance.errorReductionNote} />
-          <FieldRow label="기대 효과" value={version.performance.expectedBenefit} multiline />
-          <FieldRow label="측정 방법" value={version.performance.measurementMethod} />
-        </FieldList>
-      ),
-    },
-    {
       value: 'evaluations',
       label: '평가',
       count: detail.evaluationSummary.count,
@@ -300,36 +257,39 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
           />
         ) : (
           <div className="flex flex-col gap-4">
-            <div className="rounded-card border border-border p-4">
-              <h3 className="text-sm font-semibold text-fg">
-                항목별 평균 ({detail.evaluationSummary.count}건)
-              </h3>
-              <dl className="mt-3 grid gap-2 sm:grid-cols-2">
-                {EVALUATION_CRITERIA.map((criterion) => (
-                  <div key={criterion} className="flex items-center justify-between gap-3 text-sm">
-                    <dt className="text-fg-muted">{EVALUATION_CRITERION_LABELS[criterion]}</dt>
-                    <dd className="tabular-nums text-fg">
-                      {detail.evaluationSummary.averages?.[criterion]?.toFixed(1) ?? '-'} / 5
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+            {/* 점수 하나만 받으므로 표 대신 숫자를 크게 보여준다 (리뷰 4.2절:
+                "구성이 눈에 잘 안보임. 세로로 한줄로 하고 글자 크기를 키워야 함") */}
+            <div className="flex flex-wrap items-baseline gap-3 rounded-card border border-border p-5">
+              <p className="text-3xl font-bold tabular-nums text-fg">
+                {detail.evaluationSummary.averageOverall?.toFixed(1) ?? '-'}
+                <span className="ml-1 text-base font-normal text-fg-muted">/ 5</span>
+              </p>
+              <p className="text-sm text-fg-muted">
+                {detail.evaluationSummary.count}명이 남긴 종합 만족도입니다.
+              </p>
             </div>
 
             <ul className="flex flex-col gap-3">
               {detail.evaluations.map((evaluation) => (
                 <li key={evaluation.id} className="rounded-card border border-border p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-fg">{evaluation.evaluatorName}</p>
-                    <p className="text-xs text-fg-subtle">
-                      종합 {evaluation.scores.overall}점 · {formatDateTime(evaluation.createdAt)}
+                  {/* 평가는 익명이다. 누가 썼는지 보여주지 않는다 (리뷰 7절). */}
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <p className="text-lg font-semibold tabular-nums text-fg">
+                      {evaluation.scores.overall}
+                      <span className="ml-0.5 text-sm font-normal text-fg-muted">/ 5</span>
+                    </p>
+                    <p className="text-sm text-fg-muted">
+                      {SCORE_LABELS[evaluation.scores.overall]}
+                    </p>
+                    <p className="ml-auto text-xs text-fg-subtle">
+                      {formatDateTime(evaluation.createdAt)}
                       {evaluation.revisionCount > 0
                         ? ` · ${evaluation.revisionCount}회 수정됨`
                         : ''}
                     </p>
                   </div>
                   {evaluation.comment ? (
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-fg-muted">
+                    <p className="mt-2 whitespace-pre-wrap text-base text-fg">
                       {evaluation.comment}
                     </p>
                   ) : null}
@@ -379,32 +339,6 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
             </ul>
           </>
         ),
-    },
-    {
-      value: 'versions',
-      label: '버전',
-      count: detail.versions.length,
-      content: (
-        <FieldList>
-          {detail.versions.map((item) => (
-            <FieldRow
-              key={item.id}
-              label={item.versionLabel || '(버전 표기 없음)'}
-              hint={formatDateTime(item.createdAt)}
-              value={
-                <>
-                  {item.id === tool.currentVersionId ? (
-                    <span className="mr-2 rounded-full bg-primary-soft px-2 py-0.5 text-xs text-primary">
-                      현재 버전
-                    </span>
-                  ) : null}
-                  {item.changeNote || '변경 사항이 기록되지 않았습니다.'}
-                </>
-              }
-            />
-          ))}
-        </FieldList>
-      ),
     },
     {
       value: 'history',

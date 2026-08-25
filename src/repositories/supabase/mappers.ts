@@ -16,11 +16,9 @@ import type { RiskChecklist, RiskChecklistItem } from '@/domain/tool/risk-checkl
 import type {
   AutomationTool,
   AutomationToolVersion,
-  IntegrationSystem,
   ToolAttachment,
   ToolCategory,
   ToolDataClassificationEntry,
-  ToolIntegration,
   ToolStatusHistoryEntry,
 } from '@/domain/tool/types';
 import { DATA_CLASSIFICATIONS } from '@/domain/tool/types';
@@ -143,21 +141,8 @@ export function fromCategory(category: ToolCategory): Row {
     campus_id: category.campusId,
     code: category.code,
     name: category.name,
-    description: category.description,
     sort_order: category.sortOrder,
     is_active: category.isActive,
-  };
-}
-
-export function toIntegrationSystem(row: Row): IntegrationSystem {
-  return {
-    id: asId(row.id),
-    campusId: asId(row.campus_id),
-    code: str(row.code),
-    name: str(row.name),
-    isExternal: row.is_external === true,
-    sortOrder: num(row.sort_order) ?? 0,
-    isActive: row.is_active !== false,
   };
 }
 
@@ -221,29 +206,18 @@ function toClassifications(rows: Row[]): ToolDataClassificationEntry[] {
   });
 }
 
-function toIntegrations(rows: Row[]): ToolIntegration[] {
-  return rows.map((row) => ({
-    integrationSystemId: asId(row.integration_system_id),
-    note: str(row.note),
-  }));
-}
-
 /**
  * 버전 상세는 여러 테이블에 나뉘어 있으므로 조인 결과를 받는다.
  * 조회 시 select 문에서 tool_integrations, tool_data_classifications,
- * tool_costs, tool_metrics 를 함께 가져와야 한다.
+ * 비용·성과 표는 더 쓰지 않는다 (리뷰 4.3절: 비용과 성과 단계 전체 삭제).
  */
 export function toToolVersion(row: Row): AutomationToolVersion {
-  const costs = Array.isArray(row.tool_costs) ? row.tool_costs[0] : row.tool_costs;
-  const metrics = Array.isArray(row.tool_metrics) ? row.tool_metrics[0] : row.tool_metrics;
-
   return {
     id: asId(row.id),
     toolId: asId(row.tool_id),
     campusId: asId(row.campus_id),
     versionLabel: str(row.version_label),
     changeNote: str(row.change_note),
-    description: str(row.description),
     problemStatement: str(row.problem_statement),
     keyFeatures: arr(row.key_features),
     currentWorkflow: str(row.current_workflow),
@@ -251,10 +225,7 @@ export function toToolVersion(row: Row): AutomationToolVersion {
     inputData: str(row.input_data),
     outputData: str(row.output_data),
     expectedUsers: str(row.expected_users),
-    monthlyExpectedUsage: num(row.monthly_expected_usage),
     automationLevel: row.automation_level ?? 'HUMAN_IN_THE_LOOP',
-    integrations: toIntegrations(row.tool_integrations ?? []),
-    otherIntegrationNote: str(row.other_integration_note),
     security: {
       classifications: toClassifications(row.tool_data_classifications ?? []),
       sendsDataExternally: row.sends_data_externally === true,
@@ -263,22 +234,6 @@ export function toToolVersion(row: Row): AutomationToolVersion {
       dataRetentionPeriod: str(row.data_retention_period),
       hasExecutionLog: row.has_execution_log === true,
       requiresHumanApproval: row.requires_human_approval !== false,
-    },
-    cost: {
-      initialDevelopmentCost: num(costs?.initial_development_cost),
-      monthlyOperationCost: num(costs?.monthly_operation_cost),
-      monthlyLlmCost: num(costs?.monthly_llm_cost),
-      externalServiceCost: num(costs?.external_service_cost),
-      costPerUser: num(costs?.cost_per_user),
-      costBasis: str(costs?.cost_basis),
-    },
-    performance: {
-      currentProcessingMinutes: num(metrics?.current_processing_minutes),
-      automatedProcessingMinutes: num(metrics?.automated_processing_minutes),
-      monthlySavedHours: num(metrics?.monthly_saved_hours),
-      errorReductionNote: str(metrics?.error_reduction_note),
-      expectedBenefit: str(metrics?.expected_benefit),
-      measurementMethod: str(metrics?.measurement_method),
     },
     repositoryUrl: str(row.repository_url),
     serviceUrl: str(row.service_url),
@@ -297,7 +252,6 @@ export function fromToolVersion(version: AutomationToolVersion): Row {
     campus_id: version.campusId,
     version_label: version.versionLabel,
     change_note: version.changeNote,
-    description: version.description,
     problem_statement: version.problemStatement,
     key_features: version.keyFeatures,
     current_workflow: version.currentWorkflow,
@@ -305,9 +259,7 @@ export function fromToolVersion(version: AutomationToolVersion): Row {
     input_data: version.inputData,
     output_data: version.outputData,
     expected_users: version.expectedUsers,
-    monthly_expected_usage: version.monthlyExpectedUsage,
     automation_level: version.automationLevel,
-    other_integration_note: version.otherIntegrationNote,
     sends_data_externally: version.security.sendsDataExternally,
     external_transfer_targets: version.security.externalTransferTargets,
     data_storage_location: version.security.dataStorageLocation,
@@ -324,24 +276,12 @@ export function fromToolVersion(version: AutomationToolVersion): Row {
 export function fromToolCosts(version: AutomationToolVersion): Row {
   return {
     tool_version_id: version.id,
-    initial_development_cost: version.cost.initialDevelopmentCost,
-    monthly_operation_cost: version.cost.monthlyOperationCost,
-    monthly_llm_cost: version.cost.monthlyLlmCost,
-    external_service_cost: version.cost.externalServiceCost,
-    cost_per_user: version.cost.costPerUser,
-    cost_basis: version.cost.costBasis,
   };
 }
 
 export function fromToolMetrics(version: AutomationToolVersion): Row {
   return {
     tool_version_id: version.id,
-    current_processing_minutes: version.performance.currentProcessingMinutes,
-    automated_processing_minutes: version.performance.automatedProcessingMinutes,
-    monthly_saved_hours: version.performance.monthlySavedHours,
-    error_reduction_note: version.performance.errorReductionNote,
-    expected_benefit: version.performance.expectedBenefit,
-    measurement_method: version.performance.measurementMethod,
   };
 }
 
@@ -456,15 +396,16 @@ export function toDemand(row: Row): AutomationDemand {
     mostPainfulStep: str(row.most_painful_step),
     inputMaterials: str(row.input_materials),
     desiredOutcome: str(row.desired_outcome),
-    systemsInUse: str(row.systems_in_use),
     workFrequency: row.work_frequency ?? 'MONTHLY',
     expectedUserCount: num(row.expected_user_count),
-    containsPersonalData: row.contains_personal_data === true,
+    containsIdentifiablePersonalData: row.contains_identifiable_personal_data === true,
+    containsAnonymizedPersonalData: row.contains_anonymized_personal_data === true,
     containsAcademicOrResearchData: row.contains_academic_or_research_data === true,
     requiresHumanApproval: row.requires_human_approval !== false,
     requiredFeatures: arr(row.required_features),
     optionalFeatures: arr(row.optional_features),
     expectedBenefit: str(row.expected_benefit),
+    offeredTokens: num(row.offered_tokens),
     desiredCompletionDate: row.desired_completion_date ?? null,
     status: row.status ?? 'DRAFT',
     createdAt: str(row.created_at),
@@ -480,19 +421,18 @@ export function fromDemand(demand: AutomationDemand): Row {
     campus_id: demand.campusId,
     title: demand.title,
     requester_user_id: demand.requesterUserId,
-    current_work_description: demand.currentWorkDescription,
     most_painful_step: demand.mostPainfulStep,
     input_materials: demand.inputMaterials,
     desired_outcome: demand.desiredOutcome,
-    systems_in_use: demand.systemsInUse,
     work_frequency: demand.workFrequency,
     expected_user_count: demand.expectedUserCount,
-    contains_personal_data: demand.containsPersonalData,
+    contains_personal_data: demand.containsIdentifiablePersonalData,
     contains_academic_or_research_data: demand.containsAcademicOrResearchData,
     requires_human_approval: demand.requiresHumanApproval,
     required_features: demand.requiredFeatures,
     optional_features: demand.optionalFeatures,
     expected_benefit: demand.expectedBenefit,
+    offered_tokens: demand.offeredTokens,
     desired_completion_date: demand.desiredCompletionDate,
     status: demand.status,
     created_by: demand.createdBy,
@@ -547,12 +487,6 @@ export function toEvaluation(row: Row): ToolEvaluation {
     toolVersionId: asId(row.tool_version_id),
     evaluatorUserId: asId(row.evaluator_user_id),
     scores: {
-      problemSolving: num(row.problem_solving) ?? 3,
-      workEfficiency: num(row.work_efficiency) ?? 3,
-      usability: num(row.usability) ?? 3,
-      stability: num(row.stability) ?? 3,
-      accuracy: num(row.accuracy) ?? 3,
-      spreadPotential: num(row.spread_potential) ?? 3,
       overall: num(row.overall) ?? 3,
     },
     comment: str(row.comment),
@@ -570,12 +504,6 @@ export function fromEvaluation(evaluation: ToolEvaluation): Row {
     tool_id: evaluation.toolId,
     tool_version_id: evaluation.toolVersionId,
     evaluator_user_id: evaluation.evaluatorUserId,
-    problem_solving: evaluation.scores.problemSolving,
-    work_efficiency: evaluation.scores.workEfficiency,
-    usability: evaluation.scores.usability,
-    stability: evaluation.scores.stability,
-    accuracy: evaluation.scores.accuracy,
-    spread_potential: evaluation.scores.spreadPotential,
     overall: evaluation.scores.overall,
     comment: evaluation.comment,
     revision_count: evaluation.revisionCount,

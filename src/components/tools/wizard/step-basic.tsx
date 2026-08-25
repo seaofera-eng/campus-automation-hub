@@ -134,20 +134,6 @@ export function StepBasic({ form, data }: StepProps) {
         description="검토자가 필요성을 판단하는 근거가 됩니다."
       >
         <Field
-          label="도구 설명"
-          htmlFor="description"
-          required
-          hint="이 도구가 무엇을 하는지 처음 보는 사람도 알 수 있게 적어 주세요."
-          error={errors.description?.message}
-        >
-          <Textarea
-            {...register('description')}
-            {...fieldAria('description', 'hint', errors.description?.message)}
-            rows={4}
-          />
-        </Field>
-
-        <Field
           label="해결하려는 업무 문제"
           htmlFor="problemStatement"
           required

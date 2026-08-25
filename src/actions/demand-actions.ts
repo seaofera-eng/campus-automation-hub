@@ -179,7 +179,7 @@ export async function joinDemandAction(input: unknown): Promise<ActionResult<nul
       () =>
         joinDemand(actor, {
           demandId: data.demandId,
-          participantRole: data.participantRole,
+          participantRole: 'DEVELOPER',
           message: data.message,
         }),
     );

@@ -12,12 +12,6 @@ import type { CampusId, EvaluationId, ToolId, ToolVersionId, UserId } from '@/do
 
 function scores(value: number): EvaluationScores {
   return {
-    problemSolving: value,
-    workEfficiency: value,
-    usability: value,
-    stability: value,
-    accuracy: value,
-    spreadPotential: value,
     overall: value,
   };
 }
@@ -89,7 +83,7 @@ describe('평가 집계', () => {
     ]);
     expect(summary.count).toBe(3);
     expect(summary.averageOverall).toBe(4);
-    expect(summary.averages?.usability).toBe(4);
+    expect(summary.averages?.overall).toBe(4);
   });
 
   it('삭제된 평가는 평균에서 제외한다', () => {

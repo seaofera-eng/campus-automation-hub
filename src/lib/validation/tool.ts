@@ -4,7 +4,6 @@ import { AUTOMATION_LEVELS, DATA_CLASSIFICATIONS,
   RUNTIME_KINDS,
 } from '@/domain/tool/types';
 import {
-  nullableNumber,
   optionalText,
   optionalUrl,
   requiredText,
@@ -28,11 +27,6 @@ const classificationEntrySchema = z.object({
   note: optionalText,
 });
 
-const integrationSchema = z.object({
-  integrationSystemId: z.string().min(1),
-  note: optionalText,
-});
-
 /** 임시저장 기준. 이름 외에는 전부 비워 둘 수 있다. */
 export const toolDraftSchema = z.object({
   /* ------------------------------------------------------------ 1. 기본정보 */
@@ -44,7 +38,6 @@ export const toolDraftSchema = z.object({
   /** 누구에게 맞는 도구인가. 비우면 "누구나". 부서 대신 쓴다. */
   recommendedFor: z.array(z.enum(MEMBER_TYPES)).default([]),
   tags: textList,
-  description: optionalText,
   problemStatement: optionalText,
 
   /* ------------------------------------------------------ 2. 기능·업무흐름 */
@@ -54,12 +47,9 @@ export const toolDraftSchema = z.object({
   inputData: optionalText,
   outputData: optionalText,
   expectedUsers: optionalText,
-  monthlyExpectedUsage: nullableNumber,
   automationLevel: z.enum(AUTOMATION_LEVELS).default('AI_ASSISTED'),
 
   /* --------------------------------------------------- 3. 연동·데이터/보안 */
-  integrations: z.array(integrationSchema).default([]),
-  otherIntegrationNote: optionalText,
   classifications: z.array(classificationEntrySchema).default([]),
   sendsDataExternally: z.boolean().default(false),
   externalTransferTargets: optionalText,
@@ -69,19 +59,7 @@ export const toolDraftSchema = z.object({
   requiresHumanApproval: z.boolean().default(true),
 
   /* ------------------------------------------------------------ 4. 비용·성과 */
-  initialDevelopmentCost: nullableNumber,
-  monthlyOperationCost: nullableNumber,
-  monthlyLlmCost: nullableNumber,
-  externalServiceCost: nullableNumber,
-  costPerUser: nullableNumber,
-  costBasis: optionalText,
 
-  currentProcessingMinutes: nullableNumber,
-  automatedProcessingMinutes: nullableNumber,
-  monthlySavedHours: nullableNumber,
-  errorReductionNote: optionalText,
-  expectedBenefit: optionalText,
-  measurementMethod: optionalText,
 
   repositoryUrl: optionalUrl,
   serviceUrl: optionalUrl,
@@ -115,7 +93,6 @@ function requireFilled(
 export const toolSubmitSchema = toolDraftSchema.superRefine((value, context) => {
   requireFilled(context, value.summary, 'summary', '한 줄 소개를 입력해 주세요. 목록에서 이 문장으로 도구를 구분합니다.');
   requireFilled(context, value.categoryId, 'categoryId', '카테고리를 선택해 주세요.');
-  requireFilled(context, value.description, 'description', '어떤 도구인지 설명을 입력해 주세요.');
   requireFilled(
     context,
     value.problemStatement,
@@ -204,7 +181,6 @@ export function emptyToolForm(): ToolFormInput {
     runtimeKind: 'WEB',
     recommendedFor: [],
     tags: [],
-    description: '',
     problemStatement: '',
 
     keyFeatures: [],
@@ -213,11 +189,8 @@ export function emptyToolForm(): ToolFormInput {
     inputData: '',
     outputData: '',
     expectedUsers: '',
-    monthlyExpectedUsage: null,
     automationLevel: 'AI_ASSISTED',
 
-    integrations: [],
-    otherIntegrationNote: '',
     classifications: DATA_CLASSIFICATIONS.map((classification) => ({
       classification,
       inUse: false,
@@ -230,19 +203,7 @@ export function emptyToolForm(): ToolFormInput {
     hasExecutionLog: false,
     requiresHumanApproval: true,
 
-    initialDevelopmentCost: null,
-    monthlyOperationCost: null,
-    monthlyLlmCost: null,
-    externalServiceCost: null,
-    costPerUser: null,
-    costBasis: '',
 
-    currentProcessingMinutes: null,
-    automatedProcessingMinutes: null,
-    monthlySavedHours: null,
-    errorReductionNote: '',
-    expectedBenefit: '',
-    measurementMethod: '',
 
     repositoryUrl: '',
     serviceUrl: '',

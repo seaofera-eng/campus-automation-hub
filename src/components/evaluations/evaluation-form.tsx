@@ -104,6 +104,11 @@ export function EvaluationForm({
         <div className="flex flex-col gap-4">
           {error ? <Alert tone="danger">{error}</Alert> : null}
 
+          {/* 평가는 익명이다. 그 사실을 알아야 솔직하게 쓸 수 있다 (리뷰 7절). */}
+          <Alert tone="info">
+            평가는 익명으로 남습니다. 도구를 만든 사람에게 누가 썼는지 보이지 않습니다.
+          </Alert>
+
           {isEdit && existing.revisionCount > 0 ? (
             <p className="text-xs text-fg-subtle">
               이 평가는 {existing.revisionCount}회 수정되었습니다.
@@ -126,7 +131,7 @@ export function EvaluationForm({
           <Field
             label="의견"
             htmlFor="evaluation-comment"
-            hint="좋았던 점이나 아쉬운 점을 적어 주시면 개선에 도움이 됩니다. (선택)"
+            hint="아쉬웠던 점을 적어 주시면 만든 사람이 고칠 수 있습니다. (선택)"
             error={fieldErrors.comment}
           >
             <Textarea
@@ -146,7 +151,7 @@ export function EvaluationForm({
             </Button>
           </DialogClose>
           <Button onClick={submit} disabled={pending || missing.length > 0}>
-            {pending ? '저장 중…' : missing.length > 0 ? `${missing.length}개 항목 남음` : '저장'}
+            {pending ? '저장 중…' : missing.length > 0 ? '점수를 골라 주세요' : '저장'}
           </Button>
         </DialogFooter>
       </DialogContent>

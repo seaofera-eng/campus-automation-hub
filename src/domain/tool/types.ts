@@ -3,7 +3,6 @@ import type {
   AttachmentId,
   CampusId,
   CategoryId,
-  IntegrationSystemId,
   StatusHistoryId,
   ToolId,
   ToolVersionId,
@@ -149,17 +148,6 @@ export interface ToolTag {
   name: string;
 }
 
-export interface IntegrationSystem {
-  id: IntegrationSystemId;
-  campusId: CampusId;
-  code: string;
-  name: string;
-  /** 대학 내부 시스템인지 외부 서비스인지 — 위험 평가의 입력이 된다. */
-  isExternal: boolean;
-  sortOrder: number;
-  isActive: boolean;
-}
-
 /**
  * 도구를 어디서 실행하는가 (리뷰 4.1절).
  *
@@ -217,12 +205,6 @@ export interface AutomationTool {
   deletedAt: string | null;
 }
 
-export interface ToolIntegration {
-  integrationSystemId: IntegrationSystemId;
-  /** 연동 방식·범위에 대한 짧은 설명 */
-  note: string;
-}
-
 export interface ToolDataClassificationEntry {
   classification: DataClassification;
   inUse: boolean;
@@ -240,24 +222,6 @@ export interface ToolSecurityProfile {
   dataRetentionPeriod: string;
   hasExecutionLog: boolean;
   requiresHumanApproval: boolean;
-}
-
-export interface ToolCostProfile {
-  initialDevelopmentCost: number | null;
-  monthlyOperationCost: number | null;
-  monthlyLlmCost: number | null;
-  externalServiceCost: number | null;
-  costPerUser: number | null;
-  costBasis: string;
-}
-
-export interface ToolPerformanceProfile {
-  currentProcessingMinutes: number | null;
-  automatedProcessingMinutes: number | null;
-  monthlySavedHours: number | null;
-  errorReductionNote: string;
-  expectedBenefit: string;
-  measurementMethod: string;
 }
 
 export const ATTACHMENT_KINDS = [
@@ -303,7 +267,6 @@ export interface AutomationToolVersion {
   changeNote: string;
 
   // 기본정보
-  description: string;
   problemStatement: string;
 
   // 기능정보
@@ -313,21 +276,10 @@ export interface AutomationToolVersion {
   inputData: string;
   outputData: string;
   expectedUsers: string;
-  monthlyExpectedUsage: number | null;
   automationLevel: AutomationLevel;
-
-  // 연동정보
-  integrations: ToolIntegration[];
-  otherIntegrationNote: string;
 
   // 보안·데이터
   security: ToolSecurityProfile;
-
-  // 비용
-  cost: ToolCostProfile;
-
-  // 성과
-  performance: ToolPerformanceProfile;
 
   // 링크
   repositoryUrl: string;

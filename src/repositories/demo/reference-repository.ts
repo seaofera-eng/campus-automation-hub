@@ -1,6 +1,6 @@
 import 'server-only';
 import type { CampusId, CategoryId } from '@/domain/shared/ids';
-import type { IntegrationSystem, ToolCategory } from '@/domain/tool/types';
+import type { ToolCategory } from '@/domain/tool/types';
 import type { ReferenceDataRepository } from '../types';
 import { clone, loadDb, mutateDb } from './store';
 
@@ -29,13 +29,5 @@ export function createDemoReferenceRepository(): ReferenceDataRepository {
       });
     },
 
-    async listIntegrationSystems(campusId: CampusId): Promise<IntegrationSystem[]> {
-      const db = await loadDb();
-      return clone(
-        db.integrationSystems
-          .filter((system) => system.campusId === campusId && system.isActive)
-          .sort((a, b) => a.sortOrder - b.sortOrder),
-      );
-    },
   };
 }

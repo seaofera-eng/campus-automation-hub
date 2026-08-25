@@ -4,7 +4,7 @@ import type { Profile } from '@/domain/identity/types';
 import { notFound } from '@/domain/shared/errors';
 import { asId } from '@/domain/shared/ids';
 import type { ToolId } from '@/domain/shared/ids';
-import type { IntegrationSystem, ToolCategory, ToolStatus } from '@/domain/tool/types';
+import type { ToolCategory, ToolStatus } from '@/domain/tool/types';
 import { requireUser, toActor } from '@/lib/auth/current-user';
 import { getRepositories } from '@/lib/di/container';
 import type { ToolFormInput } from '@/lib/validation/tool';
@@ -20,7 +20,6 @@ import { formFromTool } from './register';
 export interface ToolFormPageData {
   actor: Profile;
   categories: ToolCategory[];
-  integrationSystems: IntegrationSystem[];
   /** 함께 개발한 사람으로 지정할 수 있는 목록 */
   people: { id: string; name: string }[];
   /** 수정 중인 도구. 신규 등록이면 null. */
@@ -30,16 +29,14 @@ export interface ToolFormPageData {
 
 async function loadReferenceData(actor: Profile) {
   const repositories = getRepositories();
-  const [categories, integrationSystems, profiles] = await Promise.all([
+  const [categories, profiles] = await Promise.all([
     repositories.reference.listCategories(actor.campusId),
-    repositories.reference.listIntegrationSystems(actor.campusId),
     repositories.identity.listProfiles(actor.campusId),
   ]);
 
 
   return {
     categories,
-    integrationSystems,
     people: profiles
       .filter((profile) => profile.isActive)
       .map((profile) => ({

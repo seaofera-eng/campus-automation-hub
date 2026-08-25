@@ -201,7 +201,7 @@ describe('카테고리 관리', () => {
       categoryId: '',
       name: '신규 분류',
       code: 'NEW_CAT',
-      description: '설명',
+      description: '',
       sortOrder: 9,
       isActive: true,
     });
@@ -211,7 +211,7 @@ describe('카테고리 관리', () => {
       categoryId: created.id,
       name: '신규 분류',
       code: 'NEW_CAT',
-      description: '설명',
+      description: '',
       sortOrder: 9,
       isActive: false,
     });

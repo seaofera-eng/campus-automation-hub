@@ -30,7 +30,6 @@ function searchableText(
     tool.name,
     tool.summary,
     tool.tags.join(' '),
-    version?.description ?? '',
     version?.problemStatement ?? '',
     version?.keyFeatures.join(' ') ?? '',
   ].join(' ');

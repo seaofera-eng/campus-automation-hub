@@ -19,12 +19,6 @@ afterEach(teardownIsolatedStore);
 
 function scores(value: number): EvaluationScores {
   return {
-    problemSolving: value,
-    workEfficiency: value,
-    usability: value,
-    stability: value,
-    accuracy: value,
-    spreadPotential: value,
     overall: value,
   };
 }

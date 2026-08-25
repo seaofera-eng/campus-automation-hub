@@ -1,7 +1,7 @@
 import 'server-only';
 import type { Campus, Profile } from '@/domain/identity/types';
 import type { CampusId, CategoryId, UserId } from '@/domain/shared/ids';
-import type { IntegrationSystem, ToolCategory } from '@/domain/tool/types';
+import type { ToolCategory } from '@/domain/tool/types';
 import type { IdentityRepository, ReferenceDataRepository } from '../types';
 import { getUserClient, throwOnError } from './client';
 import {
@@ -9,7 +9,6 @@ import {
   fromProfile,
   toCampus,
   toCategory,
-  toIntegrationSystem,
   toProfile,
 } from './mappers';
 
@@ -159,16 +158,5 @@ export function createSupabaseReferenceRepository(): ReferenceDataRepository {
       return toCategory(data);
     },
 
-    async listIntegrationSystems(campusId: CampusId): Promise<IntegrationSystem[]> {
-      const supabase = await getUserClient();
-      const { data, error } = await supabase
-        .from('integration_systems')
-        .select('*')
-        .eq('campus_id', campusId)
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true });
-      throwOnError(error, '연동 시스템 목록 조회');
-      return (data ?? []).map(toIntegrationSystem);
-    },
   };
 }

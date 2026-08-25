@@ -5,7 +5,6 @@ import { conflict, notFound } from '@/domain/shared/errors';
 import { asId, newId } from '@/domain/shared/ids';
 import type {
   CategoryId,
-  IntegrationSystemId,
   StatusHistoryId,
   ToolId,
   ToolVersionId,
@@ -51,7 +50,6 @@ function versionFromForm(
     versionLabel: form.versionLabel || 'v1.0',
     changeNote: form.changeNote,
 
-    description: form.description,
     problemStatement: form.problemStatement,
 
     keyFeatures: form.keyFeatures,
@@ -60,14 +58,8 @@ function versionFromForm(
     inputData: form.inputData,
     outputData: form.outputData,
     expectedUsers: form.expectedUsers,
-    monthlyExpectedUsage: form.monthlyExpectedUsage,
     automationLevel: form.automationLevel,
 
-    integrations: form.integrations.map((integration) => ({
-      integrationSystemId: asId<IntegrationSystemId>(integration.integrationSystemId),
-      note: integration.note,
-    })),
-    otherIntegrationNote: form.otherIntegrationNote,
 
     security: {
       classifications: form.classifications,
@@ -79,23 +71,7 @@ function versionFromForm(
       requiresHumanApproval: form.requiresHumanApproval,
     },
 
-    cost: {
-      initialDevelopmentCost: form.initialDevelopmentCost,
-      monthlyOperationCost: form.monthlyOperationCost,
-      monthlyLlmCost: form.monthlyLlmCost,
-      externalServiceCost: form.externalServiceCost,
-      costPerUser: form.costPerUser,
-      costBasis: form.costBasis,
-    },
 
-    performance: {
-      currentProcessingMinutes: form.currentProcessingMinutes,
-      automatedProcessingMinutes: form.automatedProcessingMinutes,
-      monthlySavedHours: form.monthlySavedHours,
-      errorReductionNote: form.errorReductionNote,
-      expectedBenefit: form.expectedBenefit,
-      measurementMethod: form.measurementMethod,
-    },
 
     repositoryUrl: form.repositoryUrl,
     serviceUrl: form.serviceUrl,
@@ -127,7 +103,6 @@ export function formFromTool(
     runtimeKind: tool.runtimeKind,
     recommendedFor: tool.recommendedFor,
     tags: tool.tags,
-    description: version.description,
     problemStatement: version.problemStatement,
 
     keyFeatures: version.keyFeatures,
@@ -136,14 +111,8 @@ export function formFromTool(
     inputData: version.inputData,
     outputData: version.outputData,
     expectedUsers: version.expectedUsers,
-    monthlyExpectedUsage: version.monthlyExpectedUsage,
     automationLevel: version.automationLevel,
 
-    integrations: version.integrations.map((integration) => ({
-      integrationSystemId: integration.integrationSystemId,
-      note: integration.note,
-    })),
-    otherIntegrationNote: version.otherIntegrationNote,
     classifications,
     sendsDataExternally: version.security.sendsDataExternally,
     externalTransferTargets: version.security.externalTransferTargets,
@@ -152,19 +121,7 @@ export function formFromTool(
     hasExecutionLog: version.security.hasExecutionLog,
     requiresHumanApproval: version.security.requiresHumanApproval,
 
-    initialDevelopmentCost: version.cost.initialDevelopmentCost,
-    monthlyOperationCost: version.cost.monthlyOperationCost,
-    monthlyLlmCost: version.cost.monthlyLlmCost,
-    externalServiceCost: version.cost.externalServiceCost,
-    costPerUser: version.cost.costPerUser,
-    costBasis: version.cost.costBasis,
 
-    currentProcessingMinutes: version.performance.currentProcessingMinutes,
-    automatedProcessingMinutes: version.performance.automatedProcessingMinutes,
-    monthlySavedHours: version.performance.monthlySavedHours,
-    errorReductionNote: version.performance.errorReductionNote,
-    expectedBenefit: version.performance.expectedBenefit,
-    measurementMethod: version.performance.measurementMethod,
 
     repositoryUrl: version.repositoryUrl,
     serviceUrl: version.serviceUrl,

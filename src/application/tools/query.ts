@@ -17,7 +17,6 @@ import type {
   AutomationTool,
   AutomationToolVersion,
   DataClassification,
-  IntegrationSystem,
   ToolCategory,
   ToolListItem,
   ToolStatus,
@@ -145,7 +144,6 @@ function emptyVersion(tool: AutomationTool): AutomationToolVersion {
     campusId: tool.campusId,
     versionLabel: '',
     changeNote: '',
-    description: '',
     problemStatement: '',
     keyFeatures: [],
     currentWorkflow: '',
@@ -153,10 +151,7 @@ function emptyVersion(tool: AutomationTool): AutomationToolVersion {
     inputData: '',
     outputData: '',
     expectedUsers: '',
-    monthlyExpectedUsage: null,
     automationLevel: 'AI_ASSISTED',
-    integrations: [],
-    otherIntegrationNote: '',
     security: {
       classifications: [],
       sendsDataExternally: false,
@@ -165,22 +160,6 @@ function emptyVersion(tool: AutomationTool): AutomationToolVersion {
       dataRetentionPeriod: '',
       hasExecutionLog: false,
       requiresHumanApproval: true,
-    },
-    cost: {
-      initialDevelopmentCost: null,
-      monthlyOperationCost: null,
-      monthlyLlmCost: null,
-      externalServiceCost: null,
-      costPerUser: null,
-      costBasis: '',
-    },
-    performance: {
-      currentProcessingMinutes: null,
-      automatedProcessingMinutes: null,
-      monthlySavedHours: null,
-      errorReductionNote: '',
-      expectedBenefit: '',
-      measurementMethod: '',
     },
     repositoryUrl: '',
     serviceUrl: '',
@@ -243,9 +222,9 @@ export interface ToolDetail {
   categoryName: string;
   ownerName: string;
   developerNames: string[];
-  integrationSystems: IntegrationSystem[];
   attachments: AttachmentView[];
-  evaluations: (ToolEvaluation & { evaluatorName: string })[];
+  /** 평가는 익명이다. 작성자 이름을 화면으로 내보내지 않는다 (리뷰 7절). */
+  evaluations: ToolEvaluation[];
   evaluationSummary: EvaluationSummary;
   improvements: (ImprovementRequest & { requesterName: string })[];
   statusHistory: (ToolStatusHistoryEntry & { changedByName: string })[];
@@ -283,7 +262,6 @@ export async function loadToolDetail(toolId: string): Promise<ToolDetail> {
     versions,
     categories,
     profiles,
-    integrationSystems,
     attachments,
     evaluations,
     improvements,
@@ -296,7 +274,6 @@ export async function loadToolDetail(toolId: string): Promise<ToolDetail> {
     repositories.tools.listVersions(tool.id),
     repositories.reference.listCategories(tool.campusId),
     repositories.identity.listProfiles(tool.campusId),
-    repositories.reference.listIntegrationSystems(tool.campusId),
     listAttachments(toolId),
     repositories.evaluations.listByTool(tool.id),
     repositories.improvements.listByTool(tool.id),
@@ -322,12 +299,8 @@ export async function loadToolDetail(toolId: string): Promise<ToolDetail> {
     categoryName: categories.find((category) => category.id === tool.categoryId)?.name ?? '미분류',
     ownerName: name(tool.ownerUserId),
     developerNames: tool.developerUserIds.map(name),
-    integrationSystems,
     attachments,
-    evaluations: evaluations.map((evaluation) => ({
-      ...evaluation,
-      evaluatorName: name(evaluation.evaluatorUserId),
-    })),
+    evaluations,
     evaluationSummary: summarizeEvaluations(evaluations),
     improvements: improvements.map((request) => ({
       ...request,

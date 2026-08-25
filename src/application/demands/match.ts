@@ -121,7 +121,7 @@ export async function joinDemand(
     id: newId<string>(),
     demandId: demand.id,
     userId: actor.id,
-    participantRole: input.participantRole,
+    participantRole: 'DEVELOPER',
     message: input.message,
     joinedAt: new Date().toISOString(),
   });

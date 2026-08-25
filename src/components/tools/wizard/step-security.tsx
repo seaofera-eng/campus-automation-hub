@@ -9,32 +9,16 @@ import { DATA_CLASSIFICATION_LABELS, isSensitiveClassification } from '@/domain/
 import { cn } from '@/lib/utils/cn';
 import { StepSection, type StepProps } from './shared';
 
-export function StepSecurity({ form, data }: StepProps) {
+export function StepSecurity({ form }: StepProps) {
   const { register, control, setValue, formState } = form;
   const errors = formState.errors;
 
   const classifications = useWatch({ control, name: 'classifications' });
-  const integrations = useWatch({ control, name: 'integrations' });
   const sendsDataExternally = useWatch({ control, name: 'sendsDataExternally' });
 
-  const selectedSystemIds = new Set(integrations.map((item) => item.integrationSystemId));
   const usesSensitiveData = classifications.some(
     (entry) => entry.inUse && isSensitiveClassification(entry.classification),
   );
-
-  function toggleIntegration(systemId: string, checked: boolean) {
-    if (checked) {
-      setValue('integrations', [...integrations, { integrationSystemId: systemId, note: '' }], {
-        shouldDirty: true,
-      });
-    } else {
-      setValue(
-        'integrations',
-        integrations.filter((item) => item.integrationSystemId !== systemId),
-        { shouldDirty: true },
-      );
-    }
-  }
 
   function setClassification(index: number, inUse: boolean) {
     const next = classifications.map((entry, position) =>
@@ -45,49 +29,6 @@ export function StepSecurity({ form, data }: StepProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <StepSection
-        title="연동 시스템"
-        description="이 도구가 데이터를 주고받는 시스템을 모두 선택해 주세요."
-      >
-        <fieldset className="grid gap-2 sm:grid-cols-2">
-          <legend className="sr-only">연동 시스템 선택</legend>
-          {data.integrationSystems.map((system) => {
-            const checked = selectedSystemIds.has(system.id);
-            return (
-              <label
-                key={system.id}
-                htmlFor={`integration-${system.id}`}
-                className="flex cursor-pointer items-center gap-3 rounded-md border border-border p-3 text-sm transition-colors hover:bg-surface-muted"
-              >
-                <Checkbox
-                  id={`integration-${system.id}`}
-                  checked={checked}
-                  onCheckedChange={(value) => toggleIntegration(system.id, value === true)}
-                />
-                <span className="min-w-0">
-                  <span className="block truncate font-medium text-fg">{system.name}</span>
-                  <span className="block text-xs text-fg-muted">
-                    {system.isExternal ? '외부 서비스' : '교내 시스템'}
-                  </span>
-                </span>
-              </label>
-            );
-          })}
-        </fieldset>
-
-        <Field
-          label="그 밖의 연동"
-          htmlFor="otherIntegrationNote"
-          hint="목록에 없는 시스템이 있으면 적어 주세요."
-          error={errors.otherIntegrationNote?.message}
-        >
-          <Input
-            {...register('otherIntegrationNote')}
-            {...fieldAria('otherIntegrationNote', 'hint')}
-          />
-        </Field>
-      </StepSection>
-
       <StepSection
         title="다루는 데이터 종류"
         description="이 항목이 위험 평가의 핵심 입력입니다. 실제로 처리하는 것을 빠짐없이 선택해 주세요."

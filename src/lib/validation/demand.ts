@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DEMAND_STATUSES, MATCH_TYPES, PARTICIPANT_ROLES, WORK_FREQUENCIES } from '@/domain/demand/types';
+import { DEMAND_STATUSES, MATCH_TYPES, WORK_FREQUENCIES } from '@/domain/demand/types';
 import { nullableNumber, optionalText, requiredText, textList } from './common';
 
 /**
@@ -16,17 +16,18 @@ export const demandDraftSchema = z.object({
   mostPainfulStep: optionalText,
   inputMaterials: optionalText,
   desiredOutcome: optionalText,
-  systemsInUse: optionalText,
   workFrequency: z.enum(WORK_FREQUENCIES).default('MONTHLY'),
   expectedUserCount: nullableNumber,
 
-  containsPersonalData: z.boolean().default(false),
+  containsIdentifiablePersonalData: z.boolean().default(false),
+  containsAnonymizedPersonalData: z.boolean().default(false),
   containsAcademicOrResearchData: z.boolean().default(false),
   requiresHumanApproval: z.boolean().default(true),
 
   requiredFeatures: textList,
   optionalFeatures: textList,
   expectedBenefit: optionalText,
+  offeredTokens: nullableNumber,
   desiredCompletionDate: optionalText.refine(
     (value) => value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value),
     { message: '날짜를 YYYY-MM-DD 형식으로 입력해 주세요.' },
@@ -95,8 +96,11 @@ export const unlinkToolSchema = z.object({
 
 export const joinDemandSchema = z.object({
   demandId: z.string().min(1),
-  participantRole: z.enum(PARTICIPANT_ROLES).default('DEVELOPER'),
-  message: requiredText('참여 메시지', 5, 1000),
+  /**
+   * 참여할 때 남기는 한 마디. **선택이다** (리뷰 6.4절).
+   * 필수로 만들면 "돕고 싶습니다" 같은 빈 문장만 쌓인다.
+   */
+  message: optionalText.pipe(z.string().max(1000, '메시지는 1000자까지 쓸 수 있습니다.')),
 });
 
 /** 새 수요 폼의 초기값. */
@@ -107,15 +111,16 @@ export function emptyDemandForm(): DemandFormInput {
     mostPainfulStep: '',
     inputMaterials: '',
     desiredOutcome: '',
-    systemsInUse: '',
     workFrequency: 'MONTHLY',
     expectedUserCount: null,
-    containsPersonalData: false,
+    containsIdentifiablePersonalData: false,
+    containsAnonymizedPersonalData: false,
     containsAcademicOrResearchData: false,
     requiresHumanApproval: true,
     requiredFeatures: [],
     optionalFeatures: [],
     expectedBenefit: '',
+    offeredTokens: null,
     desiredCompletionDate: '',
   };
 }

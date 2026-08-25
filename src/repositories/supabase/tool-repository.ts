@@ -319,22 +319,6 @@ async function syncToolDevelopers(tool: AutomationTool): Promise<void> {
 async function syncVersionDetails(version: AutomationToolVersion): Promise<void> {
   const supabase = await getUserClient();
 
-  const { error: integrationDeleteError } = await supabase
-    .from('tool_integrations')
-    .delete()
-    .eq('tool_version_id', version.id);
-  throwOnError(integrationDeleteError, '연동 정보 정리');
-
-  if (version.integrations.length > 0) {
-    const { error } = await supabase.from('tool_integrations').insert(
-      version.integrations.map((integration) => ({
-        tool_version_id: version.id,
-        integration_system_id: integration.integrationSystemId,
-        note: integration.note,
-      })),
-    );
-    throwOnError(error, '연동 정보 저장');
-  }
 
   const { error: classificationError } = await supabase.from('tool_data_classifications').upsert(
     version.security.classifications.map((entry) => ({

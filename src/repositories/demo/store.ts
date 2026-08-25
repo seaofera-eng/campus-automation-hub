@@ -15,7 +15,6 @@ import type { RiskChecklist } from '@/domain/tool/risk-checklist-rules';
 import type {
   AutomationTool,
   AutomationToolVersion,
-  IntegrationSystem,
   ToolAttachment,
   ToolCategory,
   ToolStatusHistoryEntry,
@@ -38,7 +37,6 @@ export interface DemoDatabase {
   campuses: Campus[];
   profiles: Profile[];
   categories: ToolCategory[];
-  integrationSystems: IntegrationSystem[];
   tools: AutomationTool[];
   toolVersions: AutomationToolVersion[];
   toolStatusHistory: ToolStatusHistoryEntry[];

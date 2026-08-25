@@ -17,10 +17,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Field, NativeSelect, Textarea, fieldAria } from '@/components/ui/field';
+import { Field, Textarea, fieldAria } from '@/components/ui/field';
 import type { DemandTransitionRule } from '@/domain/demand/status-machine';
-import { PARTICIPANT_ROLES, PARTICIPANT_ROLE_LABELS } from '@/domain/demand/types';
-import type { ParticipantRole } from '@/domain/demand/types';
 
 export function DemandActionsPanel({
   demandId,
@@ -97,7 +95,6 @@ export function DemandActionsPanel({
 function JoinDialog({ demandId }: { demandId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [participantRole, setParticipantRole] = useState<ParticipantRole>('DEVELOPER');
   const [message, setMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -108,7 +105,7 @@ function JoinDialog({ demandId }: { demandId: string }) {
     setFieldErrors({});
 
     startTransition(async () => {
-      const result = await joinDemandAction({ demandId, participantRole, message });
+      const result = await joinDemandAction({ demandId, message });
       if (result.ok) {
         setOpen(false);
         setMessage('');
@@ -141,25 +138,10 @@ function JoinDialog({ demandId }: { demandId: string }) {
         <div className="flex flex-col gap-4">
           {error ? <Alert tone="danger">{error}</Alert> : null}
 
-          <Field label="참여 형태" htmlFor="participant-role" required>
-            <NativeSelect
-              id="participant-role"
-              value={participantRole}
-              onChange={(event) => setParticipantRole(event.target.value as ParticipantRole)}
-            >
-              {PARTICIPANT_ROLES.map((role) => (
-                <option key={role} value={role}>
-                  {PARTICIPANT_ROLE_LABELS[role]}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-
           <Field
-            label="참여 메시지"
+            label="남기실 말"
             htmlFor="participant-message"
-            required
-            hint="어떤 부분을 맡을 수 있는지, 비슷한 것을 만들어 본 적이 있는지 적어 주세요."
+            hint="어떤 부분을 맡을 수 있는지 적어 주시면 좋습니다. 비워 두셔도 됩니다."
             error={fieldErrors.message}
           >
             <Textarea
@@ -177,7 +159,7 @@ function JoinDialog({ demandId }: { demandId: string }) {
               취소
             </Button>
           </DialogClose>
-          <Button onClick={submit} disabled={pending || message.trim().length < 5}>
+          <Button onClick={submit} disabled={pending}>
             {pending ? '신청 중…' : '참여 신청'}
           </Button>
         </DialogFooter>

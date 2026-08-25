@@ -3,7 +3,7 @@
 import { Controller } from 'react-hook-form';
 import type { Control, FieldPath, UseFormReturn } from 'react-hook-form';
 import type { Profile } from '@/domain/identity/types';
-import type { IntegrationSystem, ToolCategory } from '@/domain/tool/types';
+import type { ToolCategory } from '@/domain/tool/types';
 import { Input } from '@/components/ui/field';
 import type { ToolFormInput } from '@/lib/validation/tool';
 
@@ -11,7 +11,6 @@ import type { ToolFormInput } from '@/lib/validation/tool';
 export interface WizardReferenceData {
   actor: Profile;
   categories: readonly ToolCategory[];
-  integrationSystems: readonly IntegrationSystem[];
   /** 함께 개발한 사람으로 지정할 수 있는 목록 */
   people: readonly { id: string; name: string }[];
 }

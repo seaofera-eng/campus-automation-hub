@@ -32,7 +32,6 @@ function completeForm(name: string): ToolFormInput {
     name,
     summary: '테스트용 도구입니다.',
     categoryId: DEMO_CATEGORY_IDS.documentMeeting,
-    description: '설명',
     problemStatement: '문제 설명',
     keyFeatures: ['기능 1'],
     currentWorkflow: '지금은 수작업',

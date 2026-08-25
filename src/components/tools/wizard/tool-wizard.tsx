@@ -15,7 +15,6 @@ import type { ToolStatus } from '@/domain/tool/types';
 import { toolSubmitSchema, type ToolFormInput } from '@/lib/validation/tool';
 import { cn } from '@/lib/utils/cn';
 import { StepBasic } from './step-basic';
-import { StepCost } from './step-cost';
 import { StepFeatures } from './step-features';
 import { StepReview } from './step-review';
 import { StepSecurity } from './step-security';
@@ -33,11 +32,17 @@ import type { WizardReferenceData } from './shared';
  * 3. 최종 신청 여부는 **서버가 다시 판단한다.** 여기 검사는 사용자 편의일 뿐이다.
  */
 
+/**
+ * 4단계로 줄였다.
+ *
+ * 리뷰 4.3절: "작성해야 하는 내용이 너무 많음. 불필요한 항목을 줄여야 함."
+ * 비용·성과 단계는 통째로 없앴다. 이 플랫폼에 올라오는 도구는 개인이 만들어
+ * 나누는 것이라 원가 계산을 요구할 대상이 아니다.
+ */
 const STEPS = [
   { title: '기본 정보', description: '이름 · 분류 · 해결하려는 문제' },
   { title: '기능과 업무 흐름', description: '무엇을 어떻게 처리하는지' },
-  { title: '연동과 데이터', description: '연동 시스템 · 데이터 · 보안' },
-  { title: '비용과 성과', description: '비용 · 기대 효과 · 링크' },
+  { title: '다루는 데이터', description: '어떤 자료를 다루는지' },
   { title: '첨부와 확인', description: '자료 첨부 후 최종 확인' },
 ] as const;
 
@@ -50,8 +55,9 @@ const STEP_FIELDS: readonly (readonly FieldPath<ToolFormInput>[])[] = [
     'runtimeKind',
     'recommendedFor',
     'tags',
-    'description',
     'problemStatement',
+    'serviceUrl',
+    'repositoryUrl',
   ],
   [
     'keyFeatures',
@@ -60,12 +66,9 @@ const STEP_FIELDS: readonly (readonly FieldPath<ToolFormInput>[])[] = [
     'inputData',
     'outputData',
     'expectedUsers',
-    'monthlyExpectedUsage',
     'automationLevel',
   ],
   [
-    'integrations',
-    'otherIntegrationNote',
     'classifications',
     'sendsDataExternally',
     'externalTransferTargets',
@@ -73,22 +76,6 @@ const STEP_FIELDS: readonly (readonly FieldPath<ToolFormInput>[])[] = [
     'dataRetentionPeriod',
     'hasExecutionLog',
     'requiresHumanApproval',
-  ],
-  [
-    'initialDevelopmentCost',
-    'monthlyOperationCost',
-    'monthlyLlmCost',
-    'externalServiceCost',
-    'costPerUser',
-    'costBasis',
-    'currentProcessingMinutes',
-    'automatedProcessingMinutes',
-    'monthlySavedHours',
-    'errorReductionNote',
-    'expectedBenefit',
-    'measurementMethod',
-    'repositoryUrl',
-    'serviceUrl',
   ],
   ['versionLabel', 'changeNote'],
 ];
@@ -277,8 +264,7 @@ export function ToolWizard({ data, initialForm, tool, attachments }: ToolWizardP
           {step === 0 ? <StepBasic form={form} data={data} /> : null}
           {step === 1 ? <StepFeatures form={form} data={data} /> : null}
           {step === 2 ? <StepSecurity form={form} data={data} /> : null}
-          {step === 3 ? <StepCost form={form} data={data} /> : null}
-          {step === 4 ? (
+          {step === 3 ? (
             <StepReview form={form} data={data} toolId={toolId} attachments={attachments} />
           ) : null}
         </CardContent>

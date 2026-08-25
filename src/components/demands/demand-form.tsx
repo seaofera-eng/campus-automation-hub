@@ -12,6 +12,7 @@ import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DeadlinePicker } from '@/components/demands/deadline-picker';
 import { Field, Input, NativeSelect, Textarea, fieldAria } from '@/components/ui/field';
 import { WORK_FREQUENCIES, WORK_FREQUENCY_LABELS } from '@/domain/demand/types';
 import type { DemandStatus } from '@/domain/demand/types';
@@ -225,14 +226,6 @@ export function DemandForm({
             </Field>
           </div>
 
-          <Field
-            label="사용 중인 시스템"
-            htmlFor="systemsInUse"
-            hint="연동이 필요할 수 있는 교내 시스템이 있으면 적어 주세요."
-            error={errors.systemsInUse?.message}
-          >
-            <Input {...register('systemsInUse')} {...fieldAria('systemsInUse', 'hint')} />
-          </Field>
         </CardContent>
       </Card>
 
@@ -297,18 +290,42 @@ export function DemandForm({
               />
             </Field>
 
-            <Field
-              label="희망 완료 시기"
-              htmlFor="desiredCompletionDate"
-              error={errors.desiredCompletionDate?.message}
-            >
-              <Input
-                {...register('desiredCompletionDate')}
-                {...fieldAria('desiredCompletionDate', undefined, errors.desiredCompletionDate?.message)}
-                type="date"
-              />
-            </Field>
+            <Controller
+              control={control}
+              name="desiredCompletionDate"
+              render={({ field }) => (
+                <DeadlinePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={errors.desiredCompletionDate?.message}
+                />
+              )}
+            />
           </div>
+
+          <Field
+            label="희망 수여 토큰"
+            htmlFor="offeredTokens"
+            hint="이 도구를 완성해 준 사람에게 주고 싶은 토큰입니다. 나중에 마음에 드는 도구 하나를 골라 수여합니다."
+            error={errors.offeredTokens?.message}
+          >
+            <Controller
+              control={control}
+              name="offeredTokens"
+              render={({ field }) => (
+                <Input
+                  type="number"
+                  min={0}
+                  step={100}
+                  value={field.value ?? ''}
+                  onChange={(event) =>
+                    field.onChange(event.target.value === '' ? null : Number(event.target.value))
+                  }
+                  {...fieldAria('offeredTokens', 'hint', errors.offeredTokens?.message)}
+                />
+              )}
+            />
+          </Field>
 
           <Field
             label="기대 효과"
@@ -336,18 +353,50 @@ export function DemandForm({
         <CardContent className="flex flex-col gap-2">
           <Controller
             control={control}
-            name="containsPersonalData"
+            name="containsIdentifiablePersonalData"
             render={({ field }) => (
               <label
-                htmlFor="containsPersonalData"
-                className="flex cursor-pointer items-center gap-3 rounded-md border border-border p-3 text-sm transition-colors hover:bg-surface-muted"
+                htmlFor="containsIdentifiablePersonalData"
+                className="flex cursor-pointer items-start gap-3 rounded-md border border-border p-3 text-sm transition-colors hover:bg-surface-muted"
               >
                 <Checkbox
-                  id="containsPersonalData"
+                  id="containsIdentifiablePersonalData"
                   checked={field.value}
                   onCheckedChange={(value) => field.onChange(value === true)}
                 />
-                <span className="font-medium text-fg">개인정보가 포함됩니다</span>
+                <span>
+                  <span className="block font-medium text-fg">
+                    사람을 특정할 수 있는 정보가 포함됩니다
+                  </span>
+                  <span className="block text-xs text-fg-muted">
+                    예: 이름, 학번, 사번, 연락처, 상담 내용
+                  </span>
+                </span>
+              </label>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="containsAnonymizedPersonalData"
+            render={({ field }) => (
+              <label
+                htmlFor="containsAnonymizedPersonalData"
+                className="flex cursor-pointer items-start gap-3 rounded-md border border-border p-3 text-sm transition-colors hover:bg-surface-muted"
+              >
+                <Checkbox
+                  id="containsAnonymizedPersonalData"
+                  checked={field.value}
+                  onCheckedChange={(value) => field.onChange(value === true)}
+                />
+                <span>
+                  <span className="block font-medium text-fg">
+                    사람을 특정할 수 없는 형태로만 다룹니다
+                  </span>
+                  <span className="block text-xs text-fg-muted">
+                    예: 학과별 인원수, 만족도 평균처럼 이미 합쳐진 숫자
+                  </span>
+                </span>
               </label>
             )}
           />

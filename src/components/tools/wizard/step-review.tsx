@@ -35,13 +35,6 @@ export function StepReview({
   const categoryName =
     data.categories.find((category) => category.id === values.categoryId)?.name ?? '';
   const usedClassifications = (values.classifications ?? []).filter((entry) => entry?.inUse);
-  const integrationNames = (values.integrations ?? [])
-    .map(
-      (integration) =>
-        data.integrationSystems.find((system) => system.id === integration?.integrationSystemId)
-          ?.name,
-    )
-    .filter((name): name is string => Boolean(name));
 
   return (
     <div className="flex flex-col gap-6">
@@ -111,10 +104,6 @@ export function StepReview({
                 ''
               )
             }
-          />
-          <SummaryRow
-            label="연동 시스템"
-            value={integrationNames.length > 0 ? integrationNames.join(', ') : ''}
           />
           <SummaryRow
             label="다루는 데이터"

@@ -18,7 +18,6 @@ import type {
   AutomationTool,
   AutomationToolVersion,
   DataClassification,
-  IntegrationSystem,
   ToolAttachment,
   ToolCategory,
   ToolStatus,
@@ -104,8 +103,6 @@ export interface ReferenceDataRepository {
   listCategories(campusId: CampusId): Promise<ToolCategory[]>;
   getCategory(id: CategoryId): Promise<ToolCategory | null>;
   upsertCategory(category: ToolCategory): Promise<ToolCategory>;
-
-  listIntegrationSystems(campusId: CampusId): Promise<IntegrationSystem[]>;
 }
 
 /* -------------------------------------------------------------------------- */

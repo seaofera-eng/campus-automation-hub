@@ -22,7 +22,6 @@ import { emptyChecklistItems } from '@/domain/tool/risk-checklist-rules';
 import type {
   AutomationTool,
   AutomationToolVersion,
-  IntegrationSystem,
   ToolCategory,
   ToolDataClassificationEntry,
   ToolStatus,
@@ -35,7 +34,6 @@ import {
   DEMO_CAMPUS_ID,
   DEMO_CATEGORY_IDS,
   DEMO_DEMAND_IDS,
-  DEMO_INTEGRATION_IDS,
   DEMO_TOOL_IDS,
   DEMO_USER_IDS,
   DEMO_VERSION_IDS,
@@ -191,7 +189,7 @@ function buildCategories(): ToolCategory[] {
       id: DEMO_CATEGORY_IDS.dataAggregation,
       code: 'DATA_AGG',
       name: '데이터 취합',
-      description: '여러 부서·학과의 자료를 모으고 정리하는 도구',
+      description: '여러 곳의 자료를 모으고 정리하는 도구',
     },
     {
       id: DEMO_CATEGORY_IDS.communication,
@@ -209,7 +207,7 @@ function buildCategories(): ToolCategory[] {
       id: DEMO_CATEGORY_IDS.classificationRouting,
       code: 'ROUTING',
       name: '분류·라우팅',
-      description: '문의나 민원을 분류해 담당 부서로 전달하는 도구',
+      description: '문의나 민원을 분류해 담당자에게 전달하는 도구',
     },
     {
       id: DEMO_CATEGORY_IDS.researchSupport,
@@ -226,51 +224,6 @@ function buildCategories(): ToolCategory[] {
     isActive: true,
     createdAt: daysAgo(400),
     updatedAt: daysAgo(400),
-  }));
-}
-
-function buildIntegrationSystems(): IntegrationSystem[] {
-  const rows: {
-    id: IntegrationSystem['id'];
-    code: string;
-    name: string;
-    isExternal: boolean;
-  }[] = [
-    { id: DEMO_INTEGRATION_IDS.email, code: 'EMAIL', name: '이메일', isExternal: false },
-    { id: DEMO_INTEGRATION_IDS.calendar, code: 'CALENDAR', name: '캘린더', isExternal: false },
-    { id: DEMO_INTEGRATION_IDS.lms, code: 'LMS', name: 'LMS', isExternal: false },
-    {
-      id: DEMO_INTEGRATION_IDS.academicSystem,
-      code: 'ACADEMIC',
-      name: '학사정보시스템',
-      isExternal: false,
-    },
-    {
-      id: DEMO_INTEGRATION_IDS.researchSystem,
-      code: 'RESEARCH_MGMT',
-      name: '연구관리시스템',
-      isExternal: false,
-    },
-    {
-      id: DEMO_INTEGRATION_IDS.approvalSystem,
-      code: 'APPROVAL',
-      name: '전자결재',
-      isExternal: false,
-    },
-    {
-      id: DEMO_INTEGRATION_IDS.fileStorage,
-      code: 'FILE_STORAGE',
-      name: '파일 저장소',
-      isExternal: false,
-    },
-    { id: DEMO_INTEGRATION_IDS.externalApi, code: 'EXTERNAL_API', name: '외부 API', isExternal: true },
-  ];
-
-  return rows.map((row, index) => ({
-    ...row,
-    campusId: DEMO_CAMPUS_ID,
-    sortOrder: index + 1,
-    isActive: true,
   }));
 }
 
@@ -326,8 +279,6 @@ function buildToolSeeds(): SeedToolInput[] {
       version: {
         versionLabel: 'v1.2',
         changeNote: '담당자 자동 인식 정확도 개선 및 회의록 서식 정리',
-        description:
-          '부서 회의 녹취록이나 메모를 붙여넣으면 안건별 요약과 결정사항, 담당자별 후속 과업 목록을 만들어 줍니다. 결과는 초안으로 제공되며 작성자가 확인·수정한 뒤 배포합니다.',
         problemStatement:
           '회의가 끝난 뒤 회의록을 정리하는 데 매번 40분 이상 걸리고, 담당자별 후속 과업이 누락되는 일이 잦았습니다.',
         keyFeatures: [
@@ -343,16 +294,7 @@ function buildToolSeeds(): SeedToolInput[] {
         inputData: '회의 녹취록 텍스트, 참석자 명단, 회의 안건',
         outputData: '요약 회의록(서식 적용), 담당자별 후속 과업 목록',
         expectedUsers: '각 부서 회의록 작성 담당자',
-        monthlyExpectedUsage: 120,
         automationLevel: 'HUMAN_IN_THE_LOOP',
-        integrations: [
-          { integrationSystemId: DEMO_INTEGRATION_IDS.email, note: '완성된 회의록 발송' },
-          {
-            integrationSystemId: DEMO_INTEGRATION_IDS.fileStorage,
-            note: '회의록 원본 보관 (교내 저장소)',
-          },
-        ],
-        otherIntegrationNote: '',
         security: {
           classifications: classifications({
             INTERNAL: '회의 안건과 논의 내용',
@@ -364,22 +306,6 @@ function buildToolSeeds(): SeedToolInput[] {
           dataRetentionPeriod: '90일 후 자동 삭제',
           hasExecutionLog: true,
           requiresHumanApproval: true,
-        },
-        cost: {
-          initialDevelopmentCost: 3_000_000,
-          monthlyOperationCost: 50_000,
-          monthlyLlmCost: 120_000,
-          externalServiceCost: 0,
-          costPerUser: 4_000,
-          costBasis: '월 120회 처리 기준, 회당 평균 토큰 사용량으로 산출한 예상치입니다.',
-        },
-        performance: {
-          currentProcessingMinutes: 45,
-          automatedProcessingMinutes: 12,
-          monthlySavedHours: 66,
-          errorReductionNote: '후속 과업 누락이 눈에 띄게 줄었다는 사용 부서 의견이 있었습니다.',
-          expectedBenefit: '회의록 작성 시간을 줄이고 후속 과업 관리 누락을 방지합니다.',
-          measurementMethod: '작성 소요시간 자가 기록, 월별 사용 건수 집계',
         },
         repositoryUrl: 'https://example.test/demo/meeting-notes',
         serviceUrl: 'https://example.test/demo/meeting-notes/app',
@@ -401,8 +327,6 @@ function buildToolSeeds(): SeedToolInput[] {
       version: {
         versionLabel: 'v2.0',
         changeNote: '서식이 다른 파일도 열 이름 매칭으로 처리하도록 개선',
-        description:
-          '학과별로 제출한 엑셀 파일을 표준 서식으로 변환해 하나의 표로 합칩니다. 필수 항목 누락, 중복 행, 숫자 형식 오류를 점검해 목록으로 알려 줍니다.',
         problemStatement:
           '학과마다 서식이 조금씩 달라 취합 담당자가 수작업으로 열을 맞추고 오류를 찾느라 제출 기간마다 이틀이 걸렸습니다.',
         keyFeatures: [
@@ -418,16 +342,7 @@ function buildToolSeeds(): SeedToolInput[] {
         inputData: '학과별 제출 엑셀 파일',
         outputData: '통합 엑셀 파일, 오류·누락 항목 목록',
         expectedUsers: '학사관리과, 각 단과대학 행정실',
-        monthlyExpectedUsage: 40,
         automationLevel: 'HUMAN_IN_THE_LOOP',
-        integrations: [
-          {
-            integrationSystemId: DEMO_INTEGRATION_IDS.fileStorage,
-            note: '제출 파일과 결과 파일 보관',
-          },
-          { integrationSystemId: DEMO_INTEGRATION_IDS.email, note: '재요청 안내 메일 초안 생성' },
-        ],
-        otherIntegrationNote: '',
         security: {
           classifications: classifications({
             INTERNAL: '학과 제출 실적 자료',
@@ -439,22 +354,6 @@ function buildToolSeeds(): SeedToolInput[] {
           dataRetentionPeriod: '학기 종료 후 1년',
           hasExecutionLog: true,
           requiresHumanApproval: true,
-        },
-        cost: {
-          initialDevelopmentCost: 2_000_000,
-          monthlyOperationCost: 30_000,
-          monthlyLlmCost: 0,
-          externalServiceCost: 0,
-          costPerUser: 1_500,
-          costBasis: 'LLM을 사용하지 않는 규칙 기반 처리라 운영비만 발생합니다.',
-        },
-        performance: {
-          currentProcessingMinutes: 960,
-          automatedProcessingMinutes: 90,
-          monthlySavedHours: 29,
-          errorReductionNote: '제출 오류로 인한 재요청 횟수가 줄었습니다.',
-          expectedBenefit: '제출 기간의 취합 업무 부담을 크게 줄입니다.',
-          measurementMethod: '취합 소요시간 기록, 재요청 건수 비교',
         },
         repositoryUrl: 'https://example.test/demo/excel-aggregation',
         serviceUrl: 'https://example.test/demo/excel-aggregation/app',
@@ -476,8 +375,6 @@ function buildToolSeeds(): SeedToolInput[] {
       version: {
         versionLabel: 'v0.9',
         changeNote: '시범운영용 초기 버전',
-        description:
-          '수강신청 안내, 서류 제출 요청처럼 반복되는 이메일의 초안을 만들어 줍니다. 발송은 담당자가 내용을 확인한 뒤 직접 수행합니다.',
         problemStatement:
           '같은 성격의 안내 메일을 매번 새로 쓰느라 시간이 들고, 담당자마다 표현이 달라 안내가 일관되지 않았습니다.',
         keyFeatures: [
@@ -490,16 +387,7 @@ function buildToolSeeds(): SeedToolInput[] {
         inputData: '안내 목적, 대상자 구분, 마감일 등 조건',
         outputData: '이메일 제목과 본문 초안',
         expectedUsers: '학사관리과 안내 담당자',
-        monthlyExpectedUsage: 200,
         automationLevel: 'AI_ASSISTED',
-        integrations: [
-          { integrationSystemId: DEMO_INTEGRATION_IDS.email, note: '초안을 임시보관함에 저장' },
-          {
-            integrationSystemId: DEMO_INTEGRATION_IDS.externalApi,
-            note: '문장 생성을 위한 외부 LLM API 호출',
-          },
-        ],
-        otherIntegrationNote: '',
         security: {
           classifications: classifications({
             PUBLIC: '공개 안내 문구',
@@ -511,22 +399,6 @@ function buildToolSeeds(): SeedToolInput[] {
           dataRetentionPeriod: '30일',
           hasExecutionLog: true,
           requiresHumanApproval: true,
-        },
-        cost: {
-          initialDevelopmentCost: 1_200_000,
-          monthlyOperationCost: 20_000,
-          monthlyLlmCost: 80_000,
-          externalServiceCost: 0,
-          costPerUser: 2_000,
-          costBasis: '월 200건 생성 기준 예상치입니다. 시범운영 결과에 따라 조정합니다.',
-        },
-        performance: {
-          currentProcessingMinutes: 15,
-          automatedProcessingMinutes: 5,
-          monthlySavedHours: 33,
-          errorReductionNote: '안내 문구가 통일되어 문의 재확인이 줄어들 것으로 예상합니다.',
-          expectedBenefit: '반복 작성 시간을 줄이고 안내 표현을 통일합니다.',
-          measurementMethod: '작성 시간 기록, 사용 건수 집계',
         },
         repositoryUrl: 'https://example.test/demo/email-drafts',
         serviceUrl: '',
@@ -548,8 +420,6 @@ function buildToolSeeds(): SeedToolInput[] {
       version: {
         versionLabel: 'v0.5',
         changeNote: '등록 신청용 초기 버전',
-        description:
-          '기관별 연구과제 공고문에서 지원자격, 지원규모, 접수기한, 제출서류를 뽑아 표로 정리합니다. 원문 링크를 항상 함께 제공합니다.',
         problemStatement:
           '공고문이 기관마다 형식이 달라 연구자들이 핵심 조건을 찾는 데 시간이 걸리고, 마감을 놓치는 사례가 있었습니다.',
         keyFeatures: [
@@ -564,19 +434,7 @@ function buildToolSeeds(): SeedToolInput[] {
         inputData: '연구과제 공고문(PDF 또는 텍스트), 공고 원문 링크',
         outputData: '핵심 조건 요약표, 분야 분류 결과',
         expectedUsers: '연구지원과 담당자, 교내 연구자',
-        monthlyExpectedUsage: 60,
         automationLevel: 'HUMAN_IN_THE_LOOP',
-        integrations: [
-          {
-            integrationSystemId: DEMO_INTEGRATION_IDS.researchSystem,
-            note: '요약 결과를 공고 게시판에 등록',
-          },
-          {
-            integrationSystemId: DEMO_INTEGRATION_IDS.externalApi,
-            note: '공고문 요약을 위한 외부 LLM API 호출',
-          },
-        ],
-        otherIntegrationNote: '',
         security: {
           classifications: classifications({
             PUBLIC: '공개된 연구과제 공고문',
@@ -588,22 +446,6 @@ function buildToolSeeds(): SeedToolInput[] {
           dataRetentionPeriod: '미설정 — 검토 단계에서 확정 예정',
           hasExecutionLog: false,
           requiresHumanApproval: true,
-        },
-        cost: {
-          initialDevelopmentCost: 1_500_000,
-          monthlyOperationCost: 25_000,
-          monthlyLlmCost: 60_000,
-          externalServiceCost: 0,
-          costPerUser: 3_000,
-          costBasis: '월 60건 요약 기준 예상치입니다.',
-        },
-        performance: {
-          currentProcessingMinutes: 30,
-          automatedProcessingMinutes: 8,
-          monthlySavedHours: 22,
-          errorReductionNote: '마감일 누락을 줄일 것으로 기대합니다.',
-          expectedBenefit: '연구자가 공고 조건을 빠르게 파악할 수 있습니다.',
-          measurementMethod: '요약 작성 시간 기록, 게시 후 조회수 집계',
         },
         repositoryUrl: 'https://example.test/demo/grant-summary',
         serviceUrl: '',
@@ -625,8 +467,6 @@ function buildToolSeeds(): SeedToolInput[] {
       version: {
         versionLabel: 'v0.3',
         changeNote: '등록 신청용 초기 버전',
-        description:
-          '학칙과 학사 관련 지침을 대상으로 질문에 답합니다. 답변에는 반드시 근거 조항과 원문 링크를 붙이고, 확실하지 않으면 담당 부서 문의를 안내합니다.',
         problemStatement:
           '규정 문의 전화가 반복되고, 담당자마다 안내 내용이 조금씩 달라 재확인이 필요한 경우가 있었습니다.',
         keyFeatures: ['자연어 질문 검색', '근거 조항 인용', '원문 링크 제공', '불확실 시 문의 안내'],
@@ -635,19 +475,7 @@ function buildToolSeeds(): SeedToolInput[] {
         inputData: '학칙·지침 원문, 사용자 질문',
         outputData: '답변 문장, 근거 조항, 원문 링크',
         expectedUsers: '교직원, 학생',
-        monthlyExpectedUsage: 800,
         automationLevel: 'AI_ASSISTED',
-        integrations: [
-          {
-            integrationSystemId: DEMO_INTEGRATION_IDS.academicSystem,
-            note: '규정 원문 동기화 (읽기 전용)',
-          },
-          {
-            integrationSystemId: DEMO_INTEGRATION_IDS.externalApi,
-            note: '답변 생성을 위한 외부 LLM API 호출',
-          },
-        ],
-        otherIntegrationNote: '',
         security: {
           classifications: classifications({
             PUBLIC: '공개된 학칙과 지침',
@@ -659,22 +487,6 @@ function buildToolSeeds(): SeedToolInput[] {
           dataRetentionPeriod: '질문 로그 6개월',
           hasExecutionLog: true,
           requiresHumanApproval: false,
-        },
-        cost: {
-          initialDevelopmentCost: 4_000_000,
-          monthlyOperationCost: 60_000,
-          monthlyLlmCost: 250_000,
-          externalServiceCost: 0,
-          costPerUser: 500,
-          costBasis: '월 800건 질의 기준 예상치입니다.',
-        },
-        performance: {
-          currentProcessingMinutes: 10,
-          automatedProcessingMinutes: 2,
-          monthlySavedHours: 106,
-          errorReductionNote: '근거 조항을 함께 제시해 안내 오류를 줄일 것으로 기대합니다.',
-          expectedBenefit: '반복 문의를 줄이고 일관된 안내를 제공합니다.',
-          measurementMethod: '질의 건수, 담당자 문의 전환율',
         },
         repositoryUrl: 'https://example.test/demo/regulation-chatbot',
         serviceUrl: '',
@@ -696,8 +508,6 @@ function buildToolSeeds(): SeedToolInput[] {
       version: {
         versionLabel: 'v0.1',
         changeNote: '작성 중인 초안',
-        description:
-          '접수된 학생 문의를 유형별로 분류하고 담당 부서를 제안합니다. 최종 배정은 담당자가 확인 후 진행합니다.',
         problemStatement:
           '문의가 여러 창구로 들어와 담당 부서를 찾는 데 시간이 걸리고, 부서 간 재이관이 반복되었습니다.',
         keyFeatures: ['문의 유형 분류', '담당 부서 제안', '유사 문의 묶기'],
@@ -706,10 +516,7 @@ function buildToolSeeds(): SeedToolInput[] {
         inputData: '문의 본문',
         outputData: '문의 유형, 담당 부서 제안',
         expectedUsers: '학생상담센터, 학사관리과',
-        monthlyExpectedUsage: 300,
         automationLevel: 'HUMAN_IN_THE_LOOP',
-        integrations: [],
-        otherIntegrationNote: '문의 접수 채널은 아직 확정되지 않았습니다.',
         security: {
           classifications: classifications({
             PERSONAL: '문의자 이름과 학번',
@@ -721,22 +528,6 @@ function buildToolSeeds(): SeedToolInput[] {
           dataRetentionPeriod: '미설정',
           hasExecutionLog: false,
           requiresHumanApproval: true,
-        },
-        cost: {
-          initialDevelopmentCost: null,
-          monthlyOperationCost: null,
-          monthlyLlmCost: null,
-          externalServiceCost: null,
-          costPerUser: null,
-          costBasis: '아직 산출하지 않았습니다.',
-        },
-        performance: {
-          currentProcessingMinutes: 8,
-          automatedProcessingMinutes: null,
-          monthlySavedHours: null,
-          errorReductionNote: '',
-          expectedBenefit: '부서 간 재이관을 줄입니다.',
-          measurementMethod: '아직 정하지 않았습니다.',
         },
         repositoryUrl: '',
         serviceUrl: '',
@@ -974,15 +765,16 @@ function buildDemands(): {
         '회의록에서 후속 과업만 골라내 담당자별로 다시 정리하는 단계에서 시간이 가장 많이 걸리고 누락도 생깁니다.',
       inputMaterials: '회의 메모, 참석자 명단',
       desiredOutcome: '담당자별 과업 목록과 기한이 정리된 표',
-      systemsInUse: '이메일, 메신저, 워드',
       workFrequency: 'WEEKLY',
       expectedUserCount: 12,
-      containsPersonalData: true,
+      containsIdentifiablePersonalData: true,
+      containsAnonymizedPersonalData: false,
       containsAcademicOrResearchData: false,
       requiresHumanApproval: true,
       requiredFeatures: ['담당자별 과업 추출', '기한 표시'],
       optionalFeatures: ['캘린더 등록'],
-      expectedBenefit: '후속 과업 누락을 줄이고 회의록 정리 시간을 단축합니다.',
+      expectedBenefit: '회의록 정리 시간을 줄이고 후속 과업 누락을 막습니다.',
+      offeredTokens: 300,
       desiredCompletionDate: daysAhead(60),
       status: 'MATCHED',
       createdAt: daysAgo(90),
@@ -1000,15 +792,16 @@ function buildDemands(): {
       mostPainfulStep: '서식이 다른 파일들의 열을 맞추고 누락 항목을 찾아 재요청하는 단계입니다.',
       inputMaterials: '학과별 실적 엑셀 파일',
       desiredOutcome: '표준 서식으로 통합된 실적표와 누락 항목 목록',
-      systemsInUse: '엑셀, 이메일, 파일 저장소',
       workFrequency: 'SEMESTERLY',
       expectedUserCount: 8,
-      containsPersonalData: false,
+      containsIdentifiablePersonalData: false,
+      containsAnonymizedPersonalData: false,
       containsAcademicOrResearchData: true,
       requiresHumanApproval: true,
       requiredFeatures: ['서식 자동 변환', '누락 항목 검출'],
       optionalFeatures: ['재요청 메일 초안'],
-      expectedBenefit: '취합 기간을 이틀에서 반나절로 줄입니다.',
+      expectedBenefit: '학과별 자료 대조에 드는 시간을 줄입니다.',
+      offeredTokens: 500,
       desiredCompletionDate: daysAhead(120),
       status: 'OPEN',
       createdAt: daysAgo(30),
@@ -1026,15 +819,16 @@ function buildDemands(): {
       mostPainfulStep: '연구자별 관심 분야에 맞는 공고만 골라내는 단계입니다.',
       inputMaterials: '기관별 공고문, 연구자 관심 분야 정보',
       desiredOutcome: '연구자별 맞춤 공고 알림',
-      systemsInUse: '이메일, 연구관리시스템',
       workFrequency: 'WEEKLY',
       expectedUserCount: 150,
-      containsPersonalData: true,
+      containsIdentifiablePersonalData: true,
+      containsAnonymizedPersonalData: false,
       containsAcademicOrResearchData: true,
       requiresHumanApproval: false,
       requiredFeatures: ['분야별 분류', '개인별 알림 발송'],
       optionalFeatures: ['마감 임박 재알림'],
-      expectedBenefit: '연구자의 공고 확인 부담을 줄이고 지원 기회를 놓치지 않게 합니다.',
+      expectedBenefit: '연구자가 자기 분야 공고를 놓치지 않게 합니다.',
+      offeredTokens: 200,
       desiredCompletionDate: daysAhead(90),
       status: 'IN_DEVELOPMENT',
       createdAt: daysAgo(45),
@@ -1052,15 +846,16 @@ function buildDemands(): {
       mostPainfulStep: '문의 내용을 읽고 담당 부서를 판단해 이관하는 단계입니다.',
       inputMaterials: '문의 본문, 접수 채널 정보',
       desiredOutcome: '문의 유형 분류 결과와 담당 부서 제안',
-      systemsInUse: '이메일, 문의 게시판',
       workFrequency: 'DAILY',
       expectedUserCount: 20,
-      containsPersonalData: true,
+      containsIdentifiablePersonalData: true,
+      containsAnonymizedPersonalData: false,
       containsAcademicOrResearchData: false,
       requiresHumanApproval: true,
       requiredFeatures: ['문의 유형 분류', '담당 부서 제안'],
       optionalFeatures: ['유사 문의 묶기', '자주 묻는 질문 자동 추출'],
-      expectedBenefit: '부서 간 재이관을 줄이고 답변 시간을 단축합니다.',
+      expectedBenefit: '민원을 담당자에게 바로 넘겨 재안내를 줄입니다.',
+      offeredTokens: 400,
       desiredCompletionDate: daysAhead(150),
       status: 'OPEN',
       createdAt: daysAgo(12),
@@ -1146,12 +941,6 @@ function buildEvaluations(): ToolEvaluation[] {
       versionId: DEMO_VERSION_IDS.meetingNotes,
       evaluator: DEMO_USER_IDS.requester,
       scores: {
-        problemSolving: 5,
-        workEfficiency: 5,
-        usability: 4,
-        stability: 4,
-        accuracy: 4,
-        spreadPotential: 5,
         overall: 5,
       },
       comment:
@@ -1164,12 +953,6 @@ function buildEvaluations(): ToolEvaluation[] {
       versionId: DEMO_VERSION_IDS.meetingNotes,
       evaluator: DEMO_USER_IDS.requester2,
       scores: {
-        problemSolving: 4,
-        workEfficiency: 4,
-        usability: 5,
-        stability: 4,
-        accuracy: 3,
-        spreadPotential: 4,
         overall: 4,
       },
       comment:
@@ -1182,12 +965,6 @@ function buildEvaluations(): ToolEvaluation[] {
       versionId: DEMO_VERSION_IDS.excelAggregation,
       evaluator: DEMO_USER_IDS.requester,
       scores: {
-        problemSolving: 5,
-        workEfficiency: 5,
-        usability: 3,
-        stability: 5,
-        accuracy: 5,
-        spreadPotential: 4,
         overall: 4,
       },
       comment:
@@ -1200,12 +977,6 @@ function buildEvaluations(): ToolEvaluation[] {
       versionId: DEMO_VERSION_IDS.repetitiveEmail,
       evaluator: DEMO_USER_IDS.requester,
       scores: {
-        problemSolving: 4,
-        workEfficiency: 4,
-        usability: 4,
-        stability: 3,
-        accuracy: 3,
-        spreadPotential: 3,
         overall: 3,
       },
       comment:
@@ -1494,7 +1265,6 @@ export function buildDemoSeed(): DemoDatabase {
     campuses: [buildCampus()],
     profiles: buildProfiles(),
     categories: buildCategories(),
-    integrationSystems: buildIntegrationSystems(),
     tools,
     toolVersions: versions,
     toolStatusHistory: buildStatusHistory(tools),

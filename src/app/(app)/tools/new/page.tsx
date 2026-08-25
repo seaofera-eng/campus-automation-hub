@@ -6,7 +6,7 @@ import { guardPage } from '@/lib/auth/page-guard';
 export const metadata: Metadata = { title: '도구 등록' };
 
 export default async function NewToolPage() {
-  const { actor, categories, integrationSystems, people, initialForm } =
+  const { actor, categories, people, initialForm } =
     await guardPage(loadNewToolForm);
 
   return (
@@ -19,7 +19,7 @@ export default async function NewToolPage() {
       </div>
 
       <ToolWizard
-        data={{ actor, categories, integrationSystems, people }}
+        data={{ actor, categories, people }}
         initialForm={initialForm}
         tool={null}
         attachments={[]}

@@ -91,7 +91,7 @@ async function DemandListSection({ query }: { query: DemandQueryInput }) {
                         {entry.demand.title}
                       </Link>
                       <DemandStatusBadge status={entry.demand.status} />
-                      {entry.demand.containsPersonalData ? (
+                      {entry.demand.containsIdentifiablePersonalData ? (
                         <Badge tone="danger" icon={Lock}>
                           개인정보 포함
                         </Badge>

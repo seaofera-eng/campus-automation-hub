@@ -78,19 +78,24 @@ export interface AutomationDemand {
   mostPainfulStep: string;
   inputMaterials: string;
   desiredOutcome: string;
-  systemsInUse: string;
   workFrequency: WorkFrequency;
   expectedUserCount: number | null;
 
-  containsPersonalData: boolean;
+  /** 이름·학번처럼 사람을 특정할 수 있는 정보를 다루는가 */
+  containsIdentifiablePersonalData: boolean;
+  /** 통계·집계처럼 사람을 특정할 수 없는 형태의 개인 관련 정보를 다루는가 */
+  containsAnonymizedPersonalData: boolean;
   containsAcademicOrResearchData: boolean;
   requiresHumanApproval: boolean;
 
   requiredFeatures: string[];
   optionalFeatures: string[];
+  /** 자동화되면 무엇이 나아지는지 */
   expectedBenefit: string;
   /** 희망 완료시기 (ISO date) */
   desiredCompletionDate: string | null;
+  /** 완성한 개발자에게 주고 싶은 토큰. 5단계 토큰 시스템에서 실제로 지급된다. */
+  offeredTokens: number | null;
 
   status: DemandStatus;
   createdAt: string;

@@ -9,7 +9,7 @@ import {
   AUTOMATION_LEVEL_DESCRIPTIONS,
   AUTOMATION_LEVEL_LABELS,
 } from '@/domain/tool/types';
-import { NumberField, StepSection, type StepProps } from './shared';
+import { StepSection, type StepProps } from './shared';
 
 export function StepFeatures({ form }: StepProps) {
   const { register, control, formState } = form;
@@ -120,18 +120,6 @@ export function StepFeatures({ form }: StepProps) {
             />
           </Field>
 
-          <Field
-            label="월 예상 사용 횟수"
-            htmlFor="monthlyExpectedUsage"
-            error={errors.monthlyExpectedUsage?.message}
-          >
-            <NumberField
-              control={control}
-              name="monthlyExpectedUsage"
-              id="monthlyExpectedUsage"
-              suffix="회"
-            />
-          </Field>
         </div>
       </StepSection>
 

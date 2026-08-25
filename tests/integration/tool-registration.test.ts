@@ -24,7 +24,6 @@ function completeForm(overrides: Partial<ToolFormInput> = {}): ToolFormInput {
     name: '회의록 자동 정리 도구',
     summary: '회의 녹취를 요약해 결정사항과 할 일을 정리합니다.',
     categoryId: DEMO_CATEGORY_IDS.documentMeeting,
-    description: '회의 녹취 파일을 올리면 요약본을 만들어 줍니다.',
     problemStatement: '회의록 정리에 회의당 40분이 걸립니다.',
     keyFeatures: ['녹취 요약', '할 일 추출'],
     currentWorkflow: '담당자가 녹취를 듣고 직접 정리합니다.',
