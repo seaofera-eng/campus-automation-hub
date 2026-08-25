@@ -1,4 +1,4 @@
-import { ExternalLink, Paperclip, Pencil, Send } from 'lucide-react';
+import { ChevronLeft, Paperclip, Pencil, Send } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { after } from 'next/server';
@@ -14,6 +14,7 @@ import {
 import { EvaluationForm } from '@/components/evaluations/evaluation-form';
 import { ImprovementForm } from '@/components/improvements/improvement-form';
 import { FieldList, FieldRow, MoneyValue, NumberValue } from '@/components/tools/detail-field';
+import { LaunchToolButton } from '@/components/tools/launch-tool-button';
 import { StatusTransitionDialog } from '@/components/tools/status-transition-dialog';
 import { ToolDetailTabs, type DetailTab } from '@/components/tools/tool-detail-tabs';
 import { Alert } from '@/components/ui/alert';
@@ -29,6 +30,7 @@ import {
 } from '@/domain/tool/types';
 import { guardPage } from '@/lib/auth/page-guard';
 import { humanFileSize } from '@/lib/validation/attachment';
+import { formatDateTime } from '@/lib/utils/datetime';
 
 export async function generateMetadata({
   params,
@@ -42,10 +44,6 @@ export async function generateMetadata({
   } catch {
     return { title: '도구' };
   }
-}
-
-function formatDateTime(value: string): string {
-  return new Date(value).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 export default async function ToolDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -88,7 +86,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
           />
           <FieldRow
             label="조회 / 실행"
-            value={`${detail.usage.views.toLocaleString()}회 / ${detail.usage.launches.toLocaleString()}회`}
+            value={`${detail.usage.views.toLocaleString('ko-KR')}회 / ${detail.usage.launches.toLocaleString('ko-KR')}회`}
           />
         </FieldList>
       ),
@@ -466,6 +464,16 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
+        {/* 상세로 바로 들어온 경우(주소 공유·알림)에는 브라우저 뒤로가기가
+            목록으로 데려다주지 않는다. 돌아갈 곳을 화면에 둔다. */}
+        <Link
+          href="/tools"
+          className="inline-flex w-fit items-center gap-1 text-sm text-fg-muted hover:text-fg"
+        >
+          <ChevronLeft className="size-4" aria-hidden="true" />
+          자동화 도구 목록
+        </Link>
+
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -486,12 +494,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
             ) : null}
 
             {version.serviceUrl ? (
-              <Button variant="secondary" asChild>
-                <a href={version.serviceUrl} target="_blank" rel="noreferrer">
-                  <ExternalLink aria-hidden="true" />
-                  서비스 열기
-                </a>
-              </Button>
+              <LaunchToolButton toolId={tool.id} serviceUrl={version.serviceUrl} />
             ) : null}
             {permissions.canEdit ? (
               <Button variant="secondary" asChild>

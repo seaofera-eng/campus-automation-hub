@@ -51,7 +51,7 @@ export function Pagination({
 }: PaginationProps) {
   if (totalPages <= 1) {
     return (
-      <p className={cn('text-sm text-fg-muted', className)}>총 {totalItems.toLocaleString()}건</p>
+      <p className={cn('text-sm text-fg-muted', className)}>총 {totalItems.toLocaleString('ko-KR')}건</p>
     );
   }
 
@@ -61,7 +61,7 @@ export function Pagination({
       className={cn('flex flex-wrap items-center justify-between gap-3', className)}
     >
       <p className="text-sm text-fg-muted">
-        총 {totalItems.toLocaleString()}건 · {page}/{totalPages} 페이지
+        총 {totalItems.toLocaleString('ko-KR')}건 · {page}/{totalPages} 페이지
       </p>
 
       <ul className="flex items-center gap-1">

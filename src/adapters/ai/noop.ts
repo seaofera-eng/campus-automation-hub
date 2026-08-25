@@ -9,6 +9,7 @@ import type {
   RewardService,
   RiskAssessmentService,
 } from './types';
+import { josa } from '@/domain/shared/josa';
 
 /**
  * 1단계용 Noop 구현.
@@ -26,8 +27,8 @@ function disabled(phase: AiPhase, feature: string): AiFeatureDisabled {
     phase,
     message:
       phase === 'PHASE_2'
-        ? `${feature}은(는) 2단계에서 제공될 예정입니다. 현재는 담당자가 직접 확인합니다.`
-        : `${feature}은(는) 3단계에서 제공될 예정입니다.`,
+        ? `${feature}${josa(feature, '은는')} 2단계에서 제공될 예정입니다. 현재는 담당자가 직접 확인합니다.`
+        : `${feature}${josa(feature, '은는')} 3단계에서 제공될 예정입니다.`,
   };
 }
 

@@ -1,4 +1,4 @@
-import { FileClock } from 'lucide-react';
+import { CircleAlert, CircleCheck, FileClock } from 'lucide-react';
 import { Suspense } from 'react';
 import { listAuditLogs } from '@/application/admin/audit';
 import { AuditFilters } from '@/components/admin/audit-filters';
@@ -17,8 +17,9 @@ import {
   TableWrapper,
 } from '@/components/ui/table';
 import { guardPage } from '@/lib/auth/page-guard';
-import { buildAuditHref, parseAuditQuery } from '@/lib/validation/admin';
+import { buildAuditHref, hasAuditFilter, parseAuditQuery } from '@/lib/validation/admin';
 import type { AuditQueryInput } from '@/lib/validation/admin';
+import { formatDateTime } from '@/lib/utils/datetime';
 
 export default async function AdminAuditLogsPage({
   searchParams,
@@ -54,11 +55,21 @@ async function AuditLogSection({ query }: { query: AuditQueryInput }) {
       />
 
       {page.items.length === 0 ? (
-        <EmptyState
-          icon={FileClock}
-          title="조건에 맞는 기록이 없습니다"
-          description="필터를 해제하거나 기간을 넓혀 보세요."
-        />
+        /* 걸어 둔 필터가 없는데 "필터를 해제해 보세요"라고 하면 사용자가
+           있지도 않은 필터를 찾게 된다. 두 경우를 갈라서 안내한다. */
+        hasAuditFilter(query) ? (
+          <EmptyState
+            icon={FileClock}
+            title="조건에 맞는 기록이 없습니다"
+            description="필터를 해제하거나 기간을 넓혀 보세요."
+          />
+        ) : (
+          <EmptyState
+            icon={FileClock}
+            title="아직 기록된 작업이 없습니다"
+            description="도구 상태 변경이나 역할 변경 같은 작업을 하면 여기에 남습니다."
+          />
+        )
       ) : (
         <>
           <TableWrapper>
@@ -78,10 +89,7 @@ async function AuditLogSection({ query }: { query: AuditQueryInput }) {
                   <TableRow key={log.id}>
                     <TableCell className="whitespace-nowrap text-xs text-fg-muted">
                       <time dateTime={log.createdAt}>
-                        {new Date(log.createdAt).toLocaleString('ko-KR', {
-                          dateStyle: 'short',
-                          timeStyle: 'medium',
-                        })}
+                        {formatDateTime(log.createdAt)}
                       </time>
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm">
@@ -111,9 +119,13 @@ async function AuditLogSection({ query }: { query: AuditQueryInput }) {
                     </TableCell>
                     <TableCell>
                       {log.outcome === 'SUCCESS' ? (
-                        <span className="text-sm text-fg-muted">성공</span>
+                        <Badge tone="success" icon={CircleCheck}>
+                          성공
+                        </Badge>
                       ) : (
-                        <Badge tone="danger">실패</Badge>
+                        <Badge tone="danger" icon={CircleAlert}>
+                          실패
+                        </Badge>
                       )}
                     </TableCell>
                   </TableRow>

@@ -5,6 +5,7 @@ import { BarList } from '@/components/dashboard/bar-list';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { guardPage } from '@/lib/auth/page-guard';
+import { formatDateTime } from '@/lib/utils/datetime';
 
 /**
  * 관리자 현황.
@@ -106,10 +107,7 @@ export default async function AdminOverviewPage() {
                   <p className="text-xs text-fg-subtle">
                     {entry.actorName} ·{' '}
                     <time dateTime={entry.occurredAt}>
-                      {new Date(entry.occurredAt).toLocaleString('ko-KR', {
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      })}
+                      {formatDateTime(entry.occurredAt)}
                     </time>
                   </p>
                 </li>

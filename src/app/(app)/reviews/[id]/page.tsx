@@ -17,12 +17,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { REVIEW_COMMENT_KIND_LABELS } from '@/domain/review/types';
 import { AUTOMATION_LEVEL_LABELS, isSensitiveClassification } from '@/domain/tool/types';
 import { guardPage } from '@/lib/auth/page-guard';
+import { formatDateTime } from '@/lib/utils/datetime';
 
 export const metadata: Metadata = { title: '도구 검토' };
-
-function formatDateTime(value: string): string {
-  return new Date(value).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' });
-}
 
 export default async function ReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

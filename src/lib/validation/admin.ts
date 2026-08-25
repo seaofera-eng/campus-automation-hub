@@ -97,3 +97,13 @@ export function buildAuditHref(
   const queryString = params.toString();
   return queryString ? `/admin/audit-logs?${queryString}` : '/admin/audit-logs';
 }
+
+/**
+ * 감사 로그에 걸어 둔 필터가 하나라도 있는지.
+ *
+ * "결과가 없다"를 안내할 때 필터 탓인지 아직 기록이 없는 것인지 갈라 준다.
+ * `page` 와 `pageSize` 는 사용자가 고른 조건이 아니므로 세지 않는다.
+ */
+export function hasAuditFilter(query: AuditQueryInput): boolean {
+  return Boolean(query.action || query.actorUserId || query.targetType || query.from || query.to);
+}

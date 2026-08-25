@@ -2,6 +2,7 @@ import type { UserRole } from '../authz/roles';
 import { DomainError } from '../shared/errors';
 import type { RiskLevel, ToolStatus } from './types';
 import { TOOL_STATUS_LABELS } from './types';
+import { josa } from '../shared/josa';
 
 /**
  * 도구 상태 전환 규칙 (요구사항 7번).
@@ -142,11 +143,11 @@ export function availableTransitions(
 /** 전환이 불가능하면 사유 메시지를, 가능하면 null을 반환한다. */
 function checkTransition(rule: TransitionRule, context: TransitionContext): string | null {
   if (!rule.allowedRoles.includes(context.actorRole)) {
-    return `'${rule.label}'은(는) ${rule.allowedRoles.map(roleLabel).join(' 또는 ')} 역할만 수행할 수 있습니다.`;
+    return `'${rule.label}'${josa(rule.label, '은는')} ${rule.allowedRoles.map(roleLabel).join(' 또는 ')} 역할만 수행할 수 있습니다.`;
   }
 
   if (rule.requiresOwnership && !context.isOwner && context.actorRole !== 'ADMIN') {
-    return `'${rule.label}'은(는) 이 도구의 담당자 또는 개발자만 수행할 수 있습니다. 담당자에게 요청해 주세요.`;
+    return `'${rule.label}'${josa(rule.label, '은는')} 이 도구의 담당자 또는 개발자만 수행할 수 있습니다. 담당자에게 요청해 주세요.`;
   }
 
   if (STATUSES_BLOCKED_FOR_CRITICAL_RISK.includes(rule.to)) {

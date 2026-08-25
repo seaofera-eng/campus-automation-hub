@@ -2,6 +2,7 @@ import type { UserRole } from '../authz/roles';
 import { DomainError } from '../shared/errors';
 import type { ImprovementStatus } from './types';
 import { IMPROVEMENT_STATUS_LABELS } from './types';
+import { josa } from '../shared/josa';
 
 /**
  * 개선 요청 상태 전환 규칙 (요구사항 9번).
@@ -161,7 +162,7 @@ export function assertImprovementTransitionAllowed(
   if (!isAllowed(rule, context)) {
     throw new DomainError(
       'FORBIDDEN',
-      `'${rule.label}'을(를) 수행할 권한이 없습니다. 담당 개발자 또는 검토자·관리자에게 요청해 주세요.`,
+      `'${rule.label}'${josa(rule.label, '을를')} 수행할 권한이 없습니다. 담당 개발자 또는 검토자·관리자에게 요청해 주세요.`,
     );
   }
 

@@ -23,7 +23,7 @@ export function StatCard({ label, value, icon: Icon, hint, href, emphasis }: Sta
           aria-hidden="true"
         />
       </div>
-      <p className="mt-2 text-2xl font-bold tabular-nums text-fg">{value.toLocaleString()}</p>
+      <p className="mt-2 text-2xl font-bold tabular-nums text-fg">{value.toLocaleString('ko-KR')}</p>
       {hint ? <p className="mt-1 text-xs text-fg-subtle">{hint}</p> : null}
     </>
   );

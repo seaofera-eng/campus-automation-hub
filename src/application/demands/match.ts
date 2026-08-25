@@ -9,6 +9,7 @@ import type { DemandId, DemandMatchId, ToolId } from '@/domain/shared/ids';
 import { toActor } from '@/lib/auth/current-user';
 import { getRepositories } from '@/lib/di/container';
 import { notifyMany } from '../shared/notify';
+import { josa } from '@/domain/shared/josa';
 
 /**
  * 수요-도구 수동 매칭과 개발 참여 (요구사항 8번).
@@ -43,7 +44,7 @@ export async function linkToolToDemand(
   const existing = await repositories.demands.listMatches(demand.id);
   if (existing.some((match) => match.toolId === tool.id)) {
     throw conflict(
-      `'${tool.name}'은(는) 이미 이 수요에 연결되어 있습니다. 연결 유형을 바꾸려면 기존 연결을 해제한 뒤 다시 연결해 주세요.`,
+      `'${tool.name}'${josa(tool.name, '은는')} 이미 이 수요에 연결되어 있습니다. 연결 유형을 바꾸려면 기존 연결을 해제한 뒤 다시 연결해 주세요.`,
     );
   }
 

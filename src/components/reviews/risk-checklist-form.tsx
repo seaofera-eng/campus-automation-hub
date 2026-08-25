@@ -15,6 +15,7 @@ import type { RiskChecklistItem } from '@/domain/tool/risk-checklist-rules';
 import { RISK_LEVELS, RISK_LEVEL_LABELS } from '@/domain/tool/types';
 import type { RiskLevel } from '@/domain/tool/types';
 import { cn } from '@/lib/utils/cn';
+import { formatDateTime } from '@/lib/utils/datetime';
 
 /**
  * 위험 체크리스트 (요구사항 15번).
@@ -85,10 +86,7 @@ export function RiskChecklistForm({
         {reviewedBy && reviewedAt ? (
           <p className="text-xs text-fg-subtle">
             마지막 작성: {reviewedBy} ·{' '}
-            {new Date(reviewedAt).toLocaleString('ko-KR', {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-            })}
+            {formatDateTime(reviewedAt)}
           </p>
         ) : null}
       </CardHeader>

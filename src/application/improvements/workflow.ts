@@ -16,6 +16,7 @@ import type { ImprovementRequestId, ToolId, UserId } from '@/domain/shared/ids';
 import { toActor } from '@/lib/auth/current-user';
 import { getRepositories } from '@/lib/di/container';
 import { notifyMany } from '../shared/notify';
+import { josa } from '@/domain/shared/josa';
 
 /**
  * 개선 요청 (요구사항 9번).
@@ -138,7 +139,7 @@ export async function transitionImprovement(
   await notifyMany(recipients, {
     campusId: request.campusId,
     kind: 'IMPROVEMENT_STATUS_CHANGED',
-    title: `개선 요청 '${request.title}'이(가) ${IMPROVEMENT_STATUS_LABELS[input.toStatus]} 상태가 되었습니다`,
+    title: `개선 요청 '${request.title}'${josa(request.title, '이가')} ${IMPROVEMENT_STATUS_LABELS[input.toStatus]} 상태가 되었습니다`,
     body: '개선 요청 상세에서 처리 내용을 확인해 주세요.',
     linkPath: `/improvements/${request.id}`,
   });
@@ -191,7 +192,7 @@ export async function assignImprovement(
     await notifyMany([assignee], {
       campusId: request.campusId,
       kind: 'IMPROVEMENT_ASSIGNED',
-      title: `개선 요청 '${request.title}'이(가) 배정되었습니다`,
+      title: `개선 요청 '${request.title}'${josa(request.title, '이가')} 배정되었습니다`,
       body: `'${tool.name}' 도구에 대한 요청입니다.`,
       linkPath: `/improvements/${request.id}`,
     });

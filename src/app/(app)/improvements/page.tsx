@@ -13,6 +13,7 @@ import { IMPROVEMENT_TYPE_LABELS, URGENCY_LEVEL_LABELS } from '@/domain/improvem
 import { guardPage } from '@/lib/auth/page-guard';
 import { buildImprovementHref, parseImprovementQuery } from '@/lib/validation/improvement';
 import type { ImprovementQueryInput } from '@/lib/validation/improvement';
+import { formatDate } from '@/lib/utils/datetime';
 
 export const metadata: Metadata = { title: '개선 요청' };
 
@@ -131,7 +132,7 @@ async function ImprovementListSection({ query }: { query: ImprovementQueryInput 
                     {entry.request.targetCompletionDate ? (
                       <p>
                         목표{' '}
-                        {new Date(entry.request.targetCompletionDate).toLocaleDateString('ko-KR')}
+                        {formatDate(entry.request.targetCompletionDate)}
                       </p>
                     ) : null}
                   </div>

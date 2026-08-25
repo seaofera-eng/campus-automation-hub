@@ -15,12 +15,9 @@ import {
   URGENCY_LEVEL_LABELS,
 } from '@/domain/improvement/types';
 import { guardPage } from '@/lib/auth/page-guard';
+import { formatDate, formatDateTime } from '@/lib/utils/datetime';
 
 export const metadata: Metadata = { title: '개선 요청 상세' };
-
-function formatDateTime(value: string): string {
-  return new Date(value).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' });
-}
 
 export default async function ImprovementDetailPage({
   params,
@@ -93,7 +90,7 @@ export default async function ImprovementDetailPage({
                   label="목표 완료일"
                   value={
                     request.targetCompletionDate
-                      ? new Date(request.targetCompletionDate).toLocaleDateString('ko-KR')
+                      ? formatDate(request.targetCompletionDate)
                       : ''
                   }
                 />

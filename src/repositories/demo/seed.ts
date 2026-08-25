@@ -4,7 +4,9 @@ import type { Campus, Department, Profile } from '@/domain/identity/types';
 import type { ImprovementRequest } from '@/domain/improvement/types';
 import type { ReviewAssignment, ReviewComment } from '@/domain/review/types';
 import { asId } from '@/domain/shared/ids';
+import type { AuditLog } from '@/domain/observability/types';
 import type {
+  AuditLogId,
   DemandMatchId,
   EvaluationId,
   ImprovementRequestId,
@@ -1235,6 +1237,169 @@ function buildEvaluations(): ToolEvaluation[] {
   }));
 }
 
+/**
+ * 감사 로그 시드.
+ *
+ * 비워 두면 관리자의 감사 로그 화면이 처음부터 빈 채로 보인다. 요구사항 18번이
+ * "관리자 작업도 예외 없이 기록한다"인데 그 화면이 비어 있으면 기능이 없는 것처럼 읽힌다.
+ *
+ * 값은 넣지 않는다. 바뀐 **필드 이름**만 남긴다.
+ * (역할 변경 사유는 권한 변경의 근거라 summary 에 남긴다 — DECISIONS 참고)
+ */
+function buildAuditLogs(): AuditLog[] {
+  const rows: readonly {
+    index: number;
+    action: string;
+    actor: keyof typeof DEMO_USER_IDS;
+    actorRole: string;
+    targetType: string;
+    targetId: string | null;
+    outcome: 'SUCCESS' | 'FAILURE';
+    summary: string;
+    changedFields: string[];
+    daysAgo: number;
+  }[] = [
+    {
+      index: 1,
+      action: 'tool.submit',
+      actor: 'developer',
+      actorRole: 'DEVELOPER',
+      targetType: 'tool',
+      targetId: DEMO_TOOL_IDS.regulationChatbot,
+      outcome: 'SUCCESS',
+      summary: '도구 등록을 신청했습니다.',
+      changedFields: ['status'],
+      daysAgo: 21,
+    },
+    {
+      index: 2,
+      action: 'review.assign',
+      actor: 'reviewer',
+      actorRole: 'REVIEWER',
+      targetType: 'tool',
+      targetId: DEMO_TOOL_IDS.grantSummary,
+      outcome: 'SUCCESS',
+      summary: '검토자를 자신에게 배정했습니다.',
+      changedFields: ['reviewerUserId', 'status'],
+      daysAgo: 17,
+    },
+    {
+      index: 3,
+      action: 'review.checklist',
+      actor: 'reviewer',
+      actorRole: 'REVIEWER',
+      targetType: 'tool',
+      targetId: DEMO_TOOL_IDS.grantSummary,
+      outcome: 'SUCCESS',
+      summary: '위험 체크리스트를 작성했습니다.',
+      changedFields: ['riskLevel', 'items'],
+      daysAgo: 16,
+    },
+    {
+      index: 4,
+      action: 'demand.publish',
+      actor: 'requester2',
+      actorRole: 'REQUESTER',
+      targetType: 'demand',
+      targetId: DEMO_DEMAND_IDS.complaintRouting,
+      outcome: 'SUCCESS',
+      summary: '수요를 공개했습니다.',
+      changedFields: ['status'],
+      daysAgo: 13,
+    },
+    {
+      index: 5,
+      action: 'demand.match',
+      actor: 'reviewer',
+      actorRole: 'REVIEWER',
+      targetType: 'demand',
+      targetId: DEMO_DEMAND_IDS.meetingTasks,
+      outcome: 'SUCCESS',
+      summary: '수요에 도구를 연결했습니다.',
+      changedFields: ['matchType', 'rationale'],
+      daysAgo: 11,
+    },
+    {
+      index: 6,
+      action: 'evaluation.create',
+      actor: 'requester',
+      actorRole: 'REQUESTER',
+      targetType: 'evaluation',
+      targetId: null,
+      outcome: 'SUCCESS',
+      summary: '도구 평가를 등록했습니다.',
+      changedFields: ['scores', 'comment'],
+      daysAgo: 10,
+    },
+    {
+      index: 7,
+      action: 'admin.changeUserRole',
+      actor: 'admin',
+      actorRole: 'ADMIN',
+      targetType: 'user',
+      targetId: DEMO_USER_IDS.developer2,
+      outcome: 'SUCCESS',
+      // 역할 변경 사유는 권한을 바꾼 근거라 예외적으로 남긴다.
+      summary: '역할을 개발자로 변경했습니다. 사유: 연구지원과 도구 개발 담당으로 지정',
+      changedFields: ['role'],
+      daysAgo: 8,
+    },
+    {
+      index: 8,
+      action: 'improvement.create',
+      actor: 'requester',
+      actorRole: 'REQUESTER',
+      targetType: 'improvement',
+      targetId: null,
+      outcome: 'SUCCESS',
+      summary: '개선 요청을 등록했습니다.',
+      changedFields: ['title', 'content'],
+      daysAgo: 6,
+    },
+    {
+      index: 9,
+      action: 'admin.deleteDepartment',
+      actor: 'admin',
+      actorRole: 'ADMIN',
+      targetType: 'department',
+      targetId: null,
+      outcome: 'FAILURE',
+      // 실패한 시도도 남긴다.
+      summary: '소속 인원이 있어 삭제하지 못했습니다.',
+      changedFields: [],
+      daysAgo: 4,
+    },
+    {
+      index: 10,
+      action: 'tool.attachment.add',
+      actor: 'developer',
+      actorRole: 'DEVELOPER',
+      targetType: 'tool',
+      targetId: DEMO_TOOL_IDS.inquiryClassifier,
+      outcome: 'SUCCESS',
+      summary: '첨부파일을 추가했습니다.',
+      changedFields: ['attachments'],
+      daysAgo: 3,
+    },
+  ];
+
+  return rows.map((row) => ({
+    id: asId<AuditLogId>(seedId(17, row.index)),
+    campusId: DEMO_CAMPUS_ID,
+    action: row.action,
+    actorUserId: DEMO_USER_IDS[row.actor],
+    actorRole: row.actorRole,
+    targetType: row.targetType,
+    targetId: row.targetId,
+    outcome: row.outcome,
+    summary: row.summary,
+    changedFields: row.changedFields,
+    ipAddress: null,
+    userAgent: null,
+    createdAt: daysAgo(row.daysAgo),
+  }));
+}
+
 function buildImprovements(): ImprovementRequest[] {
   const rows: {
     index: number;
@@ -1353,7 +1518,7 @@ export function buildDemoSeed(): DemoDatabase {
     evaluationHistory: [],
     improvementRequests: buildImprovements(),
     improvementRequestHistory: [],
-    auditLogs: [],
+    auditLogs: buildAuditLogs(),
     usageEvents: [],
     notifications: [],
   };

@@ -5,13 +5,16 @@ import { withAudit } from '@/application/shared/audit';
 import { addAttachment, listAttachments, removeAttachment } from '@/application/tools/attachments';
 import type { AttachmentView } from '@/application/tools/attachments';
 import { draftChangedFields, saveDraft, submitTool } from '@/application/tools/register';
+import { recordToolLaunch } from '@/application/tools/usage';
 import { validationFailed } from '@/domain/shared/errors';
+import { asId } from '@/domain/shared/ids';
+import type { ToolId } from '@/domain/shared/ids';
 import type { AttachmentKind } from '@/domain/tool/types';
 import { run, type ActionResult } from '@/lib/actions/result';
 import { requireUser } from '@/lib/auth/current-user';
 import { attachmentMetaSchema, removeAttachmentSchema } from '@/lib/validation/attachment';
 import { parseOrThrow } from '@/lib/validation/common';
-import { saveDraftSchema, submitToolSchema } from '@/lib/validation/tool';
+import { saveDraftSchema, submitToolSchema, toolIdSchema } from '@/lib/validation/tool';
 
 /**
  * 도구 서버 액션.
@@ -158,5 +161,26 @@ export async function removeToolAttachmentAction(
 
     revalidatePath(`/tools/${data.toolId}`);
     return listAttachments(data.toolId);
+  });
+}
+
+/**
+ * 도구 실행(서비스 열기) 기록.
+ *
+ * 상세 화면의 "조회 / 실행" 중 실행 쪽을 채운다. 이 액션이 없으면 실행 수가
+ * 영원히 0 이라 지표가 거짓말을 한다.
+ *
+ * 감사 로그를 남기지 않는다. 상태를 바꾸는 작업이 아니라 사용 현황 집계이고,
+ * "누가 언제 어떤 도구를 열었는지"를 감사 로그에 쌓으면 이용 기록 추적이 된다.
+ * 실패해도 화면은 그대로 둔다 — 통계를 못 남긴 것이 도구를 못 여는 이유가
+ * 되어서는 안 된다.
+ */
+export async function recordToolLaunchAction(input: unknown): Promise<ActionResult<null>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const { toolId } = parseOrThrow(toolIdSchema, input);
+
+    await recordToolLaunch(actor, asId<ToolId>(toolId));
+    return null;
   });
 }

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { validationFailed } from '@/domain/shared/errors';
+import { josa } from '@/domain/shared/josa';
 
 /**
  * 폼 검증 공통 도구.
@@ -16,8 +17,8 @@ export function requiredText(label: string, min = 1, max = 2000) {
   return z
     .string()
     .trim()
-    .min(min, min === 1 ? `${label}을(를) 입력해 주세요.` : `${label}을(를) ${min}자 이상 입력해 주세요.`)
-    .max(max, `${label}은(는) ${max}자까지 입력할 수 있습니다.`);
+    .min(min, min === 1 ? `${label}${josa(label, '을를')} 입력해 주세요.` : `${label}${josa(label, '을를')} ${min}자 이상 입력해 주세요.`)
+    .max(max, `${label}${josa(label, '은는')} ${max}자까지 입력할 수 있습니다.`);
 }
 
 /**

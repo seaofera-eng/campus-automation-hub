@@ -9,6 +9,7 @@ import { TOOL_STATUS_LABELS } from '@/domain/tool/types';
 import type { AuditLogFilters, ObservabilityRepository } from '../types';
 import { clone, loadDb, mutateDb } from './store';
 import type { DemoDatabase } from './store';
+import { josa } from '@/domain/shared/josa';
 
 function buildActivity(db: DemoDatabase, campusId: CampusId, limit: number): ActivityEntry[] {
   const nameById = new Map(db.profiles.map((profile) => [profile.id, profile.name]));
@@ -34,7 +35,7 @@ function buildActivity(db: DemoDatabase, campusId: CampusId, limit: number): Act
     entries.push({
       id: `demand-${demand.id}`,
       occurredAt: demand.updatedAt,
-      description: `수요 '${demand.title}'이(가) ${DEMAND_STATUS_LABELS[demand.status]} 상태입니다.`,
+      description: `수요 '${demand.title}'${josa(demand.title, '이가')} ${DEMAND_STATUS_LABELS[demand.status]} 상태입니다.`,
       actorName: nameById.get(demand.requesterUserId) ?? '알 수 없음',
       linkPath: `/demands/${demand.id}`,
       kind: 'DEMAND',
@@ -59,7 +60,7 @@ function buildActivity(db: DemoDatabase, campusId: CampusId, limit: number): Act
     entries.push({
       id: `improvement-${request.id}`,
       occurredAt: request.updatedAt,
-      description: `개선 요청 '${request.title}'이(가) ${IMPROVEMENT_STATUS_LABELS[request.status]} 상태입니다.`,
+      description: `개선 요청 '${request.title}'${josa(request.title, '이가')} ${IMPROVEMENT_STATUS_LABELS[request.status]} 상태입니다.`,
       actorName: nameById.get(request.requesterUserId) ?? '알 수 없음',
       linkPath: `/improvements/${request.id}`,
       kind: 'IMPROVEMENT',

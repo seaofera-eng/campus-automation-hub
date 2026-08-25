@@ -1,3 +1,4 @@
+import { CircleCheck, CircleSlash } from 'lucide-react';
 import { listUsers } from '@/application/admin/manage';
 import { ChangeRoleDialog, EditUserDialog } from '@/components/admin/user-row-actions';
 import { RoleBadge } from '@/components/layout/role-badge';
@@ -67,10 +68,16 @@ export default async function AdminUsersPage() {
                     {row.toolCount}
                   </TableCell>
                   <TableCell>
+                    {/* 상태는 텍스트·아이콘·색 세 가지로 같이 표시한다.
+                        색만으로 구분하면 색을 못 보는 사람에게는 아무 정보도 없다. */}
                     {row.profile.isActive ? (
-                      <span className="text-sm text-fg-muted">활성</span>
+                      <Badge tone="success" icon={CircleCheck}>
+                        활성
+                      </Badge>
                     ) : (
-                      <Badge tone="danger">비활성</Badge>
+                      <Badge tone="danger" icon={CircleSlash}>
+                        비활성
+                      </Badge>
                     )}
                   </TableCell>
                   <TableCell>

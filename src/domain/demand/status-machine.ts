@@ -2,6 +2,7 @@ import type { UserRole } from '../authz/roles';
 import { DomainError } from '../shared/errors';
 import type { DemandStatus } from './types';
 import { DEMAND_STATUS_LABELS } from './types';
+import { josa } from '../shared/josa';
 
 /**
  * 수요 상태 전환 규칙 (요구사항 8번).
@@ -179,7 +180,7 @@ export function assertDemandTransitionAllowed(
   if (!isDemandTransitionAllowed(rule, context)) {
     throw new DomainError(
       'FORBIDDEN',
-      `'${rule.label}'을(를) 수행할 권한이 없습니다. 수요 등록자 또는 검토자·관리자에게 요청해 주세요.`,
+      `'${rule.label}'${josa(rule.label, '을를')} 수행할 권한이 없습니다. 수요 등록자 또는 검토자·관리자에게 요청해 주세요.`,
     );
   }
 

@@ -19,12 +19,9 @@ import {
 } from '@/domain/demand/types';
 import type { ToolStatus } from '@/domain/tool/types';
 import { guardPage } from '@/lib/auth/page-guard';
+import { formatDate, formatDateTime } from '@/lib/utils/datetime';
 
 export const metadata: Metadata = { title: '수요 상세' };
-
-function formatDateTime(value: string): string {
-  return new Date(value).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' });
-}
 
 export default async function DemandDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -94,7 +91,7 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ i
                   label="희망 완료 시기"
                   value={
                     demand.desiredCompletionDate
-                      ? new Date(demand.desiredCompletionDate).toLocaleDateString('ko-KR')
+                      ? formatDate(demand.desiredCompletionDate)
                       : ''
                   }
                 />

@@ -249,3 +249,8 @@ export function emptyToolForm(): ToolFormInput {
     changeNote: '',
   };
 }
+
+/** 도구 하나를 가리키기만 하는 입력 (실행 기록 등) */
+export const toolIdSchema = z.object({
+  toolId: z.string().min(1),
+});

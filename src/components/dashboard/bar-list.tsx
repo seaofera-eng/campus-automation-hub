@@ -50,7 +50,7 @@ export function BarList({ caption, items, emptyMessage, className }: BarListProp
                   />
                 </div>
                 <span className="w-16 shrink-0 text-right tabular-nums text-fg-muted">
-                  {item.count.toLocaleString()}건
+                  {item.count.toLocaleString('ko-KR')}건
                 </span>
               </div>
             </td>
@@ -63,7 +63,7 @@ export function BarList({ caption, items, emptyMessage, className }: BarListProp
             합계
           </th>
           <td className="pt-2 text-right text-xs tabular-nums text-fg-subtle">
-            {total.toLocaleString()}건
+            {total.toLocaleString('ko-KR')}건
           </td>
         </tr>
       </tfoot>

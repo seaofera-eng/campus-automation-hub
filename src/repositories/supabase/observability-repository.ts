@@ -16,6 +16,7 @@ import type { ToolStatus } from '@/domain/tool/types';
 import type { AuditLogFilters, ObservabilityRepository } from '../types';
 import { getServiceClient, getUserClient, throwOnError } from './client';
 import { fromAuditLog, fromNotification, toAuditLog, toNotification } from './mappers';
+import { josa } from '@/domain/shared/josa';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -94,7 +95,7 @@ async function collectActivity(campusId: CampusId, limit: number): Promise<Activ
     entries.push({
       id: `demand-${row.id}`,
       occurredAt: String(row.updated_at),
-      description: `수요 '${row.title}'이(가) ${DEMAND_STATUS_LABELS[row.status as DemandStatus]} 상태입니다.`,
+      description: `수요 '${row.title}'${josa(row.title, '이가')} ${DEMAND_STATUS_LABELS[row.status as DemandStatus]} 상태입니다.`,
       actorName: actorName(row.profiles),
       linkPath: `/demands/${row.id}`,
       kind: 'DEMAND',
@@ -117,7 +118,7 @@ async function collectActivity(campusId: CampusId, limit: number): Promise<Activ
     entries.push({
       id: `improvement-${row.id}`,
       occurredAt: String(row.updated_at),
-      description: `개선 요청 '${row.title}'이(가) ${IMPROVEMENT_STATUS_LABELS[row.status as ImprovementStatus]} 상태입니다.`,
+      description: `개선 요청 '${row.title}'${josa(row.title, '이가')} ${IMPROVEMENT_STATUS_LABELS[row.status as ImprovementStatus]} 상태입니다.`,
       actorName: actorName(row.profiles),
       linkPath: `/improvements/${row.id}`,
       kind: 'IMPROVEMENT',

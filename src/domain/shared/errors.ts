@@ -1,3 +1,5 @@
+import { josa } from './josa';
+
 /**
  * 도메인 오류.
  *
@@ -41,7 +43,7 @@ export function forbidden(
 export function notFound(what = '요청한 항목') {
   return new DomainError(
     'NOT_FOUND',
-    `${what}을(를) 찾을 수 없습니다. 이미 삭제되었거나 주소가 잘못되었을 수 있습니다.`,
+    `${what}${josa(what, '을를')} 찾을 수 없습니다. 이미 삭제되었거나 주소가 잘못되었을 수 있습니다.`,
   );
 }
 

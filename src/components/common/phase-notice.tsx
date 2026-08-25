@@ -1,5 +1,6 @@
 import { Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { josa } from '@/domain/shared/josa';
 
 /**
  * 2·3단계 기능 안내.
@@ -37,7 +38,8 @@ export function PhaseNotice({ phase, feature, fallback, className }: PhaseNotice
       <Sparkles className="mt-0.5 size-5 shrink-0 text-fg-subtle" aria-hidden="true" />
       <div>
         <p className="font-medium text-fg">
-          {feature}은(는) {PHASE_LABELS[phase]}에서 제공될 예정입니다.
+          {feature}
+          {josa(feature, '은는')} {PHASE_LABELS[phase]}에서 제공될 예정입니다.
         </p>
         <p className="mt-1 text-fg-muted">
           아직 분석 결과가 없습니다. 이 영역에 표시할 점수나 판정값을 임의로 만들지 않습니다.

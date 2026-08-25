@@ -16,6 +16,7 @@ import { StatCard } from '@/components/dashboard/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { USER_ROLE_LABELS } from '@/domain/authz/roles';
+import { formatDateTime } from '@/lib/utils/datetime';
 
 export const metadata: Metadata = { title: '대시보드' };
 
@@ -138,10 +139,7 @@ export default async function DashboardPage() {
                   <p className="text-xs text-fg-subtle">
                     {entry.actorName} ·{' '}
                     <time dateTime={entry.occurredAt}>
-                      {new Date(entry.occurredAt).toLocaleString('ko-KR', {
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      })}
+                      {formatDateTime(entry.occurredAt)}
                     </time>
                   </p>
                 </li>
