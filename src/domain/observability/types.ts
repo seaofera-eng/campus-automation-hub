@@ -74,7 +74,8 @@ export interface DashboardStats {
   openImprovements: number;
   totalEvaluations: number;
   byCategory: { label: string; count: number }[];
-  byDepartment: { label: string; count: number }[];
+  /** 어디서 실행하는 도구가 많은지 (부서별 분포를 대신한다) */
+  byRuntime: { label: string; count: number }[];
   byStatus: { label: string; count: number }[];
 }
 

@@ -2,7 +2,6 @@ import type {
   CampusId,
   DemandId,
   DemandMatchId,
-  DepartmentId,
   ToolId,
   UserId,
 } from '../shared/ids';
@@ -73,7 +72,6 @@ export interface AutomationDemand {
   id: DemandId;
   campusId: CampusId;
   title: string;
-  departmentId: DepartmentId;
   requesterUserId: UserId;
 
   currentWorkDescription: string;
@@ -132,7 +130,6 @@ export interface DemandParticipant {
 
 export interface DemandListItem {
   demand: AutomationDemand;
-  departmentName: string;
   requesterName: string;
   matchCount: number;
   participantCount: number;

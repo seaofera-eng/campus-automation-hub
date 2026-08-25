@@ -12,7 +12,6 @@ import { getRepositories } from '@/lib/di/container';
 
 export interface AppShellContext {
   profile: Profile;
-  departmentName: string | null;
   campusName: string;
   notifications: Notification[];
 }
@@ -24,17 +23,13 @@ export async function loadAppShellContext(): Promise<AppShellContext | null> {
 
   const repositories = getRepositories();
 
-  const [campus, department, notifications] = await Promise.all([
+  const [campus, notifications] = await Promise.all([
     repositories.identity.getCampus(profile.campusId),
-    profile.departmentId
-      ? repositories.identity.getDepartment(profile.departmentId)
-      : Promise.resolve(null),
     repositories.observability.listNotifications(profile.id, false),
   ]);
 
   return {
     profile,
-    departmentName: department?.name ?? null,
     campusName: campus?.name ?? '',
     notifications,
   };

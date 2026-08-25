@@ -48,7 +48,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="flex min-w-0 flex-1 flex-col">
             <Topbar
               profile={context.profile}
-              departmentName={context.departmentName}
               notifications={context.notifications}
             />
 

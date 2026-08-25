@@ -1,5 +1,5 @@
 import type { AccountType, AdminPermission, MemberType } from '../authz/accounts';
-import type { CampusId, DepartmentId, UserId } from '../shared/ids';
+import type { CampusId, UserId } from '../shared/ids';
 
 export interface Campus {
   id: CampusId;
@@ -8,25 +8,11 @@ export interface Campus {
   createdAt: string;
 }
 
-export interface Department {
-  id: DepartmentId;
-  campusId: CampusId;
-  name: string;
-  code: string;
-  /** 상위 조직 (없으면 최상위) */
-  parentId: DepartmentId | null;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-}
-
 export interface Profile {
   id: UserId;
   campusId: CampusId;
   email: string;
   name: string;
-  departmentId: DepartmentId | null;
   /** 직위·직급 표시용 */
   title: string;
   /** 이용자인가 관리자인가 */
@@ -53,18 +39,14 @@ export interface UserSummary {
   email: string;
   accountType: AccountType;
   memberType: MemberType;
-  departmentId: DepartmentId | null;
-  departmentName: string | null;
 }
 
-export function toUserSummary(profile: Profile, departmentName: string | null): UserSummary {
+export function toUserSummary(profile: Profile): UserSummary {
   return {
     id: profile.id,
     name: profile.name,
     email: profile.email,
     accountType: profile.accountType,
     memberType: profile.memberType,
-    departmentId: profile.departmentId,
-    departmentName,
   };
 }

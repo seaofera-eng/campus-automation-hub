@@ -96,8 +96,8 @@ export default async function ReviewsPage() {
 
               <dl className="mt-2 flex flex-wrap gap-x-4 text-xs text-fg-subtle">
                 <div className="flex gap-1">
-                  <dt>부서</dt>
-                  <dd className="text-fg-muted">{entry.departmentName}</dd>
+                  <dt>만든 사람</dt>
+                  <dd className="text-fg-muted">{entry.ownerName}</dd>
                 </div>
                 <div className="flex gap-1">
                   <dt>카테고리</dt>

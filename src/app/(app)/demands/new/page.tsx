@@ -7,11 +7,9 @@ import { emptyDemandForm } from '@/lib/validation/demand';
 export const metadata: Metadata = { title: '수요 등록' };
 
 export default async function NewDemandPage() {
-  const { actor, departments } = await guardPage(loadNewDemandForm);
+  await guardPage(loadNewDemandForm);
 
   const initialForm = emptyDemandForm();
-  // 작성자 소속을 요청 부서 기본값으로 채워 준다.
-  if (actor.departmentId) initialForm.departmentId = actor.departmentId;
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
@@ -22,7 +20,7 @@ export default async function NewDemandPage() {
         </p>
       </div>
 
-      <DemandForm departments={departments} initialForm={initialForm} demand={null} />
+      <DemandForm initialForm={initialForm} demand={null} />
     </div>
   );
 }

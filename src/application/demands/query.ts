@@ -8,14 +8,15 @@ import type {
   DemandParticipant,
   DemandStatus,
 } from '@/domain/demand/types';
-import type { Department, Profile } from '@/domain/identity/types';
+import type { Profile } from '@/domain/identity/types';
 import { notFound } from '@/domain/shared/errors';
 import { asId } from '@/domain/shared/ids';
-import type { DemandId, DepartmentId } from '@/domain/shared/ids';
+import type { DemandId } from '@/domain/shared/ids';
 import type { Page } from '@/domain/shared/pagination';
 import { MAX_PAGE_SIZE, paginate } from '@/domain/shared/pagination';
 import { requireUser, toActor } from '@/lib/auth/current-user';
 import { hasAdminPermission } from '@/domain/authz/accounts';
+import type { MemberType } from '@/domain/authz/accounts';
 import { getRepositories } from '@/lib/di/container';
 import type { DemandQueryInput } from '@/lib/validation/demand';
 import { formFromDemand } from './register';
@@ -29,8 +30,8 @@ import type { DemandFormInput } from '@/lib/validation/demand';
 
 export interface DemandListEntry {
   demand: AutomationDemand;
-  departmentName: string;
   requesterName: string;
+  requesterMemberType: MemberType;
   matchCount: number;
   participantCount: number;
 }
@@ -38,7 +39,6 @@ export interface DemandListEntry {
 export interface DemandListResult {
   actor: Profile;
   page: Page<DemandListEntry>;
-  departments: Department[];
 }
 
 function canSee(actor: Profile, demand: AutomationDemand): boolean {
@@ -51,10 +51,6 @@ export async function listDemands(query: DemandQueryInput): Promise<DemandListRe
   const actor = await requireUser();
   const repositories = getRepositories();
 
-  const [departments, profiles] = await Promise.all([
-    repositories.identity.listDepartments(actor.campusId),
-    repositories.identity.listProfiles(actor.campusId),
-  ]);
 
   // 공개 범위 필터링이 페이지 자르기보다 먼저 일어나야 총 건수가 맞는다.
   // 그래서 한 번에 넉넉히 읽고 애플리케이션에서 거른 뒤 자른다.
@@ -63,17 +59,14 @@ export async function listDemands(query: DemandQueryInput): Promise<DemandListRe
       campusId: actor.campusId,
       keyword: query.keyword || undefined,
       statuses: query.statuses.length > 0 ? (query.statuses as DemandStatus[]) : undefined,
-      departmentIds:
-        query.departmentIds.length > 0
-          ? query.departmentIds.map((id) => asId<DepartmentId>(id))
-          : undefined,
       requesterUserId: query.onlyMine ? actor.id : undefined,
     },
     { page: 1, pageSize: MAX_PAGE_SIZE },
   );
 
-  const departmentNames = new Map(departments.map((d) => [d.id, d.name]));
+  const profiles = await repositories.identity.listProfiles(actor.campusId);
   const personNames = new Map(profiles.map((p) => [p.id, p.name]));
+  const personTypes = new Map(profiles.map((p) => [p.id, p.memberType]));
 
   const visible = all.items.filter((demand) => canSee(actor, demand));
   const items = await Promise.all(
@@ -84,8 +77,8 @@ export async function listDemands(query: DemandQueryInput): Promise<DemandListRe
       ]);
       return {
         demand,
-        departmentName: departmentNames.get(demand.departmentId) ?? '미지정',
         requesterName: personNames.get(demand.requesterUserId) ?? '알 수 없음',
+        requesterMemberType: personTypes.get(demand.requesterUserId) ?? 'STAFF',
         matchCount: matches.length,
         participantCount: participants.length,
       } satisfies DemandListEntry;
@@ -95,7 +88,6 @@ export async function listDemands(query: DemandQueryInput): Promise<DemandListRe
   return {
     actor,
     page: paginate(items, { page: query.page, pageSize: query.pageSize }),
-    departments,
   };
 }
 
@@ -106,10 +98,10 @@ export async function listDemands(query: DemandQueryInput): Promise<DemandListRe
 export interface DemandDetail {
   actor: Profile;
   demand: AutomationDemand;
-  departmentName: string;
   requesterName: string;
+  requesterMemberType: MemberType;
   matches: (DemandMatch & { toolName: string; toolStatus: string; matchedByName: string })[];
-  participants: (DemandParticipant & { userName: string; departmentName: string | null })[];
+  participants: (DemandParticipant & { userName: string })[];
   transitions: DemandTransitionRule[];
   /** 매칭 화면에서 고를 수 있는 도구 목록 */
   linkableTools: { id: string; name: string; summary: string }[];
@@ -130,16 +122,13 @@ export async function loadDemandDetail(demandId: string): Promise<DemandDetail> 
   // 볼 수 없는 수요는 "없는 것"으로 취급한다.
   if (!canSee(actor, demand)) throw notFound('수요');
 
-  const [departments, profiles, matches, participants] = await Promise.all([
-    repositories.identity.listDepartments(actor.campusId),
+  const [profiles, matches, participants] = await Promise.all([
     repositories.identity.listProfiles(actor.campusId),
     repositories.demands.listMatches(demand.id),
     repositories.demands.listParticipants(demand.id),
   ]);
 
-  const departmentNames = new Map(departments.map((d) => [d.id, d.name]));
   const personNames = new Map(profiles.map((p) => [p.id, p.name]));
-  const personDepartments = new Map(profiles.map((p) => [p.id, p.departmentId]));
 
   const canMatch = can(toActor(actor), 'demand:match');
 
@@ -161,15 +150,14 @@ export async function loadDemandDetail(demandId: string): Promise<DemandDetail> 
   return {
     actor,
     demand,
-    departmentName: departmentNames.get(demand.departmentId) ?? '미지정',
+    requesterMemberType:
+      profiles.find((p) => p.id === demand.requesterUserId)?.memberType ?? 'STAFF',
     requesterName: personNames.get(demand.requesterUserId) ?? '알 수 없음',
     matches: matchDetails,
     participants: participants.map((participant) => {
-      const departmentId = personDepartments.get(participant.userId);
       return {
         ...participant,
         userName: personNames.get(participant.userId) ?? '알 수 없음',
-        departmentName: departmentId ? (departmentNames.get(departmentId) ?? null) : null,
       };
     }),
     transitions: [
@@ -218,13 +206,11 @@ async function loadLinkableTools(
 /** 수정 화면의 초기값. */
 export async function loadDemandForm(demandId: string): Promise<{
   actor: Profile;
-  departments: Department[];
   demand: { id: string; status: DemandStatus } | null;
   initialForm: DemandFormInput;
 }> {
   const actor = await requireUser();
   const repositories = getRepositories();
-  const departments = await repositories.identity.listDepartments(actor.campusId);
 
   const demand = await repositories.demands.getDemand(asId<DemandId>(demandId));
   if (!demand || demand.deletedAt !== null) throw notFound('수요');
@@ -233,7 +219,6 @@ export async function loadDemandForm(demandId: string): Promise<{
 
   return {
     actor,
-    departments,
     demand: { id: demand.id, status: demand.status },
     initialForm: formFromDemand(demand),
   };
@@ -241,9 +226,7 @@ export async function loadDemandForm(demandId: string): Promise<{
 
 export async function loadNewDemandForm(): Promise<{
   actor: Profile;
-  departments: Department[];
 }> {
   const actor = await requireUser();
-  const departments = await getRepositories().identity.listDepartments(actor.campusId);
-  return { actor, departments };
+  return { actor };
 }

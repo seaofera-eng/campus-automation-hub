@@ -47,13 +47,12 @@ export default async function ToolsPage({
 }
 
 async function ToolListSection({ query }: { query: ToolQuery }) {
-  const { page, categories, departments, canCreate } = await guardPage(() => listTools(query));
+  const { page, categories, canCreate } = await guardPage(() => listTools(query));
 
   const hasFilters =
     query.keyword !== '' ||
     query.statuses.length > 0 ||
     query.categoryIds.length > 0 ||
-    query.departmentIds.length > 0 ||
     query.classifications.length > 0 ||
     query.onlyMine;
 
@@ -62,7 +61,6 @@ async function ToolListSection({ query }: { query: ToolQuery }) {
       <ToolFilters
         query={query}
         categories={categories}
-        departments={departments}
         canCreate={canCreate}
       />
 

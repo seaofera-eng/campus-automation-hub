@@ -3,11 +3,11 @@ import { can } from '@/domain/authz/policies';
 import type { Actor } from '@/domain/authz/policies';
 import { summarizeEvaluations } from '@/domain/evaluation/scoring';
 import type { EvaluationSummary } from '@/domain/evaluation/types';
-import type { Department, Profile } from '@/domain/identity/types';
+import type { Profile } from '@/domain/identity/types';
 import type { ImprovementRequest } from '@/domain/improvement/types';
 import { notFound } from '@/domain/shared/errors';
 import { asId } from '@/domain/shared/ids';
-import type { CategoryId, DepartmentId, ToolId } from '@/domain/shared/ids';
+import type { CategoryId, ToolId } from '@/domain/shared/ids';
 import type { Page } from '@/domain/shared/pagination';
 import { MAX_PAGE_SIZE, paginate } from '@/domain/shared/pagination';
 import type { RiskChecklist } from '@/domain/tool/risk-checklist-rules';
@@ -41,7 +41,6 @@ export interface ToolListResult {
   actor: Profile;
   page: Page<ToolListItem>;
   categories: ToolCategory[];
-  departments: Department[];
   /** 화면에 "내가 만든 도구" 필터를 보여줄지 */
   canCreate: boolean;
 }
@@ -64,9 +63,8 @@ export async function listTools(query: ToolQuery): Promise<ToolListResult> {
   const actor = toActor(profile);
   const repositories = getRepositories();
 
-  const [categories, departments, profiles] = await Promise.all([
+  const [categories, profiles] = await Promise.all([
     repositories.reference.listCategories(profile.campusId),
-    repositories.identity.listDepartments(profile.campusId),
     repositories.identity.listProfiles(profile.campusId),
   ]);
 
@@ -82,10 +80,6 @@ export async function listTools(query: ToolQuery): Promise<ToolListResult> {
         query.categoryIds.length > 0
           ? query.categoryIds.map((id) => asId<CategoryId>(id))
           : undefined,
-      departmentIds:
-        query.departmentIds.length > 0
-          ? query.departmentIds.map((id) => asId<DepartmentId>(id))
-          : undefined,
       dataClassifications:
         query.classifications.length > 0
           ? (query.classifications as DataClassification[])
@@ -97,14 +91,13 @@ export async function listTools(query: ToolQuery): Promise<ToolListResult> {
   );
 
   const visible = all.items.filter((tool) => canRead(actor, tool));
-  const items = await enrich(visible, categories, departments, profiles);
+  const items = await enrich(visible, categories, profiles);
   const sorted = sortItems(items, query.sort);
 
   return {
     actor: profile,
     page: paginate(sorted, { page: query.page, pageSize: query.pageSize }),
     categories,
-    departments,
     canCreate: can(actor, 'tool:create'),
   };
 }
@@ -112,14 +105,10 @@ export async function listTools(query: ToolQuery): Promise<ToolListResult> {
 async function enrich(
   tools: readonly AutomationTool[],
   categories: readonly ToolCategory[],
-  departments: readonly Department[],
   profiles: readonly Profile[],
 ): Promise<ToolListItem[]> {
   const repositories = getRepositories();
   const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
-  const departmentNames = new Map(
-    departments.map((department) => [department.id, department.name]),
-  );
   const personNames = new Map(profiles.map((profile) => [profile.id, profile.name]));
 
   return Promise.all(
@@ -138,7 +127,6 @@ async function enrich(
         // 빈 버전으로 그려서 최소한 항목이 보이게 한다.
         version: version ?? emptyVersion(tool),
         categoryName: categoryNames.get(tool.categoryId) ?? '미분류',
-        departmentName: departmentNames.get(tool.departmentId) ?? '미지정',
         ownerName: personNames.get(tool.ownerUserId) ?? '알 수 없음',
         evaluationCount: summary.count,
         averageOverallScore: summary.averageOverall,
@@ -253,9 +241,7 @@ export interface ToolDetail {
   version: AutomationToolVersion;
   versions: AutomationToolVersion[];
   categoryName: string;
-  departmentName: string;
   ownerName: string;
-  operationsManagerName: string | null;
   developerNames: string[];
   integrationSystems: IntegrationSystem[];
   attachments: AttachmentView[];
@@ -296,7 +282,6 @@ export async function loadToolDetail(toolId: string): Promise<ToolDetail> {
     version,
     versions,
     categories,
-    departments,
     profiles,
     integrationSystems,
     attachments,
@@ -310,7 +295,6 @@ export async function loadToolDetail(toolId: string): Promise<ToolDetail> {
     repositories.tools.getVersion(tool.currentVersionId),
     repositories.tools.listVersions(tool.id),
     repositories.reference.listCategories(tool.campusId),
-    repositories.identity.listDepartments(tool.campusId),
     repositories.identity.listProfiles(tool.campusId),
     repositories.reference.listIntegrationSystems(tool.campusId),
     listAttachments(toolId),
@@ -336,12 +320,7 @@ export async function loadToolDetail(toolId: string): Promise<ToolDetail> {
     version,
     versions,
     categoryName: categories.find((category) => category.id === tool.categoryId)?.name ?? '미분류',
-    departmentName:
-      departments.find((department) => department.id === tool.departmentId)?.name ?? '미지정',
     ownerName: name(tool.ownerUserId),
-    operationsManagerName: tool.operationsManagerUserId
-      ? name(tool.operationsManagerUserId)
-      : null,
     developerNames: tool.developerUserIds.map(name),
     integrationSystems,
     attachments,

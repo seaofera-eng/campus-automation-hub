@@ -2,7 +2,6 @@ import 'server-only';
 import type { AccountType, AdminPermission, MemberType } from '@/domain/authz/accounts';
 import type { UserId } from '@/domain/shared/ids';
 import { listDemoAccounts } from '@/lib/auth/demo-auth';
-import { getRepositories } from '@/lib/di/container';
 
 /**
  * 로그인 화면에 보여줄 데모 계정 목록.
@@ -20,19 +19,11 @@ export interface LoginOption {
   adminPermissions: readonly AdminPermission[];
   memberType: MemberType;
   title: string;
-  departmentName: string | null;
 }
 
 export async function listLoginOptions(): Promise<LoginOption[]> {
   const accounts = await listDemoAccounts();
   if (accounts.length === 0) return [];
-
-  const repositories = getRepositories();
-  const firstAccount = accounts[0];
-  const departments = firstAccount
-    ? await repositories.identity.listDepartments(firstAccount.campusId)
-    : [];
-  const departmentNames = new Map(departments.map((department) => [department.id, department.name]));
 
   // 계정 종류 순서를 고정해 화면이 매번 같은 순서로 보이게 한다.
   const order: Record<AccountType, number> = { USER: 0, ADMIN: 1 };
@@ -46,9 +37,6 @@ export async function listLoginOptions(): Promise<LoginOption[]> {
       adminPermissions: account.adminPermissions,
       memberType: account.memberType,
       title: account.title,
-      departmentName: account.departmentId
-        ? (departmentNames.get(account.departmentId) ?? null)
-        : null,
     }))
     .sort(
       (a, b) =>

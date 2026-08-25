@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { AUTOMATION_LEVELS, DATA_CLASSIFICATIONS, VISIBILITY_SCOPES } from '@/domain/tool/types';
+import { MEMBER_TYPES } from '@/domain/authz/accounts';
+import { AUTOMATION_LEVELS, DATA_CLASSIFICATIONS,
+  RUNTIME_KINDS,
+} from '@/domain/tool/types';
 import {
   nullableNumber,
   optionalText,
@@ -36,9 +39,10 @@ export const toolDraftSchema = z.object({
   name: requiredText('도구 이름', 2, 120),
   summary: optionalText.pipe(z.string().max(300, '한 줄 소개는 300자까지 입력할 수 있습니다.')),
   categoryId: optionalText,
-  departmentId: optionalText,
-  operationsManagerUserId: optionalText,
-  visibility: z.enum(VISIBILITY_SCOPES).default('CAMPUS'),
+  /** 어디서 실행하는가 (리뷰 4.1절) */
+  runtimeKind: z.enum(RUNTIME_KINDS).default('WEB'),
+  /** 누구에게 맞는 도구인가. 비우면 "누구나". 부서 대신 쓴다. */
+  recommendedFor: z.array(z.enum(MEMBER_TYPES)).default([]),
   tags: textList,
   description: optionalText,
   problemStatement: optionalText,
@@ -111,7 +115,6 @@ function requireFilled(
 export const toolSubmitSchema = toolDraftSchema.superRefine((value, context) => {
   requireFilled(context, value.summary, 'summary', '한 줄 소개를 입력해 주세요. 목록에서 이 문장으로 도구를 구분합니다.');
   requireFilled(context, value.categoryId, 'categoryId', '카테고리를 선택해 주세요.');
-  requireFilled(context, value.departmentId, 'departmentId', '담당 부서를 선택해 주세요.');
   requireFilled(context, value.description, 'description', '어떤 도구인지 설명을 입력해 주세요.');
   requireFilled(
     context,
@@ -198,9 +201,8 @@ export function emptyToolForm(): ToolFormInput {
     name: '',
     summary: '',
     categoryId: '',
-    departmentId: '',
-    operationsManagerUserId: '',
-    visibility: 'CAMPUS',
+    runtimeKind: 'WEB',
+    recommendedFor: [],
     tags: [],
     description: '',
     problemStatement: '',

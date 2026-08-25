@@ -3,11 +3,13 @@
 import { useWatch } from 'react-hook-form';
 import type { AttachmentView } from '@/application/tools/attachments';
 import { DataClassificationChip } from '@/components/common/status-badge';
+import { MEMBER_TYPE_LABELS } from '@/domain/authz/accounts';
+import type { MemberType } from '@/domain/authz/accounts';
 import { PhaseNotice } from '@/components/common/phase-notice';
 import { Field, Input, Textarea, fieldAria } from '@/components/ui/field';
 import {
   AUTOMATION_LEVEL_LABELS,
-  VISIBILITY_SCOPE_LABELS,
+  RUNTIME_KIND_LABELS,
 } from '@/domain/tool/types';
 import { AttachmentUploader } from './attachment-uploader';
 import { StepSection, type StepProps } from './shared';
@@ -32,8 +34,6 @@ export function StepReview({
 
   const categoryName =
     data.categories.find((category) => category.id === values.categoryId)?.name ?? '';
-  const departmentName =
-    data.departments.find((department) => department.id === values.departmentId)?.name ?? '';
   const usedClassifications = (values.classifications ?? []).filter((entry) => entry?.inUse);
   const integrationNames = (values.integrations ?? [])
     .map(
@@ -80,10 +80,19 @@ export function StepReview({
           <SummaryRow label="도구 이름" value={values.name} />
           <SummaryRow label="한 줄 소개" value={values.summary} />
           <SummaryRow label="카테고리" value={categoryName} />
-          <SummaryRow label="담당 부서" value={departmentName} />
           <SummaryRow
-            label="공개 범위"
-            value={values.visibility ? VISIBILITY_SCOPE_LABELS[values.visibility] : ''}
+            label="어디서 실행"
+            value={values.runtimeKind ? RUNTIME_KIND_LABELS[values.runtimeKind] : ''}
+          />
+          <SummaryRow
+            label="추천 대상"
+            value={
+              (values.recommendedFor ?? []).length > 0
+                ? (values.recommendedFor ?? [])
+                    .map((member: MemberType) => MEMBER_TYPE_LABELS[member])
+                    .join(', ')
+                : '누구나'
+            }
           />
           <SummaryRow
             label="자동화 수준"

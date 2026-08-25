@@ -86,7 +86,6 @@ export function DemoLoginForm({ accounts }: { accounts: readonly LoginOption[] }
                 </div>
 
                 <p className="text-xs text-fg-muted">
-                  {account.departmentName ? `${account.departmentName} · ` : ''}
                   {account.title}
                 </p>
                 <p className="text-xs text-fg-subtle">{account.email}</p>

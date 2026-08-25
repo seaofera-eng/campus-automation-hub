@@ -62,9 +62,6 @@ export function createSupabaseToolRepository(): ToolRepository {
       if (filters.categoryIds?.length) {
         query = query.in('category_id', [...filters.categoryIds]);
       }
-      if (filters.departmentIds?.length) {
-        query = query.in('department_id', [...filters.departmentIds]);
-      }
       if (filters.involvingUserId) {
         query = query.or(
           `owner_user_id.eq.${filters.involvingUserId},created_by.eq.${filters.involvingUserId}`,

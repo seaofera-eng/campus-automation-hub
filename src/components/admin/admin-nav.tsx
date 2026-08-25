@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils/cn';
 const ITEMS: readonly { href: string; label: string; requires?: AdminPermission }[] = [
   { href: '/admin', label: '현황' },
   { href: '/admin/users', label: '사용자', requires: 'MANAGE_USERS' },
-  { href: '/admin/departments', label: '부서', requires: 'MANAGE_CATEGORIES' },
   { href: '/admin/categories', label: '카테고리', requires: 'MANAGE_CATEGORIES' },
   { href: '/admin/audit-logs', label: '감사 로그', requires: 'VIEW_AUDIT' },
 ];

@@ -41,7 +41,6 @@ export interface ReviewQueueEntry {
   summary: string;
   status: ToolStatus;
   categoryName: string;
-  departmentName: string;
   ownerName: string;
   submittedAt: string;
   assignment: ReviewAssignment | null;
@@ -66,21 +65,17 @@ export async function loadReviewQueue(): Promise<ReviewQueue> {
   assertCan(toActor(actor), 'review:list');
 
   const repositories = getRepositories();
-  const [page, categories, departments, profiles] = await Promise.all([
+  const [page, categories, profiles] = await Promise.all([
     repositories.tools.listTools(
       { campusId: actor.campusId, statuses: REVIEWABLE_STATUSES },
       'STATUS',
       { page: 1, pageSize: MAX_PAGE_SIZE },
     ),
     repositories.reference.listCategories(actor.campusId),
-    repositories.identity.listDepartments(actor.campusId),
     repositories.identity.listProfiles(actor.campusId),
   ]);
 
   const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
-  const departmentNames = new Map(
-    departments.map((department) => [department.id, department.name]),
-  );
   const personNames = new Map(profiles.map((profile) => [profile.id, profile.name]));
 
   const entries = await Promise.all(
@@ -100,7 +95,6 @@ export async function loadReviewQueue(): Promise<ReviewQueue> {
         summary: tool.summary,
         status: tool.status,
         categoryName: categoryNames.get(tool.categoryId) ?? '미분류',
-        departmentName: departmentNames.get(tool.departmentId) ?? '미지정',
         ownerName: personNames.get(tool.ownerUserId) ?? '알 수 없음',
         submittedAt: submitted?.changedAt ?? tool.updatedAt,
         assignment,
@@ -138,7 +132,6 @@ export interface ReviewDetail {
   tool: AutomationTool;
   version: AutomationToolVersion;
   categoryName: string;
-  departmentName: string;
   ownerName: string;
   assignment: ReviewAssignment | null;
   assigneeName: string | null;
@@ -158,11 +151,10 @@ export async function loadReviewDetail(toolId: string): Promise<ReviewDetail> {
   const tool = await repositories.tools.getTool(asId<ToolId>(toolId));
   if (!tool || tool.deletedAt !== null) throw notFound('도구');
 
-  const [version, categories, departments, profiles, assignment, checklist, comments] =
+  const [version, categories, profiles, assignment, checklist, comments] =
     await Promise.all([
       repositories.tools.getVersion(tool.currentVersionId),
       repositories.reference.listCategories(tool.campusId),
-      repositories.identity.listDepartments(tool.campusId),
       repositories.identity.listProfiles(tool.campusId),
       repositories.reviews.getAssignmentForVersion(tool.currentVersionId),
       repositories.reviews.getChecklist(tool.currentVersionId),
@@ -178,8 +170,6 @@ export async function loadReviewDetail(toolId: string): Promise<ReviewDetail> {
     tool,
     version,
     categoryName: categories.find((category) => category.id === tool.categoryId)?.name ?? '미분류',
-    departmentName:
-      departments.find((department) => department.id === tool.departmentId)?.name ?? '미지정',
     ownerName: personNames.get(tool.ownerUserId) ?? '알 수 없음',
     assignment,
     assigneeName: assignment ? (personNames.get(assignment.reviewerUserId) ?? null) : null,

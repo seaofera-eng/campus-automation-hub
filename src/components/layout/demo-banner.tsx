@@ -16,7 +16,7 @@ export function DemoBanner() {
     >
       <TriangleAlert className="size-4 shrink-0" aria-hidden="true" />
       <span>
-        DEMO 모드입니다 — 화면의 모든 기관·부서·사용자·도구 정보는 실제와 무관한 가상의 예시
+        DEMO 모드입니다 — 화면의 모든 기관·사용자·도구 정보는 실제와 무관한 가상의 예시
         데이터입니다.
       </span>
     </div>

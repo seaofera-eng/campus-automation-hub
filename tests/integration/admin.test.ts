@@ -22,18 +22,13 @@ vi.mock('@/lib/auth/current-user', async (importOriginal) => {
 const { listAuditLogs } = await import('@/application/admin/audit');
 const {
   changeAccountPermissions,
-  deleteDepartment,
   listUsers,
   updateUser,
   upsertCategory,
-  upsertDepartment,
 } = await import('@/application/admin/manage');
 const { withAudit } = await import('@/application/shared/audit');
-const { saveDraft } = await import('@/application/tools/register');
 const { getRepositories } = await import('@/lib/di/container');
 const { parseAuditQuery } = await import('@/lib/validation/admin');
-const { emptyToolForm } = await import('@/lib/validation/tool');
-const { DEMO_DEPARTMENT_IDS } = await import('@/repositories/demo/seed-ids');
 const { demoProfile, setupIsolatedStore, teardownIsolatedStore } = await import('./helpers');
 
 beforeEach(() => {
@@ -179,7 +174,6 @@ describe('사용자 정보 수정', () => {
     await expect(
       updateUser(admin, {
         userId: admin.id,
-        departmentId: '',
         title: '',
         isActive: false,
       }),
@@ -192,102 +186,10 @@ describe('사용자 정보 수정', () => {
 
     const updated = await updateUser(admin, {
       userId: requester.id,
-      departmentId: requester.departmentId ?? '',
       title: requester.title,
       isActive: false,
     });
     expect(updated.isActive).toBe(false);
-  });
-});
-
-describe('부서 관리', () => {
-  it('부서를 추가하고 수정할 수 있다', async () => {
-    const admin = await signInAs('admin');
-
-    const created = await upsertDepartment(admin, {
-      departmentId: '',
-      name: '신설 지원과',
-      code: 'NEW_SUPPORT',
-      parentId: '',
-      sortOrder: 10,
-    });
-    expect(created.name).toBe('신설 지원과');
-
-    const updated = await upsertDepartment(admin, {
-      departmentId: created.id,
-      name: '개편 지원과',
-      code: 'NEW_SUPPORT',
-      parentId: '',
-      sortOrder: 10,
-    });
-    expect(updated.id).toBe(created.id);
-    expect(updated.name).toBe('개편 지원과');
-  });
-
-  it('자기 자신을 상위 부서로 지정할 수 없다', async () => {
-    const admin = await signInAs('admin');
-    const created = await upsertDepartment(admin, {
-      departmentId: '',
-      name: '순환 확인용',
-      code: 'CYCLE',
-      parentId: '',
-      sortOrder: 0,
-    });
-
-    await expect(
-      upsertDepartment(admin, {
-        departmentId: created.id,
-        name: '순환 확인용',
-        code: 'CYCLE',
-        parentId: created.id,
-        sortOrder: 0,
-      }),
-    ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' });
-  });
-
-  it('소속 인원이 있는 부서는 삭제할 수 없다', async () => {
-    const admin = await signInAs('admin');
-
-    await expect(
-      deleteDepartment(admin, DEMO_DEPARTMENT_IDS.academicAffairs),
-    ).rejects.toMatchObject({ code: 'CONFLICT' });
-  });
-
-  it('도구가 있는 부서는 삭제할 수 없다', async () => {
-    const admin = await signInAs('admin');
-    const developer = await demoProfile('developer');
-
-    const department = await upsertDepartment(admin, {
-      departmentId: '',
-      name: '도구만 있는 부서',
-      code: 'TOOL_ONLY',
-      parentId: '',
-      sortOrder: 0,
-    });
-
-    await saveDraft(developer, {
-      form: { ...emptyToolForm(), name: '이 부서 도구', departmentId: department.id },
-    });
-
-    await expect(deleteDepartment(admin, department.id)).rejects.toMatchObject({
-      code: 'CONFLICT',
-    });
-  });
-
-  it('비어 있는 부서는 삭제할 수 있다', async () => {
-    const admin = await signInAs('admin');
-    const department = await upsertDepartment(admin, {
-      departmentId: '',
-      name: '빈 부서',
-      code: 'EMPTY',
-      parentId: '',
-      sortOrder: 0,
-    });
-
-    await deleteDepartment(admin, department.id);
-
-    const remaining = await getRepositories().identity.listDepartments(admin.campusId);
-    expect(remaining.some((item) => item.id === department.id)).toBe(false);
   });
 });
 
@@ -394,7 +296,6 @@ describe('감사 로그 (요구사항 18번)', () => {
       () =>
         updateUser(admin, {
           userId: requester.id,
-          departmentId: DEMO_DEPARTMENT_IDS.informationCenter,
           title: '비밀 직위명',
           isActive: true,
         }),

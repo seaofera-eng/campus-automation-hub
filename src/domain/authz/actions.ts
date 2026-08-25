@@ -44,7 +44,6 @@ export const PERMISSION_ACTIONS = [
   // 관리
   'admin:dashboard',
   'admin:users',
-  'admin:departments',
   'admin:categories',
   'admin:auditLogs',
   'admin:notices',

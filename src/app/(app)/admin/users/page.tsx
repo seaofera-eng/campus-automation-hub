@@ -21,7 +21,7 @@ import {
 import { guardPage } from '@/lib/auth/page-guard';
 
 export default async function AdminUsersPage() {
-  const { actor, users, departments } = await guardPage(listUsers);
+  const { actor, users } = await guardPage(listUsers);
 
   return (
     <div className="flex flex-col gap-4">
@@ -37,7 +37,7 @@ export default async function AdminUsersPage() {
             <TableRow>
               <TableHeaderCell>이름</TableHeaderCell>
               <TableHeaderCell>권한</TableHeaderCell>
-              <TableHeaderCell>소속</TableHeaderCell>
+              <TableHeaderCell>직위</TableHeaderCell>
               <TableHeaderCell className="text-right">담당 도구</TableHeaderCell>
               <TableHeaderCell>상태</TableHeaderCell>
               <TableHeaderCell>
@@ -75,7 +75,6 @@ export default async function AdminUsersPage() {
                     ) : null}
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-sm text-fg-muted">
-                    {row.departmentName ?? '소속 없음'}
                     {row.profile.title ? (
                       <span className="block text-xs text-fg-subtle">{row.profile.title}</span>
                     ) : null}
@@ -101,8 +100,6 @@ export default async function AdminUsersPage() {
                       <EditUserDialog
                         userId={row.profile.id}
                         userName={row.profile.name}
-                        departments={departments}
-                        currentDepartmentId={row.profile.departmentId}
                         currentTitle={row.profile.title}
                         currentIsActive={row.profile.isActive}
                         isSelf={isSelf}

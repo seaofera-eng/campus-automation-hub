@@ -39,12 +39,6 @@ export function createDemoDemandRepository(): DemandRepository {
           if (demand.campusId !== filters.campusId) return false;
           if (demand.deletedAt !== null) return false;
           if (filters.statuses?.length && !filters.statuses.includes(demand.status)) return false;
-          if (
-            filters.departmentIds?.length &&
-            !filters.departmentIds.includes(demand.departmentId)
-          ) {
-            return false;
-          }
           if (filters.requesterUserId && demand.requesterUserId !== filters.requesterUserId) {
             return false;
           }

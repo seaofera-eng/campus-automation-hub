@@ -34,21 +34,8 @@ export const changeAccountPermissionsSchema = z
 
 export const updateUserSchema = z.object({
   userId: z.string().min(1),
-  departmentId: optionalText,
   title: optionalText.pipe(z.string().max(100, '직위는 100자까지 입력할 수 있습니다.')),
   isActive: z.boolean(),
-});
-
-export const upsertDepartmentSchema = z.object({
-  departmentId: optionalText,
-  name: requiredText('부서 이름', 1, 100),
-  code: requiredText('부서 코드', 1, 40),
-  parentId: optionalText,
-  sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
-});
-
-export const deleteDepartmentSchema = z.object({
-  departmentId: z.string().min(1),
 });
 
 export const upsertCategorySchema = z.object({

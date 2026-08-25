@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WORK_FREQUENCY_LABELS } from '@/domain/demand/types';
+import { MEMBER_TYPE_LABELS } from '@/domain/authz/accounts';
 import { guardPage } from '@/lib/auth/page-guard';
 import { buildDemandHref, parseDemandQuery } from '@/lib/validation/demand';
 import type { DemandQueryInput } from '@/lib/validation/demand';
@@ -40,17 +41,16 @@ export default async function DemandsPage({
 }
 
 async function DemandListSection({ query }: { query: DemandQueryInput }) {
-  const { page, departments } = await guardPage(() => listDemands(query));
+  const { page } = await guardPage(() => listDemands(query));
 
   const hasFilters =
     query.keyword !== '' ||
     query.statuses.length > 0 ||
-    query.departmentIds.length > 0 ||
     query.onlyMine;
 
   return (
     <div className="flex flex-col gap-5">
-      <DemandFilters query={query} departments={departments} />
+      <DemandFilters query={query} />
 
       {page.items.length === 0 ? (
         <EmptyState
@@ -122,12 +122,10 @@ async function DemandListSection({ query }: { query: DemandQueryInput }) {
 
                 <dl className="mt-2 flex flex-wrap gap-x-4 text-xs text-fg-subtle">
                   <div className="flex gap-1">
-                    <dt>부서</dt>
-                    <dd className="text-fg-muted">{entry.departmentName}</dd>
-                  </div>
-                  <div className="flex gap-1">
-                    <dt>등록</dt>
-                    <dd className="text-fg-muted">{entry.requesterName}</dd>
+                    <dt>수요자</dt>
+                    <dd className="text-fg-muted">
+                      {entry.requesterName} · {MEMBER_TYPE_LABELS[entry.requesterMemberType]}
+                    </dd>
                   </div>
                   <div className="flex gap-1">
                     <dt>주기</dt>

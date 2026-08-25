@@ -28,7 +28,6 @@ export interface ToolQuery {
   keyword: string;
   statuses: string[];
   categoryIds: string[];
-  departmentIds: string[];
   classifications: string[];
   page: number;
   sort: ToolSortKeyValue;
@@ -69,7 +68,6 @@ export function parseToolQuery(
     keyword: single('q').trim().slice(0, 100),
     statuses: list('status', TOOL_STATUSES),
     categoryIds: list('category'),
-    departmentIds: list('department'),
     classifications: list('classification', DATA_CLASSIFICATIONS),
     page: Number.isFinite(pageValue) && pageValue >= 1 ? Math.floor(pageValue) : 1,
     sort: (TOOL_SORT_KEYS as readonly string[]).includes(sortValue)
@@ -91,7 +89,6 @@ export function buildToolHref(query: ToolQuery, overrides: Partial<ToolQuery> = 
   if (merged.keyword) params.set('q', merged.keyword);
   for (const status of merged.statuses) params.append('status', status);
   for (const category of merged.categoryIds) params.append('category', category);
-  for (const department of merged.departmentIds) params.append('department', department);
   for (const classification of merged.classifications) {
     params.append('classification', classification);
   }

@@ -5,7 +5,7 @@ import type {
   DemandStatus,
 } from '@/domain/demand/types';
 import type { EvaluationHistoryEntry, ToolEvaluation } from '@/domain/evaluation/types';
-import type { Campus, Department, Profile } from '@/domain/identity/types';
+import type { Campus, Profile } from '@/domain/identity/types';
 import type {
   ImprovementRequest,
   ImprovementRequestHistoryEntry,
@@ -28,7 +28,6 @@ import type {
   CampusId,
   CategoryId,
   DemandId,
-  DepartmentId,
   EvaluationId,
   ImprovementRequestId,
   ToolId,
@@ -52,10 +51,6 @@ export interface IdentityRepository {
   getCampus(id: CampusId): Promise<Campus | null>;
   getDefaultCampus(): Promise<Campus>;
 
-  listDepartments(campusId: CampusId): Promise<Department[]>;
-  getDepartment(id: DepartmentId): Promise<Department | null>;
-  upsertDepartment(department: Department): Promise<Department>;
-  softDeleteDepartment(id: DepartmentId, at: string): Promise<void>;
 
   listProfiles(campusId: CampusId): Promise<Profile[]>;
   getProfile(id: UserId): Promise<Profile | null>;
@@ -72,7 +67,6 @@ export interface ToolQueryFilters {
   keyword?: string;
   statuses?: readonly ToolStatus[];
   categoryIds?: readonly CategoryId[];
-  departmentIds?: readonly DepartmentId[];
   dataClassifications?: readonly DataClassification[];
   /** 특정 사용자가 담당자·개발자인 도구만 */
   involvingUserId?: UserId;
@@ -138,7 +132,6 @@ export interface DemandQueryFilters {
   campusId: CampusId;
   keyword?: string;
   statuses?: readonly DemandStatus[];
-  departmentIds?: readonly DepartmentId[];
   requesterUserId?: UserId;
 }
 

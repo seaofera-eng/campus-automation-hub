@@ -160,9 +160,7 @@ export function can(actor: Actor, action: PermissionAction, context: ResourceCon
     case 'admin:users':
       return may(actor, 'MANAGE_USERS');
 
-    case 'admin:departments':
     case 'admin:categories':
-      // 부서는 2단계에서 없앤다. 그때까지는 카테고리와 같은 분류 관리로 본다.
       return may(actor, 'MANAGE_CATEGORIES');
 
     case 'admin:auditLogs':

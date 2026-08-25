@@ -1,10 +1,10 @@
 import 'server-only';
 import type { AccountType, AdminPermission } from '@/domain/authz/accounts';
 import { assertCan } from '@/domain/authz/policies';
-import type { Department, Profile } from '@/domain/identity/types';
+import type { Profile } from '@/domain/identity/types';
 import { conflict, notFound, preconditionFailed } from '@/domain/shared/errors';
 import { asId, newId } from '@/domain/shared/ids';
-import type { CampusId, CategoryId, DepartmentId, UserId } from '@/domain/shared/ids';
+import type { CampusId, CategoryId, UserId } from '@/domain/shared/ids';
 import { MAX_PAGE_SIZE } from '@/domain/shared/pagination';
 import type { ToolCategory } from '@/domain/tool/types';
 import { requireUser, toActor } from '@/lib/auth/current-user';
@@ -23,7 +23,6 @@ import { getRepositories } from '@/lib/di/container';
 
 export interface AdminUserRow {
   profile: Profile;
-  departmentName: string | null;
   /** 이 사람이 담당하거나 개발한 도구 수 */
   toolCount: number;
 }
@@ -31,22 +30,19 @@ export interface AdminUserRow {
 export async function listUsers(): Promise<{
   actor: Profile;
   users: AdminUserRow[];
-  departments: Department[];
 }> {
   const actor = await requireUser();
   assertCan(toActor(actor), 'admin:users');
 
   const repositories = getRepositories();
-  const [profiles, departments, toolPage] = await Promise.all([
+  const [profiles, toolPage] = await Promise.all([
     repositories.identity.listProfiles(actor.campusId),
-    repositories.identity.listDepartments(actor.campusId),
     repositories.tools.listTools({ campusId: actor.campusId }, 'RECENT', {
       page: 1,
       pageSize: MAX_PAGE_SIZE,
     }),
   ]);
 
-  const departmentNames = new Map(departments.map((d) => [d.id, d.name]));
   const toolCounts = new Map<string, number>();
   for (const tool of toolPage.items) {
     for (const userId of new Set([tool.ownerUserId, ...tool.developerUserIds])) {
@@ -56,13 +52,9 @@ export async function listUsers(): Promise<{
 
   return {
     actor,
-    departments,
     users: profiles
       .map((profile) => ({
         profile,
-        departmentName: profile.departmentId
-          ? (departmentNames.get(profile.departmentId) ?? null)
-          : null,
         toolCount: toolCounts.get(profile.id) ?? 0,
       }))
       .sort((a, b) => a.profile.name.localeCompare(b.profile.name, 'ko')),
@@ -120,7 +112,6 @@ function sameSet(a: readonly AdminPermission[], b: readonly AdminPermission[]): 
 
 export interface UpdateUserInput {
   userId: string;
-  departmentId: string;
   title: string;
   isActive: boolean;
 }
@@ -140,114 +131,10 @@ export async function updateUser(actor: Profile, input: UpdateUserInput): Promis
 
   return repositories.identity.updateProfile({
     ...profile,
-    departmentId: input.departmentId ? asId<DepartmentId>(input.departmentId) : null,
     title: input.title,
     isActive: input.isActive,
     updatedAt: new Date().toISOString(),
   });
-}
-
-/* -------------------------------------------------------------------------- */
-/* 부서                                                                        */
-/* -------------------------------------------------------------------------- */
-
-export async function listDepartmentsForAdmin(): Promise<{
-  actor: Profile;
-  departments: (Department & { memberCount: number; toolCount: number })[];
-}> {
-  const actor = await requireUser();
-  assertCan(toActor(actor), 'admin:departments');
-
-  const repositories = getRepositories();
-  const [departments, profiles, toolPage] = await Promise.all([
-    repositories.identity.listDepartments(actor.campusId),
-    repositories.identity.listProfiles(actor.campusId),
-    repositories.tools.listTools({ campusId: actor.campusId }, 'RECENT', {
-      page: 1,
-      pageSize: MAX_PAGE_SIZE,
-    }),
-  ]);
-
-  return {
-    actor,
-    departments: departments.map((department) => ({
-      ...department,
-      memberCount: profiles.filter((profile) => profile.departmentId === department.id).length,
-      toolCount: toolPage.items.filter((tool) => tool.departmentId === department.id).length,
-    })),
-  };
-}
-
-export interface UpsertDepartmentInput {
-  departmentId: string;
-  name: string;
-  code: string;
-  parentId: string;
-  sortOrder: number;
-}
-
-export async function upsertDepartment(
-  actor: Profile,
-  input: UpsertDepartmentInput,
-): Promise<Department> {
-  assertCan(toActor(actor), 'admin:departments');
-
-  const repositories = getRepositories();
-  const existing = input.departmentId
-    ? await repositories.identity.getDepartment(asId<DepartmentId>(input.departmentId))
-    : null;
-
-  if (input.departmentId && !existing) throw notFound('부서');
-
-  // 자기 자신을 상위 부서로 지정하면 순환이 된다.
-  if (input.parentId && input.parentId === input.departmentId) {
-    throw preconditionFailed('자기 자신을 상위 부서로 지정할 수 없습니다.');
-  }
-
-  const now = new Date().toISOString();
-  return repositories.identity.upsertDepartment({
-    id: existing?.id ?? newId<DepartmentId>(),
-    campusId: actor.campusId as CampusId,
-    name: input.name,
-    code: input.code,
-    parentId: input.parentId ? asId<DepartmentId>(input.parentId) : null,
-    sortOrder: input.sortOrder,
-    createdAt: existing?.createdAt ?? now,
-    updatedAt: now,
-    deletedAt: null,
-  });
-}
-
-export async function deleteDepartment(actor: Profile, departmentId: string): Promise<void> {
-  assertCan(toActor(actor), 'admin:departments');
-
-  const repositories = getRepositories();
-  const id = asId<DepartmentId>(departmentId);
-  const department = await repositories.identity.getDepartment(id);
-  if (!department || department.deletedAt !== null) throw notFound('부서');
-
-  // 소속된 사람이나 도구가 있으면 지우지 않는다. 지우면 그들의 소속이 사라진다.
-  const [profiles, toolPage] = await Promise.all([
-    repositories.identity.listProfiles(actor.campusId),
-    repositories.tools.listTools({ campusId: actor.campusId, departmentIds: [id] }, 'RECENT', {
-      page: 1,
-      pageSize: 1,
-    }),
-  ]);
-
-  const memberCount = profiles.filter((profile) => profile.departmentId === id).length;
-  if (memberCount > 0) {
-    throw conflict(
-      `이 부서에 ${memberCount}명이 소속되어 있어 삭제할 수 없습니다. 소속을 먼저 옮겨 주세요.`,
-    );
-  }
-  if (toolPage.totalItems > 0) {
-    throw conflict(
-      `이 부서에 등록된 도구가 ${toolPage.totalItems}건 있어 삭제할 수 없습니다. 담당 부서를 먼저 바꿔 주세요.`,
-    );
-  }
-
-  await repositories.identity.softDeleteDepartment(id, new Date().toISOString());
 }
 
 /* -------------------------------------------------------------------------- */

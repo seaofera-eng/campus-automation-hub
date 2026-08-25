@@ -1,8 +1,10 @@
 import type { AdminPermission } from '@/domain/authz/accounts';
 import { isAdminPermission, isMemberType } from '@/domain/authz/accounts';
+import type { MemberType } from '@/domain/authz/accounts';
+import { isRuntimeKind } from '@/domain/tool/types';
 import type { AutomationDemand, DemandMatch, DemandParticipant } from '@/domain/demand/types';
 import type { EvaluationHistoryEntry, ToolEvaluation } from '@/domain/evaluation/types';
-import type { Campus, Department, Profile } from '@/domain/identity/types';
+import type { Campus, Profile } from '@/domain/identity/types';
 import type {
   ImprovementRequest,
   ImprovementRequestHistoryEntry,
@@ -71,32 +73,6 @@ export function toCampus(row: Row): Campus {
   };
 }
 
-export function toDepartment(row: Row): Department {
-  return {
-    id: asId(row.id),
-    campusId: asId(row.campus_id),
-    name: str(row.name),
-    code: str(row.code),
-    parentId: optId(row.parent_id),
-    sortOrder: num(row.sort_order) ?? 0,
-    createdAt: str(row.created_at),
-    updatedAt: str(row.updated_at),
-    deletedAt: row.deleted_at ?? null,
-  };
-}
-
-export function fromDepartment(department: Department): Row {
-  return {
-    id: department.id,
-    campus_id: department.campusId,
-    name: department.name,
-    code: department.code,
-    parent_id: department.parentId,
-    sort_order: department.sortOrder,
-    deleted_at: department.deletedAt,
-  };
-}
-
 /** profiles 행 + user_roles 조인 결과를 하나의 Profile 로 합친다. */
 export function toProfile(row: Row): Profile {
   // 권한 행은 여러 개일 수 있다. 계정 종류는 하나, 세부 권한은 여러 줄로 들어온다.
@@ -118,7 +94,6 @@ export function toProfile(row: Row): Profile {
     campusId: asId(row.campus_id),
     email: str(row.email),
     name: str(row.name),
-    departmentId: optId(row.department_id),
     title: str(row.title),
     accountType,
     adminPermissions,
@@ -137,7 +112,6 @@ export function fromProfile(profile: Profile): Row {
     campus_id: profile.campusId,
     email: profile.email,
     name: profile.name,
-    department_id: profile.departmentId,
     title: profile.title,
     is_active: profile.isActive,
     is_demo_account: profile.isDemoAccount,
@@ -201,11 +175,12 @@ export function toTool(row: Row): AutomationTool {
     name: str(row.name),
     summary: str(row.summary),
     categoryId: asId(row.category_id),
-    departmentId: asId(row.department_id),
+    runtimeKind: isRuntimeKind(row.runtime_kind) ? row.runtime_kind : 'WEB',
+    recommendedFor: Array.isArray(row.recommended_for)
+      ? row.recommended_for.filter((value: unknown): value is MemberType => isMemberType(value))
+      : [],
     ownerUserId: asId(row.owner_user_id),
-    operationsManagerUserId: optId(row.operations_manager_user_id),
     developerUserIds: developers.map((d: Row) => asId(d.user_id)),
-    visibility: row.visibility ?? 'CAMPUS',
     status: row.status ?? 'DRAFT',
     currentVersionId: asId(row.current_version_id ?? ''),
     tags: tagRelations
@@ -225,10 +200,7 @@ export function fromTool(tool: AutomationTool): Row {
     name: tool.name,
     summary: tool.summary,
     category_id: tool.categoryId,
-    department_id: tool.departmentId,
     owner_user_id: tool.ownerUserId,
-    operations_manager_user_id: tool.operationsManagerUserId,
-    visibility: tool.visibility,
     status: tool.status,
     current_version_id: tool.currentVersionId || null,
     created_by: tool.createdBy,
@@ -479,7 +451,6 @@ export function toDemand(row: Row): AutomationDemand {
     id: asId(row.id),
     campusId: asId(row.campus_id),
     title: str(row.title),
-    departmentId: asId(row.department_id),
     requesterUserId: asId(row.requester_user_id),
     currentWorkDescription: str(row.current_work_description),
     mostPainfulStep: str(row.most_painful_step),
@@ -508,7 +479,6 @@ export function fromDemand(demand: AutomationDemand): Row {
     id: demand.id,
     campus_id: demand.campusId,
     title: demand.title,
-    department_id: demand.departmentId,
     requester_user_id: demand.requesterUserId,
     current_work_description: demand.currentWorkDescription,
     most_painful_step: demand.mostPainfulStep,

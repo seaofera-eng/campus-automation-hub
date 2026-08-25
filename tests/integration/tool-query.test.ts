@@ -143,7 +143,6 @@ describe('상세 조회', () => {
 
     expect(detail.tool.status).toBe('APPROVED');
     expect(detail.categoryName).not.toBe('미분류');
-    expect(detail.departmentName).not.toBe('미지정');
     expect(detail.statusHistory.length).toBeGreaterThan(0);
   });
 

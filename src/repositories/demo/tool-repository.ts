@@ -45,9 +45,6 @@ function applyFilters(db: DemoDatabase, filters: ToolQueryFilters): AutomationTo
 
     if (filters.statuses?.length && !filters.statuses.includes(tool.status)) return false;
     if (filters.categoryIds?.length && !filters.categoryIds.includes(tool.categoryId)) return false;
-    if (filters.departmentIds?.length && !filters.departmentIds.includes(tool.departmentId)) {
-      return false;
-    }
 
     if (filters.involvingUserId) {
       const involved =

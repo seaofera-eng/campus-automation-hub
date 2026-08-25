@@ -11,7 +11,6 @@ import { nullableNumber, optionalText, requiredText, textList } from './common';
 
 export const demandDraftSchema = z.object({
   title: requiredText('수요 제목', 2, 150),
-  departmentId: optionalText,
 
   currentWorkDescription: optionalText,
   mostPainfulStep: optionalText,
@@ -49,7 +48,6 @@ export const demandPublishSchema = demandDraftSchema.superRefine((value, context
     }
   };
 
-  require('departmentId', '수요를 등록하는 부서를 선택해 주세요.');
   require(
     'currentWorkDescription',
     '지금 이 업무를 어떻게 처리하고 있는지 적어 주세요. 개발자가 무엇을 만들지 판단하는 근거가 됩니다.',
@@ -105,7 +103,6 @@ export const joinDemandSchema = z.object({
 export function emptyDemandForm(): DemandFormInput {
   return {
     title: '',
-    departmentId: '',
     currentWorkDescription: '',
     mostPainfulStep: '',
     inputMaterials: '',
@@ -130,7 +127,6 @@ export function emptyDemandForm(): DemandFormInput {
 export interface DemandQueryInput {
   keyword: string;
   statuses: string[];
-  departmentIds: string[];
   onlyMine: boolean;
   page: number;
   pageSize: number;
@@ -157,7 +153,6 @@ export function parseDemandQuery(
   return {
     keyword: single('q').trim().slice(0, 100),
     statuses: list('status', DEMAND_STATUSES),
-    departmentIds: list('department'),
     onlyMine: single('mine') === '1',
     page: Number.isFinite(pageValue) && pageValue >= 1 ? Math.floor(pageValue) : 1,
     pageSize: 12,
@@ -173,7 +168,6 @@ export function buildDemandHref(
 
   if (merged.keyword) params.set('q', merged.keyword);
   for (const status of merged.statuses) params.append('status', status);
-  for (const department of merged.departmentIds) params.append('department', department);
   if (merged.onlyMine) params.set('mine', '1');
   if (merged.page > 1) params.set('page', String(merged.page));
 

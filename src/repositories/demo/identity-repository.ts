@@ -1,6 +1,6 @@
 import 'server-only';
-import type { Campus, Department, Profile } from '@/domain/identity/types';
-import type { CampusId, DepartmentId, UserId } from '@/domain/shared/ids';
+import type { Campus, Profile } from '@/domain/identity/types';
+import type { CampusId, UserId } from '@/domain/shared/ids';
 import type { IdentityRepository } from '../types';
 import { clone, loadDb, mutateDb } from './store';
 
@@ -18,38 +18,9 @@ export function createDemoIdentityRepository(): IdentityRepository {
       return clone(campus);
     },
 
-    async listDepartments(campusId: CampusId): Promise<Department[]> {
-      const db = await loadDb();
-      return clone(
-        db.departments
-          .filter((dept) => dept.campusId === campusId && dept.deletedAt === null)
-          .sort((a, b) => a.sortOrder - b.sortOrder),
-      );
-    },
 
-    async getDepartment(id: DepartmentId): Promise<Department | null> {
-      const db = await loadDb();
-      return clone(db.departments.find((dept) => dept.id === id) ?? null);
-    },
 
-    async upsertDepartment(department: Department): Promise<Department> {
-      return mutateDb((db) => {
-        const index = db.departments.findIndex((dept) => dept.id === department.id);
-        if (index >= 0) db.departments[index] = clone(department);
-        else db.departments.push(clone(department));
-        return clone(department);
-      });
-    },
 
-    async softDeleteDepartment(id: DepartmentId, at: string): Promise<void> {
-      await mutateDb((db) => {
-        const dept = db.departments.find((row) => row.id === id);
-        if (dept) {
-          dept.deletedAt = at;
-          dept.updatedAt = at;
-        }
-      });
-    },
 
     async listProfiles(campusId: CampusId): Promise<Profile[]> {
       const db = await loadDb();

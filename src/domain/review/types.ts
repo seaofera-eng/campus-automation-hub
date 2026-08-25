@@ -52,7 +52,6 @@ export interface ReviewQueueItem {
   toolId: ToolId;
   toolName: string;
   toolSummary: string;
-  departmentName: string;
   categoryName: string;
   status: string;
   submittedAt: string;

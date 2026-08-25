@@ -3,7 +3,6 @@ import type {
   CampusId,
   CategoryId,
   DemandId,
-  DepartmentId,
   IntegrationSystemId,
   ToolId,
   ToolVersionId,
@@ -23,15 +22,6 @@ function uuid(group: number, index: number): string {
 }
 
 export const DEMO_CAMPUS_ID = asId<CampusId>(uuid(1, 1));
-
-export const DEMO_DEPARTMENT_IDS = {
-  academicAffairs: asId<DepartmentId>(uuid(2, 1)),
-  researchSupport: asId<DepartmentId>(uuid(2, 2)),
-  industryCooperation: asId<DepartmentId>(uuid(2, 3)),
-  studentCounseling: asId<DepartmentId>(uuid(2, 4)),
-  informationCenter: asId<DepartmentId>(uuid(2, 5)),
-  sharedUniversity: asId<DepartmentId>(uuid(2, 6)),
-} as const;
 
 export const DEMO_USER_IDS = {
   developer: asId<UserId>(uuid(3, 1)),

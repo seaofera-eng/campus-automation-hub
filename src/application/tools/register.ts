@@ -5,12 +5,10 @@ import { conflict, notFound } from '@/domain/shared/errors';
 import { asId, newId } from '@/domain/shared/ids';
 import type {
   CategoryId,
-  DepartmentId,
   IntegrationSystemId,
   StatusHistoryId,
   ToolId,
   ToolVersionId,
-  UserId,
 } from '@/domain/shared/ids';
 import { assertTransitionAllowed } from '@/domain/tool/status-machine';
 import type { AutomationTool, AutomationToolVersion } from '@/domain/tool/types';
@@ -126,9 +124,8 @@ export function formFromTool(
     name: tool.name,
     summary: tool.summary,
     categoryId: tool.categoryId,
-    departmentId: tool.departmentId,
-    operationsManagerUserId: tool.operationsManagerUserId ?? '',
-    visibility: tool.visibility,
+    runtimeKind: tool.runtimeKind,
+    recommendedFor: tool.recommendedFor,
     tags: tool.tags,
     description: version.description,
     problemStatement: version.problemStatement,
@@ -208,14 +205,10 @@ export async function saveDraft(actor: Profile, input: SaveDraftInput): Promise<
     name: input.form.name,
     summary: input.form.summary,
     categoryId: asId<CategoryId>(input.form.categoryId),
-    // 부서를 아직 고르지 않았으면 작성자 소속을 기본값으로 둔다.
-    departmentId: asId<DepartmentId>(input.form.departmentId || (actor.departmentId ?? '')),
+    runtimeKind: input.form.runtimeKind,
+    recommendedFor: input.form.recommendedFor,
     ownerUserId: actor.id,
-    operationsManagerUserId: input.form.operationsManagerUserId
-      ? asId<UserId>(input.form.operationsManagerUserId)
-      : null,
     developerUserIds: [actor.id],
-    visibility: input.form.visibility,
     status: 'DRAFT',
     currentVersionId: versionId,
     tags: input.form.tags,
@@ -287,11 +280,6 @@ async function updateExistingDraft(
     name: form.name,
     summary: form.summary,
     categoryId: asId<CategoryId>(form.categoryId),
-    departmentId: asId<DepartmentId>(form.departmentId || tool.departmentId),
-    operationsManagerUserId: form.operationsManagerUserId
-      ? asId<UserId>(form.operationsManagerUserId)
-      : null,
-    visibility: form.visibility,
     tags: form.tags,
     updatedAt: now,
   };

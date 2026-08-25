@@ -2,8 +2,10 @@
 
 import { Controller } from 'react-hook-form';
 import { StringListInput } from '@/components/common/string-list-input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Field, Input, NativeSelect, Textarea, fieldAria } from '@/components/ui/field';
-import { VISIBILITY_SCOPES, VISIBILITY_SCOPE_LABELS } from '@/domain/tool/types';
+import { MEMBER_TYPES, MEMBER_TYPE_LABELS } from '@/domain/authz/accounts';
+import { RUNTIME_KINDS, RUNTIME_KIND_LABELS } from '@/domain/tool/types';
 import { StepSection, type StepProps } from './shared';
 
 export function StepBasic({ form, data }: StepProps) {
@@ -59,61 +61,51 @@ export function StepBasic({ form, data }: StepProps) {
           </Field>
 
           <Field
-            label="담당 부서"
-            htmlFor="departmentId"
+            label="어디서 실행하나요"
+            htmlFor="runtimeKind"
             required
-            error={errors.departmentId?.message}
+            hint="설치가 필요한지 아닌지가 쓸지 말지를 가릅니다."
+            error={errors.runtimeKind?.message}
           >
-            <NativeSelect
-              {...register('departmentId')}
-              {...fieldAria('departmentId', undefined, errors.departmentId?.message)}
-            >
-              <option value="">선택해 주세요</option>
-              {data.departments.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
+            <NativeSelect {...register('runtimeKind')} {...fieldAria('runtimeKind', 'hint')}>
+              {RUNTIME_KINDS.map((kind) => (
+                <option key={kind} value={kind}>
+                  {RUNTIME_KIND_LABELS[kind]}
                 </option>
               ))}
             </NativeSelect>
           </Field>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="운영 책임자"
-            htmlFor="operationsManagerUserId"
-            hint="장애나 문의가 생겼을 때 연락할 사람입니다."
-            error={errors.operationsManagerUserId?.message}
-          >
-            <NativeSelect
-              {...register('operationsManagerUserId')}
-              {...fieldAria('operationsManagerUserId', 'hint')}
-            >
-              <option value="">지정하지 않음</option>
-              {data.people.map((person) => (
-                <option key={person.id} value={person.id}>
-                  {person.name}
-                  {person.departmentName ? ` (${person.departmentName})` : ''}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-
-          <Field
-            label="공개 범위"
-            htmlFor="visibility"
-            hint="누구에게 목록에 보일지 정합니다."
-            error={errors.visibility?.message}
-          >
-            <NativeSelect {...register('visibility')} {...fieldAria('visibility', 'hint')}>
-              {VISIBILITY_SCOPES.map((scope) => (
-                <option key={scope} value={scope}>
-                  {VISIBILITY_SCOPE_LABELS[scope]}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-        </div>
+        <Controller
+          control={control}
+          name="recommendedFor"
+          render={({ field }) => (
+            <fieldset className="flex flex-col gap-2">
+              <legend className="text-sm font-medium text-fg">누구에게 맞는 도구인가요</legend>
+              <p className="text-xs text-fg-muted">
+                아무것도 고르지 않으면 &quot;누구나&quot;로 표시됩니다.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {MEMBER_TYPES.map((member) => (
+                  <label key={member} className="flex items-center gap-1.5 text-sm">
+                    <Checkbox
+                      checked={field.value.includes(member)}
+                      onCheckedChange={(checked) =>
+                        field.onChange(
+                          checked === true
+                            ? [...field.value, member]
+                            : field.value.filter((value: string) => value !== member),
+                        )
+                      }
+                    />
+                    {MEMBER_TYPE_LABELS[member]}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+        />
 
         <Field
           label="태그"

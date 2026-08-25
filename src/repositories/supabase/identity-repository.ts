@@ -1,16 +1,14 @@
 import 'server-only';
-import type { Campus, Department, Profile } from '@/domain/identity/types';
-import type { CampusId, CategoryId, DepartmentId, UserId } from '@/domain/shared/ids';
+import type { Campus, Profile } from '@/domain/identity/types';
+import type { CampusId, CategoryId, UserId } from '@/domain/shared/ids';
 import type { IntegrationSystem, ToolCategory } from '@/domain/tool/types';
 import type { IdentityRepository, ReferenceDataRepository } from '../types';
 import { getUserClient, throwOnError } from './client';
 import {
   fromCategory,
-  fromDepartment,
   fromProfile,
   toCampus,
   toCategory,
-  toDepartment,
   toIntegrationSystem,
   toProfile,
 } from './mappers';
@@ -44,45 +42,9 @@ export function createSupabaseIdentityRepository(): IdentityRepository {
       return toCampus(data);
     },
 
-    async listDepartments(campusId: CampusId): Promise<Department[]> {
-      const supabase = await getUserClient();
-      const { data, error } = await supabase
-        .from('departments')
-        .select('*')
-        .eq('campus_id', campusId)
-        .is('deleted_at', null)
-        .order('sort_order', { ascending: true });
-      throwOnError(error, '부서 목록 조회');
-      return (data ?? []).map(toDepartment);
-    },
 
-    async getDepartment(id: DepartmentId): Promise<Department | null> {
-      const supabase = await getUserClient();
-      const { data, error } = await supabase
-        .from('departments')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-      throwOnError(error, '부서 조회');
-      return data ? toDepartment(data) : null;
-    },
 
-    async upsertDepartment(department: Department): Promise<Department> {
-      const supabase = await getUserClient();
-      const { data, error } = await supabase
-        .from('departments')
-        .upsert(fromDepartment(department))
-        .select('*')
-        .single();
-      throwOnError(error, '부서 저장');
-      return toDepartment(data);
-    },
 
-    async softDeleteDepartment(id: DepartmentId, at: string): Promise<void> {
-      const supabase = await getUserClient();
-      const { error } = await supabase.from('departments').update({ deleted_at: at }).eq('id', id);
-      throwOnError(error, '부서 삭제');
-    },
 
     async listProfiles(campusId: CampusId): Promise<Profile[]> {
       const supabase = await getUserClient();

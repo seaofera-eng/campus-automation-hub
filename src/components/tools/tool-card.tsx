@@ -2,7 +2,8 @@ import { MessageSquareWarning, Star, Users } from 'lucide-react';
 import Link from 'next/link';
 import { DataClassificationChip, ToolStatusBadge } from '@/components/common/status-badge';
 import type { ToolListItem } from '@/domain/tool/types';
-import { AUTOMATION_LEVEL_LABELS } from '@/domain/tool/types';
+import { MEMBER_TYPE_LABELS } from '@/domain/authz/accounts';
+import { AUTOMATION_LEVEL_LABELS, RUNTIME_KIND_LABELS } from '@/domain/tool/types';
 
 /**
  * 목록의 카드 한 장.
@@ -41,8 +42,16 @@ export function ToolCard({ item }: { item: ToolListItem }) {
             <dd>{item.categoryName}</dd>
           </div>
           <div className="flex gap-1">
-            <dt className="sr-only">담당 부서</dt>
-            <dd>{item.departmentName}</dd>
+            <dt className="sr-only">실행 방식</dt>
+            <dd>{RUNTIME_KIND_LABELS[item.tool.runtimeKind]}</dd>
+          </div>
+          <div className="flex gap-1">
+            <dt className="sr-only">추천 대상</dt>
+            <dd>
+              {item.tool.recommendedFor.length > 0
+                ? item.tool.recommendedFor.map((m) => MEMBER_TYPE_LABELS[m]).join('·')
+                : '누구나'}
+            </dd>
           </div>
           <div className="flex gap-1">
             <dt className="sr-only">자동화 수준</dt>

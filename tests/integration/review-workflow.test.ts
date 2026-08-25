@@ -12,7 +12,7 @@ import type { RiskChecklistItem } from '@/domain/tool/risk-checklist-rules';
 import type { ToolId } from '@/domain/shared/ids';
 import { getRepositories } from '@/lib/di/container';
 import { emptyToolForm, type ToolFormInput } from '@/lib/validation/tool';
-import { DEMO_CATEGORY_IDS, DEMO_DEPARTMENT_IDS } from '@/repositories/demo/seed-ids';
+import { DEMO_CATEGORY_IDS } from '@/repositories/demo/seed-ids';
 import { demoProfile, setupIsolatedStore, teardownIsolatedStore } from './helpers';
 
 /**
@@ -32,7 +32,6 @@ function completeForm(name: string): ToolFormInput {
     name,
     summary: '테스트용 도구입니다.',
     categoryId: DEMO_CATEGORY_IDS.documentMeeting,
-    departmentId: DEMO_DEPARTMENT_IDS.academicAffairs,
     description: '설명',
     problemStatement: '문제 설명',
     keyFeatures: ['기능 1'],

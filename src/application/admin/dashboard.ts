@@ -3,7 +3,10 @@ import { DEMAND_STATUS_LABELS } from '@/domain/demand/types';
 import { IMPROVEMENT_STATUS_LABELS } from '@/domain/improvement/types';
 import type { ActivityEntry, DashboardStats } from '@/domain/observability/types';
 import { MAX_PAGE_SIZE } from '@/domain/shared/pagination';
-import { TOOL_STATUS_LABELS, TOOL_STATUSES } from '@/domain/tool/types';
+import { TOOL_STATUS_LABELS, TOOL_STATUSES,
+  RUNTIME_KINDS,
+  RUNTIME_KIND_LABELS,
+} from '@/domain/tool/types';
 import type { Profile } from '@/domain/identity/types';
 import { requireUser } from '@/lib/auth/current-user';
 import { getRepositories } from '@/lib/di/container';
@@ -26,7 +29,7 @@ export async function loadDashboard(): Promise<DashboardData> {
   const repositories = getRepositories();
   const campusId = profile.campusId;
 
-  const [toolCounts, demandCounts, improvementCounts, evaluationCount, activity, categories, departments] =
+  const [toolCounts, demandCounts, improvementCounts, evaluationCount, activity, categories] =
     await Promise.all([
       repositories.tools.countByStatus(campusId),
       repositories.demands.countByStatus(campusId),
@@ -34,7 +37,6 @@ export async function loadDashboard(): Promise<DashboardData> {
       repositories.evaluations.countAll(campusId),
       repositories.observability.listRecentActivity(campusId, 8),
       repositories.reference.listCategories(campusId),
-      repositories.identity.listDepartments(campusId),
     ]);
 
   // 카테고리별·부서별 분포는 목록을 한 번 읽어 애플리케이션에서 센다.
@@ -45,10 +47,10 @@ export async function loadDashboard(): Promise<DashboardData> {
   });
 
   const categoryCounts = new Map<string, number>();
-  const departmentCounts = new Map<string, number>();
+  const runtimeCounts = new Map<string, number>();
   for (const tool of toolPage.items) {
     categoryCounts.set(tool.categoryId, (categoryCounts.get(tool.categoryId) ?? 0) + 1);
-    departmentCounts.set(tool.departmentId, (departmentCounts.get(tool.departmentId) ?? 0) + 1);
+    runtimeCounts.set(tool.runtimeKind, (runtimeCounts.get(tool.runtimeKind) ?? 0) + 1);
   }
 
   const totalTools = TOOL_STATUSES.reduce((sum, status) => sum + toolCounts[status], 0);
@@ -69,13 +71,10 @@ export async function loadDashboard(): Promise<DashboardData> {
       .map((category) => ({ label: category.name, count: categoryCounts.get(category.id) ?? 0 }))
       .filter((entry) => entry.count > 0)
       .sort((a, b) => b.count - a.count),
-    byDepartment: departments
-      .map((department) => ({
-        label: department.name,
-        count: departmentCounts.get(department.id) ?? 0,
-      }))
-      .filter((entry) => entry.count > 0)
-      .sort((a, b) => b.count - a.count),
+    byRuntime: RUNTIME_KINDS.map((kind) => ({
+      label: RUNTIME_KIND_LABELS[kind],
+      count: runtimeCounts.get(kind) ?? 0,
+    })).filter((entry) => entry.count > 0),
     byStatus: TOOL_STATUSES.map((status) => ({
       label: TOOL_STATUS_LABELS[status],
       count: toolCounts[status],

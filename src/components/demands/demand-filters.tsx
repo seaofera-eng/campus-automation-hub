@@ -8,17 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/field';
 import { DEMAND_STATUSES, DEMAND_STATUS_LABELS } from '@/domain/demand/types';
-import type { Department } from '@/domain/identity/types';
 import { buildDemandHref } from '@/lib/validation/demand';
 import type { DemandQueryInput } from '@/lib/validation/demand';
 import { cn } from '@/lib/utils/cn';
 
 export function DemandFilters({
   query,
-  departments,
 }: {
   query: DemandQueryInput;
-  departments: readonly Department[];
 }) {
   const router = useRouter();
   const [keyword, setKeyword] = useState(query.keyword);
@@ -27,7 +24,7 @@ export function DemandFilters({
     router.push(buildDemandHref(query, { ...overrides, page: 1 }));
   }
 
-  function toggle(key: 'statuses' | 'departmentIds', value: string) {
+  function toggle(key: 'statuses', value: string) {
     const current = query[key];
     const next = current.includes(value)
       ? current.filter((item) => item !== value)
@@ -37,7 +34,6 @@ export function DemandFilters({
 
   const activeCount =
     query.statuses.length +
-    query.departmentIds.length +
     (query.keyword ? 1 : 0) +
     (query.onlyMine ? 1 : 0);
 
@@ -102,21 +98,6 @@ export function DemandFilters({
             </div>
           </fieldset>
 
-          <fieldset>
-            <legend className="mb-1.5 text-xs font-semibold text-fg-muted">요청 부서</legend>
-            <div className="flex flex-wrap gap-1.5">
-              {departments.map((department) => (
-                <Chip
-                  key={department.id}
-                  id={`demand-department-${department.id}`}
-                  checked={query.departmentIds.includes(department.id)}
-                  onChange={() => toggle('departmentIds', department.id)}
-                >
-                  {department.name}
-                </Chip>
-              ))}
-            </div>
-          </fieldset>
 
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
             <label

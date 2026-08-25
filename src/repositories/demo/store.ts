@@ -4,7 +4,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import type { AutomationDemand, DemandMatch, DemandParticipant } from '@/domain/demand/types';
 import type { EvaluationHistoryEntry, ToolEvaluation } from '@/domain/evaluation/types';
-import type { Campus, Department, Profile } from '@/domain/identity/types';
+import type { Campus, Profile } from '@/domain/identity/types';
 import type {
   ImprovementRequest,
   ImprovementRequestHistoryEntry,
@@ -36,7 +36,6 @@ export const DEMO_SCHEMA_VERSION = 1;
 export interface DemoDatabase {
   schemaVersion: number;
   campuses: Campus[];
-  departments: Department[];
   profiles: Profile[];
   categories: ToolCategory[];
   integrationSystems: IntegrationSystem[];

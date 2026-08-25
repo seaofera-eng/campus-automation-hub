@@ -1,6 +1,6 @@
 import type { AutomationDemand, DemandMatch, DemandParticipant } from '@/domain/demand/types';
 import type { ToolEvaluation } from '@/domain/evaluation/types';
-import type { Campus, Department, Profile } from '@/domain/identity/types';
+import type { Campus, Profile } from '@/domain/identity/types';
 import type { ImprovementRequest } from '@/domain/improvement/types';
 import type { ReviewAssignment, ReviewComment } from '@/domain/review/types';
 import { asId } from '@/domain/shared/ids';
@@ -35,7 +35,6 @@ import {
   DEMO_CAMPUS_ID,
   DEMO_CATEGORY_IDS,
   DEMO_DEMAND_IDS,
-  DEMO_DEPARTMENT_IDS,
   DEMO_INTEGRATION_IDS,
   DEMO_TOOL_IDS,
   DEMO_USER_IDS,
@@ -83,31 +82,6 @@ function buildCampus(): Campus {
   };
 }
 
-function buildDepartments(): Department[] {
-  const rows: { id: Department['id']; name: string; code: string; sortOrder: number }[] = [
-    { id: DEMO_DEPARTMENT_IDS.academicAffairs, name: '학사관리과', code: 'ACAD', sortOrder: 1 },
-    { id: DEMO_DEPARTMENT_IDS.researchSupport, name: '연구지원과', code: 'RSCH', sortOrder: 2 },
-    { id: DEMO_DEPARTMENT_IDS.industryCooperation, name: '산학협력단', code: 'INDU', sortOrder: 3 },
-    { id: DEMO_DEPARTMENT_IDS.studentCounseling, name: '학생상담센터', code: 'CNSL', sortOrder: 4 },
-    { id: DEMO_DEPARTMENT_IDS.informationCenter, name: '정보화본부', code: 'INFO', sortOrder: 5 },
-    {
-      id: DEMO_DEPARTMENT_IDS.sharedUniversity,
-      name: '공유대학운영센터',
-      code: 'SHRD',
-      sortOrder: 6,
-    },
-  ];
-
-  return rows.map((row) => ({
-    ...row,
-    campusId: DEMO_CAMPUS_ID,
-    parentId: null,
-    createdAt: daysAgo(400),
-    updatedAt: daysAgo(400),
-    deletedAt: null,
-  }));
-}
-
 /**
  * 데모 계정.
  *
@@ -124,7 +98,6 @@ function buildProfiles(): Profile[] {
     accountType: Profile['accountType'];
     adminPermissions: Profile['adminPermissions'];
     memberType: Profile['memberType'];
-    departmentId: Department['id'];
   }[] = [
     {
       id: DEMO_USER_IDS.developer,
@@ -134,7 +107,6 @@ function buildProfiles(): Profile[] {
       accountType: 'USER',
       adminPermissions: [],
       memberType: 'STAFF',
-      departmentId: DEMO_DEPARTMENT_IDS.informationCenter,
     },
     {
       // 검토만 맡은 관리자. "관리자라고 전부 할 수 있는 게 아니다"를 보여준다.
@@ -145,7 +117,6 @@ function buildProfiles(): Profile[] {
       accountType: 'ADMIN',
       adminPermissions: ['REVIEW'],
       memberType: 'STAFF',
-      departmentId: DEMO_DEPARTMENT_IDS.informationCenter,
     },
     {
       id: DEMO_USER_IDS.requester,
@@ -155,7 +126,6 @@ function buildProfiles(): Profile[] {
       accountType: 'USER',
       adminPermissions: [],
       memberType: 'STAFF',
-      departmentId: DEMO_DEPARTMENT_IDS.academicAffairs,
     },
     {
       // 모든 관리 권한을 가진 관리자.
@@ -173,7 +143,6 @@ function buildProfiles(): Profile[] {
         'VIEW_AUDIT',
       ],
       memberType: 'STAFF',
-      departmentId: DEMO_DEPARTMENT_IDS.informationCenter,
     },
     {
       id: DEMO_USER_IDS.developer2,
@@ -183,7 +152,6 @@ function buildProfiles(): Profile[] {
       accountType: 'USER',
       adminPermissions: [],
       memberType: 'PROFESSOR',
-      departmentId: DEMO_DEPARTMENT_IDS.researchSupport,
     },
     {
       id: DEMO_USER_IDS.requester2,
@@ -193,7 +161,6 @@ function buildProfiles(): Profile[] {
       accountType: 'USER',
       adminPermissions: [],
       memberType: 'STUDENT',
-      departmentId: DEMO_DEPARTMENT_IDS.studentCounseling,
     },
   ];
 
@@ -328,7 +295,8 @@ interface SeedToolInput {
   name: string;
   summary: string;
   categoryId: AutomationTool['categoryId'];
-  departmentId: Department['id'];
+  runtimeKind: AutomationTool['runtimeKind'];
+  recommendedFor: AutomationTool['recommendedFor'];
   ownerUserId: UserId;
   developerUserIds: UserId[];
   status: ToolStatus;
@@ -348,7 +316,8 @@ function buildToolSeeds(): SeedToolInput[] {
       name: `${DEMO_PREFIX} AI 회의록 정리 도구`,
       summary: '회의 녹취록을 요약하고 담당자별 할 일로 정리해 줍니다.',
       categoryId: DEMO_CATEGORY_IDS.documentMeeting,
-      departmentId: DEMO_DEPARTMENT_IDS.informationCenter,
+      runtimeKind: 'WEB',
+      recommendedFor: ['STAFF', 'PROFESSOR'],
       ownerUserId: DEMO_USER_IDS.developer,
       developerUserIds: [DEMO_USER_IDS.developer],
       status: 'APPROVED',
@@ -422,7 +391,8 @@ function buildToolSeeds(): SeedToolInput[] {
       name: `${DEMO_PREFIX} 학과별 엑셀 취합 자동화`,
       summary: '학과에서 제출한 엑셀 파일을 하나의 표로 합치고 오류를 점검합니다.',
       categoryId: DEMO_CATEGORY_IDS.dataAggregation,
-      departmentId: DEMO_DEPARTMENT_IDS.academicAffairs,
+      runtimeKind: 'DESKTOP',
+      recommendedFor: ['STAFF'],
       ownerUserId: DEMO_USER_IDS.developer,
       developerUserIds: [DEMO_USER_IDS.developer, DEMO_USER_IDS.developer2],
       status: 'APPROVED',
@@ -496,7 +466,8 @@ function buildToolSeeds(): SeedToolInput[] {
       name: `${DEMO_PREFIX} 반복 이메일 작성 도구`,
       summary: '자주 보내는 안내 메일의 초안을 상황에 맞게 만들어 줍니다.',
       categoryId: DEMO_CATEGORY_IDS.communication,
-      departmentId: DEMO_DEPARTMENT_IDS.academicAffairs,
+      runtimeKind: 'WEB',
+      recommendedFor: ['STAFF'],
       ownerUserId: DEMO_USER_IDS.developer,
       developerUserIds: [DEMO_USER_IDS.developer],
       status: 'PILOT',
@@ -567,7 +538,8 @@ function buildToolSeeds(): SeedToolInput[] {
       name: `${DEMO_PREFIX} 연구과제 공고 요약 서비스`,
       summary: '연구과제 공고문을 핵심 조건 중심으로 요약해 제공합니다.',
       categoryId: DEMO_CATEGORY_IDS.researchSupport,
-      departmentId: DEMO_DEPARTMENT_IDS.researchSupport,
+      runtimeKind: 'WEB',
+      recommendedFor: ['PROFESSOR'],
       ownerUserId: DEMO_USER_IDS.developer2,
       developerUserIds: [DEMO_USER_IDS.developer2],
       status: 'HUMAN_REVIEW',
@@ -643,7 +615,8 @@ function buildToolSeeds(): SeedToolInput[] {
       name: `${DEMO_PREFIX} 학사 규정 검색 챗봇`,
       summary: '학사 규정과 지침을 질문으로 찾아보고 근거 조항을 함께 확인합니다.',
       categoryId: DEMO_CATEGORY_IDS.informationSearch,
-      departmentId: DEMO_DEPARTMENT_IDS.academicAffairs,
+      runtimeKind: 'WEB',
+      recommendedFor: [],
       ownerUserId: DEMO_USER_IDS.developer2,
       developerUserIds: [DEMO_USER_IDS.developer2],
       status: 'SUBMITTED',
@@ -713,7 +686,8 @@ function buildToolSeeds(): SeedToolInput[] {
       name: `${DEMO_PREFIX} 학생 문의 분류 도구`,
       summary: '학생 문의를 유형별로 분류해 담당 부서를 제안합니다.',
       categoryId: DEMO_CATEGORY_IDS.classificationRouting,
-      departmentId: DEMO_DEPARTMENT_IDS.studentCounseling,
+      runtimeKind: 'SCRIPT',
+      recommendedFor: ['STAFF'],
       ownerUserId: DEMO_USER_IDS.developer,
       developerUserIds: [DEMO_USER_IDS.developer],
       status: 'DRAFT',
@@ -786,11 +760,10 @@ function buildTools(): { tools: AutomationTool[]; versions: AutomationToolVersio
       name: seed.name,
       summary: seed.summary,
       categoryId: seed.categoryId,
-      departmentId: seed.departmentId,
+      runtimeKind: seed.runtimeKind,
+      recommendedFor: seed.recommendedFor,
       ownerUserId: seed.ownerUserId,
-      operationsManagerUserId: DEMO_USER_IDS.admin,
       developerUserIds: seed.developerUserIds,
-      visibility: 'CAMPUS',
       status: seed.status,
       currentVersionId: seed.versionId,
       tags: seed.tags,
@@ -994,7 +967,6 @@ function buildDemands(): {
       id: DEMO_DEMAND_IDS.meetingTasks,
       campusId: DEMO_CAMPUS_ID,
       title: `${DEMO_PREFIX} 회의 후 담당자별 과업 정리`,
-      departmentId: DEMO_DEPARTMENT_IDS.academicAffairs,
       requesterUserId: DEMO_USER_IDS.requester,
       currentWorkDescription:
         '주간 부서 회의가 끝나면 담당자가 메모를 보고 회의록을 작성하고, 후속 과업을 다시 정리해 각 담당자에게 메신저로 전달합니다.',
@@ -1022,7 +994,6 @@ function buildDemands(): {
       id: DEMO_DEMAND_IDS.departmentReports,
       campusId: DEMO_CAMPUS_ID,
       title: `${DEMO_PREFIX} 학과별 실적자료 자동 취합`,
-      departmentId: DEMO_DEPARTMENT_IDS.sharedUniversity,
       requesterUserId: DEMO_USER_IDS.requester,
       currentWorkDescription:
         '학기마다 참여 학과에서 실적자료를 엑셀로 제출받아 하나의 표로 합칩니다. 학과마다 서식이 달라 열을 맞추는 데 시간이 많이 듭니다.',
@@ -1049,7 +1020,6 @@ function buildDemands(): {
       id: DEMO_DEMAND_IDS.grantAlerts,
       campusId: DEMO_CAMPUS_ID,
       title: `${DEMO_PREFIX} 연구과제 공고 맞춤 알림`,
-      departmentId: DEMO_DEPARTMENT_IDS.researchSupport,
       requesterUserId: DEMO_USER_IDS.requester2,
       currentWorkDescription:
         '연구지원과에서 공고를 확인해 전체 메일로 안내하고 있습니다. 연구자 입장에서는 본인 분야와 무관한 공고가 많아 놓치는 경우가 있습니다.',
@@ -1076,7 +1046,6 @@ function buildDemands(): {
       id: DEMO_DEMAND_IDS.complaintRouting,
       campusId: DEMO_CAMPUS_ID,
       title: `${DEMO_PREFIX} 반복 민원 분류 및 담당부서 전달`,
-      departmentId: DEMO_DEPARTMENT_IDS.studentCounseling,
       requesterUserId: DEMO_USER_IDS.requester2,
       currentWorkDescription:
         '학생 문의가 상담센터, 학사관리과, 학과 사무실로 나뉘어 들어옵니다. 담당이 아닌 곳으로 온 문의는 다시 이관하는데 이 과정이 반복됩니다.',
@@ -1523,7 +1492,6 @@ export function buildDemoSeed(): DemoDatabase {
   return {
     schemaVersion: DEMO_SCHEMA_VERSION,
     campuses: [buildCampus()],
-    departments: buildDepartments(),
     profiles: buildProfiles(),
     categories: buildCategories(),
     integrationSystems: buildIntegrationSystems(),

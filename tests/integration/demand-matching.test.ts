@@ -6,7 +6,7 @@ import type { DemandId } from '@/domain/shared/ids';
 import { getRepositories } from '@/lib/di/container';
 import { demandPublishSchema, emptyDemandForm } from '@/lib/validation/demand';
 import type { DemandFormInput } from '@/lib/validation/demand';
-import { DEMO_DEPARTMENT_IDS, DEMO_TOOL_IDS } from '@/repositories/demo/seed-ids';
+import { DEMO_TOOL_IDS } from '@/repositories/demo/seed-ids';
 import { demoProfile, setupIsolatedStore, teardownIsolatedStore } from './helpers';
 
 /**
@@ -20,7 +20,6 @@ function completeForm(title: string): DemandFormInput {
   return {
     ...emptyDemandForm(),
     title,
-    departmentId: DEMO_DEPARTMENT_IDS.academicAffairs,
     currentWorkDescription: '담당자가 엑셀을 하나씩 열어 확인합니다.',
     mostPainfulStep: '학과별 파일을 일일이 대조하는 단계',
     desiredOutcome: '충족 여부가 표시된 통합 표',

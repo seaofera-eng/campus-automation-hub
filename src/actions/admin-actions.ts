@@ -3,10 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import {
   changeAccountPermissions,
-  deleteDepartment,
   updateUser,
   upsertCategory,
-  upsertDepartment,
 } from '@/application/admin/manage';
 import { withAudit } from '@/application/shared/audit';
 import { ACCOUNT_TYPE_LABELS, ADMIN_PERMISSION_LABELS } from '@/domain/authz/accounts';
@@ -14,10 +12,8 @@ import { run, type ActionResult } from '@/lib/actions/result';
 import { requireUser } from '@/lib/auth/current-user';
 import {
   changeAccountPermissionsSchema,
-  deleteDepartmentSchema,
   updateUserSchema,
   upsertCategorySchema,
-  upsertDepartmentSchema,
 } from '@/lib/validation/admin';
 import { parseOrThrow } from '@/lib/validation/common';
 
@@ -81,64 +77,12 @@ export async function updateUserAction(input: unknown): Promise<ActionResult<nul
       () =>
         updateUser(actor, {
           userId: data.userId,
-          departmentId: data.departmentId,
           title: data.title,
           isActive: data.isActive,
         }),
     );
 
     revalidatePath('/admin/users');
-    return null;
-  });
-}
-
-export async function upsertDepartmentAction(input: unknown): Promise<ActionResult<null>> {
-  return run(async () => {
-    const actor = await requireUser();
-    const data = parseOrThrow(upsertDepartmentSchema, input);
-
-    await withAudit(
-      actor,
-      {
-        action: data.departmentId ? 'admin.updateDepartment' : 'admin.createDepartment',
-        targetType: 'department',
-        targetId: data.departmentId || null,
-        changedFields: ['name', 'code', 'parentId', 'sortOrder'],
-        summary: data.departmentId ? '부서 정보를 수정했습니다.' : '부서를 추가했습니다.',
-      },
-      () =>
-        upsertDepartment(actor, {
-          departmentId: data.departmentId,
-          name: data.name,
-          code: data.code,
-          parentId: data.parentId,
-          sortOrder: data.sortOrder,
-        }),
-    );
-
-    revalidatePath('/admin/departments');
-    return null;
-  });
-}
-
-export async function deleteDepartmentAction(input: unknown): Promise<ActionResult<null>> {
-  return run(async () => {
-    const actor = await requireUser();
-    const data = parseOrThrow(deleteDepartmentSchema, input);
-
-    await withAudit(
-      actor,
-      {
-        action: 'admin.deleteDepartment',
-        targetType: 'department',
-        targetId: data.departmentId,
-        changedFields: ['deletedAt'],
-        summary: '부서를 삭제했습니다.',
-      },
-      () => deleteDepartment(actor, data.departmentId),
-    );
-
-    revalidatePath('/admin/departments');
     return null;
   });
 }

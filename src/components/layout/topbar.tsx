@@ -7,19 +7,15 @@ import { NotificationBell } from './notification-bell';
 
 export interface TopbarProps {
   profile: Profile;
-  departmentName: string | null;
   notifications: readonly Notification[];
 }
 
-export function Topbar({ profile, departmentName, notifications }: TopbarProps) {
+export function Topbar({ profile, notifications }: TopbarProps) {
   return (
     <header className="flex h-14 items-center justify-between gap-4 border-b border-border bg-surface px-4 sm:px-6">
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-fg">
           {profile.name}
-          {departmentName ? (
-            <span className="ml-2 font-normal text-fg-muted">{departmentName}</span>
-          ) : null}
         </p>
       </div>
 

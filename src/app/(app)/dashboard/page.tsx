@@ -98,12 +98,12 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>부서별 도구</CardTitle>
+            <CardTitle>실행 환경별 도구</CardTitle>
           </CardHeader>
           <CardContent>
             <BarList
-              caption="부서별 등록 도구 수"
-              items={stats.byDepartment}
+              caption="실행 방식별 등록 도구 수"
+              items={stats.byRuntime}
               emptyMessage="아직 등록된 도구가 없습니다."
             />
           </CardContent>

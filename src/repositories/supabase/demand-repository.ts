@@ -35,9 +35,6 @@ export function createSupabaseDemandRepository(): DemandRepository {
         .is('deleted_at', null);
 
       if (filters.statuses?.length) query = query.in('status', [...filters.statuses]);
-      if (filters.departmentIds?.length) {
-        query = query.in('department_id', [...filters.departmentIds]);
-      }
       if (filters.requesterUserId) {
         query = query.eq('requester_user_id', filters.requesterUserId);
       }

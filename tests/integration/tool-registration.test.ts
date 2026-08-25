@@ -3,7 +3,7 @@ import { saveDraft, submitTool } from '@/application/tools/register';
 import { DomainError } from '@/domain/shared/errors';
 import { getRepositories } from '@/lib/di/container';
 import { emptyToolForm, toolSubmitSchema, type ToolFormInput } from '@/lib/validation/tool';
-import { DEMO_CATEGORY_IDS, DEMO_DEPARTMENT_IDS } from '@/repositories/demo/seed-ids';
+import { DEMO_CATEGORY_IDS } from '@/repositories/demo/seed-ids';
 import { demoProfile, setupIsolatedStore, teardownIsolatedStore } from './helpers';
 
 /**
@@ -24,7 +24,6 @@ function completeForm(overrides: Partial<ToolFormInput> = {}): ToolFormInput {
     name: '회의록 자동 정리 도구',
     summary: '회의 녹취를 요약해 결정사항과 할 일을 정리합니다.',
     categoryId: DEMO_CATEGORY_IDS.documentMeeting,
-    departmentId: DEMO_DEPARTMENT_IDS.academicAffairs,
     description: '회의 녹취 파일을 올리면 요약본을 만들어 줍니다.',
     problemStatement: '회의록 정리에 회의당 40분이 걸립니다.',
     keyFeatures: ['녹취 요약', '할 일 추출'],

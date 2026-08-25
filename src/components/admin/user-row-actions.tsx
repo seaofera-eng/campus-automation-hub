@@ -27,7 +27,6 @@ import {
   ADMIN_PERMISSION_LABELS,
 } from '@/domain/authz/accounts';
 import type { AccountType, AdminPermission } from '@/domain/authz/accounts';
-import type { Department } from '@/domain/identity/types';
 
 /**
  * 권한 변경.
@@ -201,23 +200,18 @@ export function ChangePermissionsDialog({
 export function EditUserDialog({
   userId,
   userName,
-  departments,
-  currentDepartmentId,
   currentTitle,
   currentIsActive,
   isSelf,
 }: {
   userId: string;
   userName: string;
-  departments: readonly Department[];
-  currentDepartmentId: string | null;
   currentTitle: string;
   currentIsActive: boolean;
   isSelf: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [departmentId, setDepartmentId] = useState(currentDepartmentId ?? '');
   const [title, setTitle] = useState(currentTitle);
   const [isActive, setIsActive] = useState(currentIsActive);
   const [error, setError] = useState<string | null>(null);
@@ -226,7 +220,7 @@ export function EditUserDialog({
   function submit() {
     setError(null);
     startTransition(async () => {
-      const result = await updateUserAction({ userId, departmentId, title, isActive });
+      const result = await updateUserAction({ userId, title, isActive });
       if (result.ok) {
         setOpen(false);
         router.refresh();
@@ -248,26 +242,12 @@ export function EditUserDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>사용자 정보 수정</DialogTitle>
-          <DialogDescription>{userName} 님의 소속과 직위를 수정합니다.</DialogDescription>
+          <DialogDescription>{userName} 님의 직위와 사용 여부를 수정합니다.</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
           {error ? <Alert tone="danger">{error}</Alert> : null}
 
-          <Field label="소속 부서" htmlFor="user-department">
-            <NativeSelect
-              id="user-department"
-              value={departmentId}
-              onChange={(event) => setDepartmentId(event.target.value)}
-            >
-              <option value="">소속 없음</option>
-              {departments.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
 
           <Field label="직위" htmlFor="user-title">
             <Input

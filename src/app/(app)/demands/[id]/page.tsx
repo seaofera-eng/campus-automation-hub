@@ -47,7 +47,6 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ i
             ) : null}
           </div>
           <p className="mt-1 text-sm text-fg-muted">
-            {detail.departmentName} · {detail.requesterName} 등록 ·{' '}
             {formatDateTime(demand.createdAt)}
           </p>
         </div>
@@ -221,11 +220,6 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ i
                     <li key={participant.id} className="rounded-card border border-border p-4">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium text-fg">{participant.userName}</span>
-                        {participant.departmentName ? (
-                          <span className="text-xs text-fg-subtle">
-                            {participant.departmentName}
-                          </span>
-                        ) : null}
                         <Badge tone="info">
                           {PARTICIPANT_ROLE_LABELS[participant.participantRole]}
                         </Badge>

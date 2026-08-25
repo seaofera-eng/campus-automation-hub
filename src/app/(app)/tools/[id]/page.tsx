@@ -26,7 +26,6 @@ import {
   AUTOMATION_LEVEL_LABELS,
   TOOL_STATUS_DESCRIPTIONS,
   TOOL_STATUS_LABELS,
-  VISIBILITY_SCOPE_LABELS,
 } from '@/domain/tool/types';
 import { guardPage } from '@/lib/auth/page-guard';
 import { humanFileSize } from '@/lib/validation/attachment';
@@ -72,14 +71,10 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
           <FieldRow label="설명" value={version.description} multiline />
           <FieldRow label="해결하려는 문제" value={version.problemStatement} multiline />
           <FieldRow label="카테고리" value={detail.categoryName} />
-          <FieldRow label="담당 부서" value={detail.departmentName} />
-          <FieldRow label="업무 담당자" value={detail.ownerName} />
-          <FieldRow label="운영 책임자" value={detail.operationsManagerName} />
           <FieldRow
             label="개발자"
             value={detail.developerNames.length > 0 ? detail.developerNames.join(', ') : ''}
           />
-          <FieldRow label="공개 범위" value={VISIBILITY_SCOPE_LABELS[tool.visibility]} />
           <FieldRow
             label="태그"
             value={tool.tags.length > 0 ? tool.tags.join(', ') : ''}

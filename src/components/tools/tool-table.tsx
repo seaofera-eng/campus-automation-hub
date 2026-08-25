@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { DataClassificationChip, ToolStatusBadge } from '@/components/common/status-badge';
+import { MEMBER_TYPE_LABELS } from '@/domain/authz/accounts';
+import { RUNTIME_KIND_LABELS } from '@/domain/tool/types';
 import {
   Table,
   TableBody,
@@ -22,7 +24,8 @@ export function ToolTable({ items }: { items: readonly ToolListItem[] }) {
             <TableHeaderCell>도구</TableHeaderCell>
             <TableHeaderCell>상태</TableHeaderCell>
             <TableHeaderCell>카테고리</TableHeaderCell>
-            <TableHeaderCell>담당 부서</TableHeaderCell>
+            <TableHeaderCell>실행 방식</TableHeaderCell>
+            <TableHeaderCell>추천 대상</TableHeaderCell>
             <TableHeaderCell>다루는 데이터</TableHeaderCell>
             <TableHeaderCell className="text-right">평가</TableHeaderCell>
           </TableRow>
@@ -45,7 +48,12 @@ export function ToolTable({ items }: { items: readonly ToolListItem[] }) {
                   {item.categoryName}
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-sm text-fg-muted">
-                  {item.departmentName}
+                  {RUNTIME_KIND_LABELS[item.tool.runtimeKind]}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-sm text-fg-muted">
+                  {item.tool.recommendedFor.length > 0
+                    ? item.tool.recommendedFor.map((m) => MEMBER_TYPE_LABELS[m]).join('·')
+                    : '누구나'}
                 </TableCell>
                 <TableCell>
                   {used.length === 0 ? (

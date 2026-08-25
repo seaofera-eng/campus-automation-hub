@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: '수요 수정' };
 
 export default async function EditDemandPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { departments, demand, initialForm } = await guardPage(() => loadDemandForm(id));
+  const { demand, initialForm } = await guardPage(() => loadDemandForm(id));
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
@@ -19,7 +19,7 @@ export default async function EditDemandPage({ params }: { params: Promise<{ id:
         </p>
       </div>
 
-      <DemandForm departments={departments} initialForm={initialForm} demand={demand} />
+      <DemandForm initialForm={initialForm} demand={demand} />
     </div>
   );
 }

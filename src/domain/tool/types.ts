@@ -1,8 +1,8 @@
+import type { MemberType } from '../authz/accounts';
 import type {
   AttachmentId,
   CampusId,
   CategoryId,
-  DepartmentId,
   IntegrationSystemId,
   StatusHistoryId,
   ToolId,
@@ -74,15 +74,7 @@ export const AUTOMATION_LEVEL_DESCRIPTIONS: Record<AutomationLevel, string> = {
   FULLY_AUTOMATED: '사람의 확인 없이 처음부터 끝까지 자동으로 실행됩니다.',
 };
 
-export const VISIBILITY_SCOPES = ['PUBLIC', 'CAMPUS', 'DEPARTMENT', 'PRIVATE'] as const;
-export type VisibilityScope = (typeof VISIBILITY_SCOPES)[number];
 
-export const VISIBILITY_SCOPE_LABELS: Record<VisibilityScope, string> = {
-  PUBLIC: '전체 공개',
-  CAMPUS: '교내 구성원',
-  DEPARTMENT: '담당 부서',
-  PRIVATE: '비공개',
-};
 
 export const RISK_LEVELS = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
 export type RiskLevel = (typeof RISK_LEVELS)[number];
@@ -168,6 +160,35 @@ export interface IntegrationSystem {
   isActive: boolean;
 }
 
+/**
+ * 도구를 어디서 실행하는가 (리뷰 4.1절).
+ *
+ * "설치해야 하나, 그냥 링크 열면 되나"가 쓸지 말지를 가르는 첫 질문이라 목록에서 바로 보여준다.
+ */
+export const RUNTIME_KINDS = ['WEB', 'DESKTOP', 'MOBILE', 'SCRIPT', 'OTHER'] as const;
+
+export type RuntimeKind = (typeof RUNTIME_KINDS)[number];
+
+export const RUNTIME_KIND_LABELS: Record<RuntimeKind, string> = {
+  WEB: '웹에서 실행',
+  DESKTOP: '윈도우 프로그램',
+  MOBILE: '모바일 앱',
+  SCRIPT: '스크립트·매크로',
+  OTHER: '그 밖',
+};
+
+export function isRuntimeKind(value: unknown): value is RuntimeKind {
+  return typeof value === 'string' && (RUNTIME_KINDS as readonly string[]).includes(value);
+}
+
+export const RUNTIME_KIND_DESCRIPTIONS: Record<RuntimeKind, string> = {
+  WEB: '주소만 열면 바로 쓸 수 있습니다.',
+  DESKTOP: '내 컴퓨터에 설치해야 합니다.',
+  MOBILE: '휴대폰에 설치해서 씁니다.',
+  SCRIPT: '엑셀 매크로나 실행 파일처럼 파일을 받아 돌립니다.',
+  OTHER: '위에 없는 방식입니다.',
+};
+
 /** 도구 자체. 자주 바뀌지 않는 식별·소유·상태 정보만 담는다. */
 export interface AutomationTool {
   id: ToolId;
@@ -175,14 +196,17 @@ export interface AutomationTool {
   name: string;
   summary: string;
   categoryId: CategoryId;
-  departmentId: DepartmentId;
-  /** 업무 담당자 */
+  /** 어디서 실행하는가 */
+  runtimeKind: RuntimeKind;
+  /**
+   * 이 도구가 누구에게 맞는지. 비워 두면 "누구나"로 본다.
+   * 부서 대신 쓴다 — 부서로 나누면 옆 부서가 이미 만든 걸 못 찾는다.
+   */
+  recommendedFor: MemberType[];
+  /** 만든 사람 */
   ownerUserId: UserId;
-  /** 운영 책임자 */
-  operationsManagerUserId: UserId | null;
   /** 개발자(복수 가능) */
   developerUserIds: UserId[];
-  visibility: VisibilityScope;
   status: ToolStatus;
   /** 현재 공개 중인 버전. DRAFT 단계에서는 최신 초안을 가리킨다. */
   currentVersionId: ToolVersionId;
@@ -333,7 +357,6 @@ export interface ToolListItem {
   tool: AutomationTool;
   version: AutomationToolVersion;
   categoryName: string;
-  departmentName: string;
   ownerName: string;
   evaluationCount: number;
   averageOverallScore: number | null;

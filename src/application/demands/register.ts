@@ -6,7 +6,7 @@ import { DEMAND_STATUS_LABELS } from '@/domain/demand/types';
 import type { Profile } from '@/domain/identity/types';
 import { conflict, notFound } from '@/domain/shared/errors';
 import { asId, newId } from '@/domain/shared/ids';
-import type { DemandId, DepartmentId } from '@/domain/shared/ids';
+import type { DemandId } from '@/domain/shared/ids';
 import { toActor } from '@/lib/auth/current-user';
 import { getRepositories } from '@/lib/di/container';
 import type { DemandFormInput } from '@/lib/validation/demand';
@@ -38,7 +38,6 @@ function applyForm(
   return {
     ...base,
     title: form.title,
-    departmentId: asId<DepartmentId>(form.departmentId || base.departmentId),
     currentWorkDescription: form.currentWorkDescription,
     mostPainfulStep: form.mostPainfulStep,
     inputMaterials: form.inputMaterials,
@@ -60,7 +59,6 @@ function applyForm(
 export function formFromDemand(demand: AutomationDemand): DemandFormInput {
   return {
     title: demand.title,
-    departmentId: demand.departmentId,
     currentWorkDescription: demand.currentWorkDescription,
     mostPainfulStep: demand.mostPainfulStep,
     inputMaterials: demand.inputMaterials,
@@ -112,7 +110,6 @@ export async function saveDemandDraft(
       campusId: actor.campusId,
       title: input.form.title,
       // 부서를 고르지 않았으면 작성자 소속을 기본값으로 둔다.
-      departmentId: asId<DepartmentId>(input.form.departmentId || (actor.departmentId ?? '')),
       requesterUserId: actor.id,
       currentWorkDescription: '',
       mostPainfulStep: '',

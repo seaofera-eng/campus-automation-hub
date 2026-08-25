@@ -1,6 +1,6 @@
 import 'server-only';
 import { assertCan } from '@/domain/authz/policies';
-import type { Department, Profile } from '@/domain/identity/types';
+import type { Profile } from '@/domain/identity/types';
 import { notFound } from '@/domain/shared/errors';
 import { asId } from '@/domain/shared/ids';
 import type { ToolId } from '@/domain/shared/ids';
@@ -20,10 +20,9 @@ import { formFromTool } from './register';
 export interface ToolFormPageData {
   actor: Profile;
   categories: ToolCategory[];
-  departments: Department[];
   integrationSystems: IntegrationSystem[];
-  /** 운영 책임자로 지정할 수 있는 사람 목록 */
-  people: { id: string; name: string; departmentName: string | null }[];
+  /** 함께 개발한 사람으로 지정할 수 있는 목록 */
+  people: { id: string; name: string }[];
   /** 수정 중인 도구. 신규 등록이면 null. */
   tool: { id: string; status: ToolStatus } | null;
   initialForm: ToolFormInput;
@@ -31,27 +30,21 @@ export interface ToolFormPageData {
 
 async function loadReferenceData(actor: Profile) {
   const repositories = getRepositories();
-  const [categories, departments, integrationSystems, profiles] = await Promise.all([
+  const [categories, integrationSystems, profiles] = await Promise.all([
     repositories.reference.listCategories(actor.campusId),
-    repositories.identity.listDepartments(actor.campusId),
     repositories.reference.listIntegrationSystems(actor.campusId),
     repositories.identity.listProfiles(actor.campusId),
   ]);
 
-  const departmentNames = new Map(departments.map((department) => [department.id, department.name]));
 
   return {
     categories,
-    departments,
     integrationSystems,
     people: profiles
       .filter((profile) => profile.isActive)
       .map((profile) => ({
         id: profile.id,
         name: profile.name,
-        departmentName: profile.departmentId
-          ? (departmentNames.get(profile.departmentId) ?? null)
-          : null,
       })),
   };
 }
@@ -63,8 +56,6 @@ export async function loadNewToolForm(): Promise<ToolFormPageData> {
 
   const reference = await loadReferenceData(actor);
   const initialForm = emptyToolForm();
-  // 작성자 소속을 담당 부서 기본값으로 채워 준다. 대부분 자기 부서 도구를 등록한다.
-  if (actor.departmentId) initialForm.departmentId = actor.departmentId;
 
   return { actor, ...reference, tool: null, initialForm };
 }

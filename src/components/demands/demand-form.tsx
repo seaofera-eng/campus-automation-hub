@@ -15,7 +15,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Field, Input, NativeSelect, Textarea, fieldAria } from '@/components/ui/field';
 import { WORK_FREQUENCIES, WORK_FREQUENCY_LABELS } from '@/domain/demand/types';
 import type { DemandStatus } from '@/domain/demand/types';
-import type { Department } from '@/domain/identity/types';
 import { demandPublishSchema, emptyDemandForm } from '@/lib/validation/demand';
 import type { DemandFormInput } from '@/lib/validation/demand';
 
@@ -27,11 +26,9 @@ import type { DemandFormInput } from '@/lib/validation/demand';
  * 같은 Zod 스키마를 쓴다.
  */
 export function DemandForm({
-  departments,
   initialForm,
   demand,
 }: {
-  departments: readonly Department[];
   initialForm?: DemandFormInput;
   demand: { id: string; status: DemandStatus } | null;
 }) {
@@ -161,25 +158,6 @@ export function DemandForm({
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              label="요청 부서"
-              htmlFor="departmentId"
-              required
-              error={errors.departmentId?.message}
-            >
-              <NativeSelect
-                {...register('departmentId')}
-                {...fieldAria('departmentId', undefined, errors.departmentId?.message)}
-              >
-                <option value="">선택해 주세요</option>
-                {departments.map((department) => (
-                  <option key={department.id} value={department.id}>
-                    {department.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
-
             <Field label="업무 주기" htmlFor="workFrequency">
               <NativeSelect {...register('workFrequency')} {...fieldAria('workFrequency')}>
                 {WORK_FREQUENCIES.map((frequency) => (

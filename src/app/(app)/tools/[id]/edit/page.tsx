@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: '도구 수정' };
 
 export default async function EditToolPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { actor, categories, departments, integrationSystems, people, tool, initialForm } =
+  const { actor, categories, integrationSystems, people, tool, initialForm } =
     await guardPage(() => loadToolEditForm(id));
   const attachments = await listAttachments(id);
 
@@ -23,7 +23,7 @@ export default async function EditToolPage({ params }: { params: Promise<{ id: s
       </div>
 
       <ToolWizard
-        data={{ actor, categories, departments, integrationSystems, people }}
+        data={{ actor, categories, integrationSystems, people }}
         initialForm={initialForm}
         tool={tool}
         attachments={attachments}

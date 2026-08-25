@@ -7,7 +7,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input, NativeSelect } from '@/components/ui/field';
-import type { Department } from '@/domain/identity/types';
 import {
   DATA_CLASSIFICATIONS,
   DATA_CLASSIFICATION_LABELS,
@@ -29,12 +28,10 @@ import { cn } from '@/lib/utils/cn';
 export function ToolFilters({
   query,
   categories,
-  departments,
   canCreate,
 }: {
   query: ToolQuery;
   categories: readonly ToolCategory[];
-  departments: readonly Department[];
   canCreate: boolean;
 }) {
   const router = useRouter();
@@ -45,7 +42,7 @@ export function ToolFilters({
     router.push(buildToolHref(query, { ...overrides, page: 1 }));
   }
 
-  function toggle(key: 'statuses' | 'categoryIds' | 'departmentIds' | 'classifications', value: string) {
+  function toggle(key: 'statuses' | 'categoryIds' | 'classifications', value: string) {
     const current = query[key];
     const next = current.includes(value)
       ? current.filter((item) => item !== value)
@@ -56,7 +53,6 @@ export function ToolFilters({
   const activeCount =
     query.statuses.length +
     query.categoryIds.length +
-    query.departmentIds.length +
     query.classifications.length +
     (query.keyword ? 1 : 0) +
     (query.onlyMine ? 1 : 0);
@@ -170,19 +166,6 @@ export function ToolFilters({
                 onChange={() => toggle('categoryIds', category.id)}
               >
                 {category.name}
-              </FilterChip>
-            ))}
-          </FilterGroup>
-
-          <FilterGroup label="담당 부서">
-            {departments.map((department) => (
-              <FilterChip
-                key={department.id}
-                id={`department-${department.id}`}
-                checked={query.departmentIds.includes(department.id)}
-                onChange={() => toggle('departmentIds', department.id)}
-              >
-                {department.name}
               </FilterChip>
             ))}
           </FilterGroup>

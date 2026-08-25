@@ -41,7 +41,6 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
             {checklist ? <RiskLevelBadge level={checklist.riskLevel} /> : null}
           </div>
           <p className="mt-1 text-sm text-fg-muted">
-            {detail.departmentName} · {detail.categoryName} · 담당 {detail.ownerName}
             {detail.assigneeName ? ` · 검토 ${detail.assigneeName}` : ' · 검토자 미배정'}
           </p>
         </div>
