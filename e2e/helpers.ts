@@ -60,6 +60,7 @@ const MENU_PATHS: Record<string, string> = {
   대시보드: '/dashboard',
   '자동화 도구': '/tools',
   '업무 수요': '/demands',
+  '도구 순위': '/ranking',
   '검토 작업': '/reviews',
   '개선 요청': '/improvements',
   공지: '/notices',
