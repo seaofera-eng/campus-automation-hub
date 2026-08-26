@@ -29,9 +29,10 @@ export function TabsTrigger({
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        'whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-sm font-medium text-fg-muted',
+        // 최소 40px 높이를 확보한다 (디자인 문서 §13)
+        'whitespace-nowrap border-b-2 border-transparent px-3.5 py-2.5 text-sm font-medium text-fg-muted',
         'transition-colors hover:text-fg',
-        'data-[state=active]:border-primary data-[state=active]:text-primary',
+        'data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:text-primary',
         className,
       )}
       {...props}

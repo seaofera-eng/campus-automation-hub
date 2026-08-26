@@ -105,8 +105,12 @@ export function ToolFilters({
             onClick={() => apply({ view: 'card' })}
             aria-pressed={query.view === 'card'}
             className={cn(
-              'flex items-center gap-1.5 rounded-l-md px-3 py-2 text-sm transition-colors',
-              query.view === 'card' ? 'bg-primary text-primary-fg' : 'text-fg-muted hover:bg-surface-muted',
+              // 꽉 찬 파랑은 이 화면에서 '내 도구 공유하기' 하나만 갖는다.
+              // 보기 전환은 그보다 덜 중요하므로 soft-fill 로 물러선다 (문서 §3.2).
+              'flex min-h-10 items-center gap-1.5 rounded-l-md px-3 py-2 text-sm transition-colors',
+              query.view === 'card'
+                ? 'bg-primary-soft font-semibold text-primary'
+                : 'text-fg-muted hover:bg-surface-muted',
             )}
           >
             <LayoutGrid className="size-4" aria-hidden="true" />
@@ -117,8 +121,10 @@ export function ToolFilters({
             onClick={() => apply({ view: 'table' })}
             aria-pressed={query.view === 'table'}
             className={cn(
-              'flex items-center gap-1.5 rounded-r-md px-3 py-2 text-sm transition-colors',
-              query.view === 'table' ? 'bg-primary text-primary-fg' : 'text-fg-muted hover:bg-surface-muted',
+              'flex min-h-10 items-center gap-1.5 rounded-r-md px-3 py-2 text-sm transition-colors',
+              query.view === 'table'
+                ? 'bg-primary-soft font-semibold text-primary'
+                : 'text-fg-muted hover:bg-surface-muted',
             )}
           >
             <Table2 className="size-4" aria-hidden="true" />
@@ -127,7 +133,7 @@ export function ToolFilters({
         </div>
 
         {canCreate ? (
-          <Button asChild size="lg" className="ml-auto shadow-sm">
+          <Button asChild className="ml-auto">
             <Link href="/tools/new">
               <Plus aria-hidden="true" />내 도구 공유하기
             </Link>

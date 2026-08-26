@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils/cn';
 export function TableWrapper({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('w-full overflow-x-auto rounded-card border border-border bg-surface', className)}
+      className={cn('w-full overflow-x-auto rounded-card border border-border bg-surface shadow-card', className)}
       {...props}
     />
   );
@@ -39,7 +39,7 @@ export function TableHeaderCell({
   return (
     <th
       scope="col"
-      className={cn('px-4 py-3 text-left text-xs font-semibold text-fg-muted', className)}
+      className={cn('px-4 py-3 text-left text-xs font-semibold whitespace-nowrap text-fg-muted', className)}
       {...props}
     />
   );

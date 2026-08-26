@@ -1,5 +1,5 @@
 import { MEMBER_TYPE_LABELS } from '@/domain/authz/accounts';
-import { ChevronLeft, Paperclip, Pencil, Send } from 'lucide-react';
+import { ChevronLeft, Paperclip, Pencil, Play, Send, Star } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { after } from 'next/server';
@@ -414,11 +414,50 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-medium text-fg-subtle">{detail.categoryName}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
               <h1 className="text-xl font-bold text-fg">{tool.name}</h1>
               <ToolStatusBadge status={tool.status} />
             </div>
             <p className="mt-1 text-sm text-fg-muted">{TOOL_STATUS_DESCRIPTIONS[tool.status]}</p>
+
+            {/*
+              핵심 사실 한 줄. 탭을 열어 보지 않아도 "얼마나 쓰이고 얼마나
+              위험한가"가 보여야 한다 (디자인 문서 §9).
+              없는 값은 0 으로 채우지 않고 그렇게 적는다.
+            */}
+            <dl className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-fg-muted">
+              <div className="flex items-center gap-1.5">
+                <dt className="sr-only">평점</dt>
+                <Star className="size-3.5 shrink-0" aria-hidden="true" />
+                <dd>
+                  {detail.evaluationSummary.averageOverall === null
+                    ? '평가 없음'
+                    : `${detail.evaluationSummary.averageOverall.toFixed(1)} (${detail.evaluationSummary.count}건)`}
+                </dd>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <dt className="sr-only">실행 횟수</dt>
+                <Play className="size-3.5 shrink-0" aria-hidden="true" />
+                <dd>
+                  {detail.usage.launches > 0
+                    ? `${detail.usage.launches.toLocaleString('ko-KR')}회 실행`
+                    : '실행 기록 없음'}
+                </dd>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <dt className="sr-only">위험도</dt>
+                <dd>
+                  {detail.riskChecklist ? (
+                    <RiskLevelBadge level={detail.riskChecklist.riskLevel} />
+                  ) : (
+                    <span className="text-fg-subtle">위험도 미판정</span>
+                  )}
+                </dd>
+              </div>
+            </dl>
           </div>
 
           <div className="flex shrink-0 flex-wrap gap-2">

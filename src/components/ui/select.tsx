@@ -51,7 +51,7 @@ export function SelectContent({
         sideOffset={4}
         className={cn(
           'z-50 max-h-72 min-w-[var(--radix-select-trigger-width)] overflow-hidden',
-          'rounded-md border border-border bg-surface shadow-lg',
+          'rounded-md border border-border bg-surface shadow-floating',
           className,
         )}
         {...props}
