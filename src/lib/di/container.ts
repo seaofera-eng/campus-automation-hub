@@ -1,6 +1,4 @@
 import 'server-only';
-import type { AiServices } from '@/adapters/ai';
-import { getAiServices } from '@/adapters/ai';
 import { createDemoRepositories } from '@/repositories/demo';
 import { createSupabaseRepositories } from '@/repositories/supabase';
 import type { Repositories } from '@/repositories/types';
@@ -24,10 +22,6 @@ export function getRepositories(): Repositories {
   cachedRepositories = repositories;
   cachedForDemoMode = demo;
   return repositories;
-}
-
-export function getAi(): AiServices {
-  return getAiServices();
 }
 
 /** 테스트에서 컨테이너를 초기화한다. */

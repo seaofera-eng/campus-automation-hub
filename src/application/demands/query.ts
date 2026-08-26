@@ -17,6 +17,7 @@ import { MAX_PAGE_SIZE, paginate } from '@/domain/shared/pagination';
 import { requireUser, toActor } from '@/lib/auth/current-user';
 import { hasAdminPermission } from '@/domain/authz/accounts';
 import type { MemberType } from '@/domain/authz/accounts';
+import { loadDemandAnalysis, type DemandAnalysisView } from '@/application/analysis/query';
 import { getRepositories } from '@/lib/di/container';
 import type { DemandQueryInput } from '@/lib/validation/demand';
 import { formFromDemand } from './register';
@@ -111,6 +112,8 @@ export interface DemandDetail {
     canJoin: boolean;
     alreadyJoined: boolean;
   };
+  /** 미리 돌려 둔 매칭 분석. 돌린 적이 없으면 null. */
+  analysis: DemandAnalysisView | null;
 }
 
 export async function loadDemandDetail(demandId: string): Promise<DemandDetail> {
@@ -122,10 +125,12 @@ export async function loadDemandDetail(demandId: string): Promise<DemandDetail> 
   // 볼 수 없는 수요는 "없는 것"으로 취급한다.
   if (!canSee(actor, demand)) throw notFound('수요');
 
-  const [profiles, matches, participants] = await Promise.all([
+  const [profiles, matches, participants, analysis] = await Promise.all([
     repositories.identity.listProfiles(actor.campusId),
     repositories.demands.listMatches(demand.id),
     repositories.demands.listParticipants(demand.id),
+    // 저장된 분석을 읽기만 한다. 여기서 모델을 부르지 않는다.
+    loadDemandAnalysis(demand.id, actor.campusId),
   ]);
 
   const personNames = new Map(profiles.map((p) => [p.id, p.name]));
@@ -181,6 +186,7 @@ export async function loadDemandDetail(demandId: string): Promise<DemandDetail> 
         !participants.some((participant) => participant.userId === actor.id),
       alreadyJoined: participants.some((participant) => participant.userId === actor.id),
     },
+    analysis,
   };
 }
 

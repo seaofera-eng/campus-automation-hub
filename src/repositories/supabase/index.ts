@@ -1,6 +1,7 @@
 import 'server-only';
 import { assertSupabaseConfigured } from '@/lib/config/env';
 import type { Repositories } from '../types';
+import { createSupabaseAnalysisRepository } from './analysis-repository';
 import { createSupabaseDemandRepository } from './demand-repository';
 import {
   createSupabaseEvaluationRepository,
@@ -39,6 +40,7 @@ export function createSupabaseRepositories(): Repositories {
     evaluations: createSupabaseEvaluationRepository(),
     improvements: createSupabaseImprovementRepository(),
     observability: createSupabaseObservabilityRepository(),
+    analyses: createSupabaseAnalysisRepository(),
     rewards: createSupabaseRewardRepository(),
     notices: createSupabaseNoticeRepository(),
     files: createSupabaseFileStorage(),

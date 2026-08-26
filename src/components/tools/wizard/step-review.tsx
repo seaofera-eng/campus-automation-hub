@@ -5,7 +5,7 @@ import type { AttachmentView } from '@/application/tools/attachments';
 import { DataClassificationChip } from '@/components/common/status-badge';
 import { MEMBER_TYPE_LABELS } from '@/domain/authz/accounts';
 import type { MemberType } from '@/domain/authz/accounts';
-import { PhaseNotice } from '@/components/common/phase-notice';
+import { SubmitAnalysisNotice } from '@/components/analysis/submit-analysis-notice';
 import { Field, Input, Textarea, fieldAria } from '@/components/ui/field';
 import {
   AUTOMATION_LEVEL_LABELS,
@@ -137,11 +137,7 @@ export function StepReview({
         </dl>
       </StepSection>
 
-      <PhaseNotice
-        phase="PHASE_2"
-        feature="AI 중복 탐지와 위험 자동 평가"
-        fallback="지금은 검토자가 위험 체크리스트를 직접 작성해 판단합니다."
-      />
+      <SubmitAnalysisNotice />
     </div>
   );
 }

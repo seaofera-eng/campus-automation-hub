@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { after } from 'next/server';
 import { loadToolDetail } from '@/application/tools/query';
 import { recordToolView } from '@/application/tools/usage';
-import { PhaseNotice } from '@/components/common/phase-notice';
+import { AnalysisPendingNotice } from '@/components/analysis/analysis-pending-notice';
+import { DuplicateAnalysisCard } from '@/components/analysis/duplicate-analysis-card';
+import { RiskAnalysisCard } from '@/components/analysis/risk-analysis-card';
 import {
   DataClassificationChip,
   ImprovementStatusBadge,
@@ -228,11 +230,18 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
             />
           </FieldList>
 
-          <PhaseNotice
-            phase="PHASE_2"
-            feature="위험도 자동 평가"
-            fallback="지금은 검토자가 체크리스트를 직접 작성해 등급을 정합니다."
-          />
+          {detail.riskAnalysis ? (
+            <RiskAnalysisCard analysis={detail.riskAnalysis} />
+          ) : (
+            <AnalysisPendingNotice
+              feature="위험도 자동 평가"
+              fallback="검토자가 체크리스트를 직접 작성해 등급을 정합니다."
+            />
+          )}
+
+          {detail.duplicateAnalysis && detail.duplicateAnalysis.findings.length > 0 ? (
+            <DuplicateAnalysisCard analysis={detail.duplicateAnalysis} />
+          ) : null}
         </div>
       ),
     },

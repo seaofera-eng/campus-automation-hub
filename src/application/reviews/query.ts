@@ -17,6 +17,14 @@ import type {
   ToolStatus,
 } from '@/domain/tool/types';
 import { isSensitiveClassification } from '@/domain/tool/types';
+import { RISK_FACTORS } from '@/domain/tool/risk-checklist-rules';
+import type { RiskFactorCode } from '@/domain/tool/risk-checklist-rules';
+import {
+  loadDuplicateAnalysis,
+  loadRiskAnalysis,
+  type DuplicateAnalysisView,
+  type RiskAnalysisView,
+} from '@/application/analysis/query';
 import { requireUser, toActor } from '@/lib/auth/current-user';
 import { getRepositories } from '@/lib/di/container';
 
@@ -182,7 +190,15 @@ export interface ReviewDetail {
   transitions: TransitionRule[];
   reviewers: { id: string; name: string }[];
   canAssignSelf: boolean;
+  /** 미리 돌려 둔 중복 분석. 돌린 적이 없으면 null. */
+  duplicateAnalysis: DuplicateAnalysisView | null;
+  /** 미리 돌려 둔 위험도 분석. 체크리스트를 미리 채우는 데 쓴다. */
+  riskAnalysis: RiskAnalysisView | null;
 }
+
+const RISK_FACTOR_LABELS: ReadonlyMap<RiskFactorCode, string> = new Map(
+  RISK_FACTORS.map((factor) => [factor.code, factor.label]),
+);
 
 export async function loadReviewDetail(toolId: string): Promise<ReviewDetail> {
   const actor = await requireUser();
@@ -205,6 +221,12 @@ export async function loadReviewDetail(toolId: string): Promise<ReviewDetail> {
   if (!version) throw notFound('도구 버전');
 
   const personNames = new Map(profiles.map((profile) => [profile.id, profile.name]));
+
+  // 저장된 분석을 읽기만 한다. 여기서 모델을 부르지 않는다.
+  const [duplicateAnalysis, riskAnalysis] = await Promise.all([
+    loadDuplicateAnalysis(tool.currentVersionId, tool.campusId),
+    loadRiskAnalysis(tool.currentVersionId, tool.campusId, checklist, RISK_FACTOR_LABELS),
+  ]);
 
   return {
     actor,
@@ -234,6 +256,8 @@ export async function loadReviewDetail(toolId: string): Promise<ReviewDetail> {
     canAssignSelf:
       assignment?.reviewerUserId !== actor.id &&
       (tool.status === 'SUBMITTED' || tool.status === 'HUMAN_REVIEW'),
+    duplicateAnalysis,
+    riskAnalysis,
   };
 }
 

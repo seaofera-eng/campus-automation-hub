@@ -6,6 +6,11 @@ import type {
   DemandParticipant,
   DemandStatus,
 } from '@/domain/demand/types';
+import type {
+  DemandAnalysis,
+  DuplicateAnalysis,
+  RiskAnalysis,
+} from '@/domain/analysis/types';
 import type { EvaluationHistoryEntry, ToolEvaluation } from '@/domain/evaluation/types';
 import type { Campus, Profile } from '@/domain/identity/types';
 import type { Notice } from '@/domain/notice/types';
@@ -259,6 +264,29 @@ export interface ObservabilityRepository {
 }
 
 /* -------------------------------------------------------------------------- */
+/* AI 분석 결과                                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * 모델이 낸 분석을 담아 두는 곳.
+ *
+ * 도구 버전 하나에 분석 하나다. 새 버전이 올라오면 그 버전으로 다시 분석한다.
+ * 이전 버전의 분석은 그 버전에 그대로 남아 있어서, 나중에 "그때는 뭐라고 봤나"를
+ * 되짚을 수 있다.
+ */
+export interface AnalysisRepository {
+  getDuplicateAnalysis(toolVersionId: ToolVersionId): Promise<DuplicateAnalysis | null>;
+  listDuplicateAnalyses(campusId: CampusId): Promise<DuplicateAnalysis[]>;
+  upsertDuplicateAnalysis(analysis: DuplicateAnalysis): Promise<DuplicateAnalysis>;
+
+  getRiskAnalysis(toolVersionId: ToolVersionId): Promise<RiskAnalysis | null>;
+  upsertRiskAnalysis(analysis: RiskAnalysis): Promise<RiskAnalysis>;
+
+  getDemandAnalysis(demandId: DemandId): Promise<DemandAnalysis | null>;
+  upsertDemandAnalysis(analysis: DemandAnalysis): Promise<DemandAnalysis>;
+}
+
+/* -------------------------------------------------------------------------- */
 /* 첨부파일 저장소                                                             */
 /* -------------------------------------------------------------------------- */
 
@@ -283,6 +311,7 @@ export interface Repositories {
   evaluations: EvaluationRepository;
   improvements: ImprovementRepository;
   observability: ObservabilityRepository;
+  analyses: AnalysisRepository;
   rewards: RewardRepository;
   notices: NoticeRepository;
   files: FileStorage;

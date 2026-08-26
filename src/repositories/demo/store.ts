@@ -3,6 +3,11 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import type {
+  DemandAnalysis,
+  DuplicateAnalysis,
+  RiskAnalysis,
+} from '@/domain/analysis/types';
+import type {
   AutomationDemand,
   DemandAttachment,
   DemandComment,
@@ -38,7 +43,7 @@ import { buildDemoSeed } from './seed';
  * 운영용 저장소가 아니다. 실제 배포에서는 Supabase 구현을 사용한다.
  */
 
-export const DEMO_SCHEMA_VERSION = 1;
+export const DEMO_SCHEMA_VERSION = 2;
 
 export interface DemoDatabase {
   schemaVersion: number;
@@ -66,6 +71,9 @@ export interface DemoDatabase {
   notifications: Notification[];
   rewardEntries: RewardEntry[];
   notices: Notice[];
+  duplicateAnalyses: DuplicateAnalysis[];
+  riskAnalyses: RiskAnalysis[];
+  demandAnalyses: DemandAnalysis[];
 }
 
 function dataDir(): string {

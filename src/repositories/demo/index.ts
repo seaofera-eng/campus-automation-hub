@@ -1,5 +1,6 @@
 import 'server-only';
 import type { Repositories } from '../types';
+import { createDemoAnalysisRepository } from './analysis-repository';
 import { createDemoDemandRepository } from './demand-repository';
 import { createDemoEvaluationRepository } from './evaluation-repository';
 import { createDemoFileStorage } from './file-storage';
@@ -22,6 +23,7 @@ export function createDemoRepositories(): Repositories {
     evaluations: createDemoEvaluationRepository(),
     improvements: createDemoImprovementRepository(),
     observability: createDemoObservabilityRepository(),
+    analyses: createDemoAnalysisRepository(),
     rewards: createRewardRepository(),
     notices: createNoticeRepository(),
     files: createDemoFileStorage(),

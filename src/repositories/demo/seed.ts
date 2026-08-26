@@ -48,6 +48,11 @@ import {
   DEMO_VERSION_IDS,
   seedId,
 } from './seed-ids';
+import {
+  SEEDED_DEMAND_ANALYSES,
+  SEEDED_DUPLICATE_ANALYSES,
+  SEEDED_RISK_ANALYSES,
+} from './seed-analyses';
 
 /**
  * DEMO 모드 시드 데이터.
@@ -1295,6 +1300,10 @@ export function buildDemoSeed(): DemoDatabase {
     demandAttachments: [],
     rewardEntries: buildRewardEntries(),
     notices: buildNotices(),
+    // 미리 돌려 둔 분석. 아직 돌린 적이 없으면 빈 배열이고, 화면은 '분석 없음'을 낸다.
+    duplicateAnalyses: structuredClone(SEEDED_DUPLICATE_ANALYSES),
+    riskAnalyses: structuredClone(SEEDED_RISK_ANALYSES),
+    demandAnalyses: structuredClone(SEEDED_DEMAND_ANALYSES),
   };
 }
 

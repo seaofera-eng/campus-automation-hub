@@ -25,6 +25,14 @@ import type {
 import type { ToolEvaluation } from '@/domain/evaluation/types';
 import type { ReviewComment } from '@/domain/review/types';
 import { requireUser, toActor } from '@/lib/auth/current-user';
+import {
+  loadDuplicateAnalysis,
+  loadRiskAnalysis,
+  type DuplicateAnalysisView,
+  type RiskAnalysisView,
+} from '@/application/analysis/query';
+import { RISK_FACTORS } from '@/domain/tool/risk-checklist-rules';
+import type { RiskFactorCode } from '@/domain/tool/risk-checklist-rules';
 import { getRepositories } from '@/lib/di/container';
 import type { ToolQuery } from '@/lib/validation/tool-query';
 import { listAttachments, type AttachmentView } from './attachments';
@@ -219,6 +227,10 @@ function sortItems(items: ToolListItem[], sort: ToolQuery['sort']): ToolListItem
 /* 상세                                                                        */
 /* -------------------------------------------------------------------------- */
 
+const RISK_FACTOR_LABELS: ReadonlyMap<RiskFactorCode, string> = new Map(
+  RISK_FACTORS.map((factor) => [factor.code, factor.label]),
+);
+
 export interface ToolDetail {
   actor: Profile;
   tool: AutomationTool;
@@ -235,6 +247,10 @@ export interface ToolDetail {
   statusHistory: (ToolStatusHistoryEntry & { changedByName: string })[];
   reviewComments: (ReviewComment & { authorName: string })[];
   riskChecklist: RiskChecklist | null;
+  /** 미리 돌려 둔 위험도 분석. 검토 화면과 같은 내용을 보여 준다. */
+  riskAnalysis: RiskAnalysisView | null;
+  /** 미리 돌려 둔 중복 분석. 등록 검토에서 무엇이 걸렸는지 공개한다. */
+  duplicateAnalysis: DuplicateAnalysisView | null;
   usage: { views: number; launches: number };
   /**
    * 지금 이 사용자가 실행할 수 있는 상태 전환.
@@ -290,6 +306,13 @@ export async function loadToolDetail(toolId: string): Promise<ToolDetail> {
 
   if (!version) throw notFound('도구 버전');
 
+  // 저장된 분석을 읽는다. 체크리스트가 있어야 갈린 항목을 계산할 수 있어서
+  // 위 Promise.all 뒤에 온다.
+  const [riskAnalysis, duplicateAnalysis] = await Promise.all([
+    loadRiskAnalysis(tool.currentVersionId, tool.campusId, riskChecklist, RISK_FACTOR_LABELS),
+    loadDuplicateAnalysis(tool.currentVersionId, tool.campusId),
+  ]);
+
   const personNames = new Map(profiles.map((person) => [person.id, person.name]));
   const name = (id: string) => personNames.get(id as never) ?? '알 수 없음';
 
@@ -320,6 +343,8 @@ export async function loadToolDetail(toolId: string): Promise<ToolDetail> {
       authorName: name(comment.authorUserId),
     })),
     riskChecklist,
+    riskAnalysis,
+    duplicateAnalysis,
     usage,
     myEvaluation:
       evaluations.find(

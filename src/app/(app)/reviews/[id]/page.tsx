@@ -2,7 +2,9 @@ import { ExternalLink } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { emptyChecklistItems, loadReviewDetail } from '@/application/reviews/query';
-import { PhaseNotice } from '@/components/common/phase-notice';
+import { DuplicateAnalysisCard } from '@/components/analysis/duplicate-analysis-card';
+import { RiskAnalysisCard } from '@/components/analysis/risk-analysis-card';
+import { AnalysisPendingNotice } from '@/components/analysis/analysis-pending-notice';
 import {
   DataClassificationChip,
   RiskLevelBadge,
@@ -130,6 +132,21 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
             </CardContent>
           </Card>
 
+          {detail.duplicateAnalysis ? (
+            <DuplicateAnalysisCard analysis={detail.duplicateAnalysis} />
+          ) : (
+            <AnalysisPendingNotice feature="중복 자동화 탐지" />
+          )}
+
+          {detail.riskAnalysis ? (
+            <RiskAnalysisCard analysis={detail.riskAnalysis} />
+          ) : (
+            <AnalysisPendingNotice
+              feature="위험도 자동 평가"
+              fallback="아래 체크리스트를 직접 채워 주세요."
+            />
+          )}
+
           <RiskChecklistForm
             toolId={tool.id}
             initialItems={checklist?.items ?? emptyChecklistItems()}
@@ -167,12 +184,6 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
             transitions={detail.transitions}
             canAssignSelf={detail.canAssignSelf}
             hasChecklist={checklist !== null}
-          />
-
-          <PhaseNotice
-            phase="PHASE_2"
-            feature="AI 중복 탐지와 위험 자동 평가"
-            fallback="지금은 위 체크리스트를 직접 작성해 판단합니다."
           />
         </div>
       </div>

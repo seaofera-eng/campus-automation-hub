@@ -8,7 +8,8 @@ import { loadAwardState } from '@/application/rewards/tokens';
 import { AwardTokensPanel } from '@/components/demands/award-tokens-panel';
 import { DemandAttachments } from '@/components/demands/demand-attachments';
 import { DemandComments } from '@/components/demands/demand-comments';
-import { PhaseNotice } from '@/components/common/phase-notice';
+import { AnalysisPendingNotice } from '@/components/analysis/analysis-pending-notice';
+import { DemandAnalysisCard } from '@/components/analysis/demand-analysis-card';
 import { DemandStatusBadge, ToolStatusBadge } from '@/components/common/status-badge';
 import { DemandActionsPanel } from '@/components/demands/demand-actions-panel';
 import { MatchToolDialog, UnlinkToolButton } from '@/components/demands/match-tool-dialog';
@@ -152,6 +153,8 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ i
               ) : null}
             </CardContent>
           </Card>
+
+          {detail.analysis ? <DemandAnalysisCard analysis={detail.analysis} /> : null}
 
           <Card>
             <CardHeader className="flex-row items-center justify-between">
@@ -302,11 +305,12 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ i
             alreadyJoined={permissions.alreadyJoined}
           />
 
-          <PhaseNotice
-            phase="PHASE_2"
-            feature="수요-도구 자동 매칭"
-            fallback="지금은 검토자가 도구를 직접 찾아 연결하고 사유를 남깁니다."
-          />
+          {detail.analysis ? null : (
+            <AnalysisPendingNotice
+              feature="수요-도구 자동 매칭"
+              fallback="검토자가 도구를 직접 찾아 연결할 수 있습니다."
+            />
+          )}
         </div>
       </div>
     </div>
