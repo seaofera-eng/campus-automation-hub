@@ -4,6 +4,8 @@ import type {
   DuplicateFinding,
   DuplicateRecommendation,
   DuplicateVerdict,
+  QualityReviewResult,
+  QualityVerdict,
   RiskAnalysis,
   RiskFactorSuggestion,
 } from '@/domain/analysis/types';
@@ -65,6 +67,16 @@ export interface RiskAnalysisView {
   disagreementCount: number;
   /** 검토자가 확정한 등급. 아직 없으면 null. */
   confirmedLevel: RiskLevel | null;
+}
+
+export interface QualityReviewView {
+  results: QualityReviewResult[];
+  disagreement: boolean;
+  verdict: QualityVerdict;
+  provenance: AnalysisProvenanceView;
+  /** 확인이 필요한 지적 수. 배지 하나로 요약할 때 쓴다. */
+  blockerCount: number;
+  totalFindings: number;
 }
 
 export interface DemandMatchFindingView {
@@ -172,6 +184,25 @@ export async function loadRiskAnalysis(
     provenance: await toProvenanceView(analysis.provenance, campusId),
     disagreementCount: disagreements.length,
     confirmedLevel: checklist?.riskLevel ?? null,
+  };
+}
+
+export async function loadQualityReview(
+  toolVersionId: ToolVersionId,
+  campusId: CampusId,
+): Promise<QualityReviewView | null> {
+  const review = await getRepositories().analyses.getQualityReview(toolVersionId);
+  if (!review) return null;
+
+  const findings = review.results.flatMap((result) => result.findings);
+
+  return {
+    results: review.results,
+    disagreement: review.disagreement,
+    verdict: review.verdict,
+    provenance: await toProvenanceView(review.provenance, campusId),
+    blockerCount: findings.filter((finding) => finding.severity === 'BLOCKER').length,
+    totalFindings: findings.length,
   };
 }
 

@@ -86,3 +86,33 @@ create policy risk_analyses_read on risk_analyses
   for select using (auth.role() = 'authenticated');
 create policy demand_analyses_read on demand_analyses
   for select using (auth.role() = 'authenticated');
+
+-- -----------------------------------------------------------------------------
+-- 멀티 LLM 품질검증
+--
+-- 0009 의 llm_review_runs / llm_review_results 를 대체합니다. 그쪽은 실행 이력을
+-- 두 테이블로 나눠 두었는데, 관점이 둘뿐이고 항상 같이 돌아서 한 행에 담는 편이
+-- 읽기 쉽습니다. 관점별 모델과 지적 내용은 results 안에 들어갑니다.
+-- -----------------------------------------------------------------------------
+drop table if exists llm_review_results;
+drop table if exists llm_review_runs;
+
+create table if not exists quality_reviews (
+  tool_version_id uuid primary key references automation_tool_versions(id) on delete cascade,
+  -- QualityReviewResult[] — 관점별 모델·통과 여부·지적 내용
+  results         jsonb not null default '[]'::jsonb,
+  -- 모델끼리 판정이 갈렸는가. 갈리면 자동으로 한쪽 편들지 않습니다.
+  disagreement    boolean not null default false,
+  -- PASS / NEEDS_HUMAN_REVIEW / FAIL
+  verdict         text not null,
+  model           text not null,
+  generated_at    timestamptz not null default now(),
+  human_reviewed  boolean not null default false,
+  reviewed_by     uuid references profiles(id) on delete set null,
+  reviewed_at     timestamptz
+);
+
+alter table quality_reviews enable row level security;
+
+create policy quality_reviews_read on quality_reviews
+  for select using (auth.role() = 'authenticated');

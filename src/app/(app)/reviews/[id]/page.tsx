@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { emptyChecklistItems, loadReviewDetail } from '@/application/reviews/query';
 import { DuplicateAnalysisCard } from '@/components/analysis/duplicate-analysis-card';
+import { QualityReviewCard } from '@/components/analysis/quality-review-card';
 import { RiskAnalysisCard } from '@/components/analysis/risk-analysis-card';
 import { AnalysisPendingNotice } from '@/components/analysis/analysis-pending-notice';
 import {
@@ -136,6 +137,12 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
             <DuplicateAnalysisCard analysis={detail.duplicateAnalysis} />
           ) : (
             <AnalysisPendingNotice feature="중복 자동화 탐지" />
+          )}
+
+          {detail.qualityReview ? (
+            <QualityReviewCard review={detail.qualityReview} />
+          ) : (
+            <AnalysisPendingNotice feature="멀티 LLM 품질검증" />
           )}
 
           {detail.riskAnalysis ? (

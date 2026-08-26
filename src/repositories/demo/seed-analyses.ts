@@ -1,6 +1,7 @@
 import type {
   DemandAnalysis,
   DuplicateAnalysis,
+  QualityReview,
   RiskAnalysis,
 } from '@/domain/analysis/types';
 
@@ -32,3 +33,5 @@ export const SEEDED_DUPLICATE_ANALYSES: DuplicateAnalysis[] = [];
 export const SEEDED_RISK_ANALYSES: RiskAnalysis[] = [];
 
 export const SEEDED_DEMAND_ANALYSES: DemandAnalysis[] = [];
+
+export const SEEDED_QUALITY_REVIEWS: QualityReview[] = [];

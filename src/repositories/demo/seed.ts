@@ -51,6 +51,7 @@ import {
 import {
   SEEDED_DEMAND_ANALYSES,
   SEEDED_DUPLICATE_ANALYSES,
+  SEEDED_QUALITY_REVIEWS,
   SEEDED_RISK_ANALYSES,
 } from './seed-analyses';
 
@@ -1304,6 +1305,7 @@ export function buildDemoSeed(): DemoDatabase {
     duplicateAnalyses: structuredClone(SEEDED_DUPLICATE_ANALYSES),
     riskAnalyses: structuredClone(SEEDED_RISK_ANALYSES),
     demandAnalyses: structuredClone(SEEDED_DEMAND_ANALYSES),
+    qualityReviews: structuredClone(SEEDED_QUALITY_REVIEWS),
   };
 }
 

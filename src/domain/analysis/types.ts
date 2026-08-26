@@ -188,3 +188,120 @@ export interface DemandAnalysis {
   comparedCount: number;
   provenance: AnalysisProvenance;
 }
+
+/* -------------------------------------------------------------------------- */
+/* 멀티 LLM 품질검증                                                            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * 등록 내용을 **서로 다른 모델 둘**이 서로 다른 관점에서 본다.
+ *
+ * ## 무엇을 검증하는가
+ *
+ * 도구의 실행 결과가 아니라 **등록 내용 자체**다. 플랫폼은 도구를 실행하지
+ * 않으므로 결과를 검증할 방법이 없고, 없는 것을 검증한 척하면 그게 가짜다.
+ *
+ * 대신 등록 내용에서 사람이 놓치기 쉬운 것을 잡는다. 특히 **앞뒤가 안 맞는
+ * 신고**다 — "외부 전송 없음"에 체크해 놓고 기능 설명에는 번역 API 를 쓴다고
+ * 적힌 경우 같은 것. 검토자가 스무 건을 훑다 보면 반드시 놓친다.
+ *
+ * ## 왜 모델을 둘 쓰는가
+ *
+ * 같은 모델에게 두 번 물으면 같은 각도에서 두 번 보는 것이다. 놓친 것은 두 번
+ * 다 놓친다. 다른 모델에게 물어야 다른 것이 걸리고, **갈렸다는 사실 자체가
+ * 신호**가 된다.
+ *
+ * 판정이 갈리면 통과도 탈락도 아닌 `NEEDS_HUMAN_REVIEW` 다. 두 모델이 서로
+ * 다르게 본 것을 자동으로 한쪽 편들지 않는다.
+ */
+
+export type QualityReviewKind =
+  /** 등록 내용끼리 앞뒤가 맞는가 */
+  | 'CONSISTENCY'
+  /** 학내 규정과 보안상 빠진 것이 없는가 */
+  | 'POLICY';
+
+export const QUALITY_REVIEW_KIND_LABELS: Record<QualityReviewKind, string> = {
+  CONSISTENCY: '내용 일관성',
+  POLICY: '규정·보안',
+};
+
+export type QualitySeverity = 'BLOCKER' | 'WARNING' | 'NOTE';
+
+export const QUALITY_SEVERITY_LABELS: Record<QualitySeverity, string> = {
+  BLOCKER: '확인 필요',
+  WARNING: '주의',
+  NOTE: '참고',
+};
+
+export interface QualityFinding {
+  severity: QualitySeverity;
+  /** 무엇이 걸렸는지 한 줄 */
+  title: string;
+  /** 등록 내용 중 근거로 삼은 대목 */
+  evidence: string;
+  /** 검토자가 무엇을 확인하면 되는지 */
+  suggestion: string;
+}
+
+export interface QualityReviewResult {
+  kind: QualityReviewKind;
+  /** 어느 모델이 봤는지. 관점마다 다른 모델을 쓴다. */
+  model: string;
+  /** 이 관점에서 문제없다고 봤는가 */
+  passed: boolean;
+  findings: QualityFinding[];
+}
+
+export type QualityVerdict = 'PASS' | 'NEEDS_HUMAN_REVIEW' | 'FAIL';
+
+export const QUALITY_VERDICT_LABELS: Record<QualityVerdict, string> = {
+  PASS: '이상 없음',
+  NEEDS_HUMAN_REVIEW: '사람 확인 필요',
+  FAIL: '확인할 것이 있음',
+};
+
+export interface QualityReview {
+  toolVersionId: ToolVersionId;
+  results: QualityReviewResult[];
+  /** 모델끼리 판정이 갈렸는가 */
+  disagreement: boolean;
+  verdict: QualityVerdict;
+  provenance: AnalysisProvenance;
+}
+
+/**
+ * 두 관점의 결과를 합쳐 최종 판정을 낸다.
+ *
+ * - 둘 다 통과 → PASS
+ * - 둘 다 탈락 → FAIL (양쪽이 같은 결론이면 사람이 다시 볼 것도 없이 문제가 있다)
+ * - 갈림 → NEEDS_HUMAN_REVIEW
+ * - BLOCKER 가 하나라도 있으면 통과시키지 않는다
+ *
+ * 결과가 하나뿐이면(한쪽 호출이 실패) 갈릴 수가 없으므로 그 결과를 따르되,
+ * 통과라도 사람 확인으로 돌린다 — 교차 검증이 안 된 결과다.
+ */
+export function aggregateQualityResults(
+  results: readonly QualityReviewResult[],
+): { verdict: QualityVerdict; disagreement: boolean } {
+  if (results.length === 0) return { verdict: 'NEEDS_HUMAN_REVIEW', disagreement: false };
+
+  const hasBlocker = results.some((result) =>
+    result.findings.some((finding) => finding.severity === 'BLOCKER'),
+  );
+  if (hasBlocker) return { verdict: 'FAIL', disagreement: false };
+
+  if (results.length === 1) {
+    // 교차 검증이 안 됐다. 통과라고 단정하지 않는다.
+    return {
+      verdict: results[0]?.passed ? 'NEEDS_HUMAN_REVIEW' : 'FAIL',
+      disagreement: false,
+    };
+  }
+
+  const passCount = results.filter((result) => result.passed).length;
+  if (passCount === results.length) return { verdict: 'PASS', disagreement: false };
+  if (passCount === 0) return { verdict: 'FAIL', disagreement: false };
+
+  return { verdict: 'NEEDS_HUMAN_REVIEW', disagreement: true };
+}

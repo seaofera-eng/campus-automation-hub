@@ -9,6 +9,7 @@ import type {
 import type {
   DemandAnalysis,
   DuplicateAnalysis,
+  QualityReview,
   RiskAnalysis,
 } from '@/domain/analysis/types';
 import type { EvaluationHistoryEntry, ToolEvaluation } from '@/domain/evaluation/types';
@@ -291,6 +292,9 @@ export interface AnalysisRepository {
 
   getDemandAnalysis(demandId: DemandId): Promise<DemandAnalysis | null>;
   upsertDemandAnalysis(analysis: DemandAnalysis): Promise<DemandAnalysis>;
+
+  getQualityReview(toolVersionId: ToolVersionId): Promise<QualityReview | null>;
+  upsertQualityReview(review: QualityReview): Promise<QualityReview>;
 }
 
 /* -------------------------------------------------------------------------- */

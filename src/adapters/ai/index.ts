@@ -33,3 +33,6 @@ export type { RiskAnalysisRequest } from './live/risk-assessment';
 
 export { analyzeDemand } from './live/demand-matching';
 export type { DemandAnalysisRequest } from './live/demand-matching';
+
+export { reviewQuality } from './live/quality-review';
+export type { QualityReviewRequest } from './live/quality-review';

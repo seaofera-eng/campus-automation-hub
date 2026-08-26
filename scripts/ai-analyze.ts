@@ -4,7 +4,7 @@
  * ```powershell
  * $env:ANTHROPIC_API_KEY = "sk-ant-..."
  * pnpm ai:analyze            # 전부
- * pnpm ai:analyze -- --only=duplicates
+ * pnpm ai:analyze -- --only=duplicates   # duplicates / risk / demands / quality
  * pnpm ai:analyze -- --dry-run   # 부를 횟수와 예상 비용만
  * ```
  *
@@ -32,6 +32,7 @@ import {
   analyzeRisk,
   drainUsage,
   isAiEnabled,
+  reviewQuality,
   toDemandDigest,
   toToolDigest,
   type ToolDigest,
@@ -39,6 +40,7 @@ import {
 import type {
   DemandAnalysis,
   DuplicateAnalysis,
+  QualityReview,
   RiskAnalysis,
 } from '../src/domain/analysis/types';
 import type { AutomationDemand } from '../src/domain/demand/types';
@@ -59,12 +61,12 @@ const CONCURRENCY = 3;
 
 interface Options {
   dryRun: boolean;
-  only: 'all' | 'duplicates' | 'risk' | 'demands';
+  only: 'all' | 'duplicates' | 'risk' | 'demands' | 'quality';
 }
 
 function parseOptions(argv: readonly string[]): Options {
   const only = argv.find((arg) => arg.startsWith('--only='))?.slice('--only='.length) ?? 'all';
-  const valid = ['all', 'duplicates', 'risk', 'demands'] as const;
+  const valid = ['all', 'duplicates', 'risk', 'demands', 'quality'] as const;
   if (!(valid as readonly string[]).includes(only)) {
     throw new Error(`--only 는 ${valid.join(' / ')} 중 하나여야 합니다. 받은 값: ${only}`);
   }
@@ -103,12 +105,14 @@ function renderSeedFile(
   duplicates: DuplicateAnalysis[],
   risks: RiskAnalysis[],
   demands: DemandAnalysis[],
+  qualityReviews: QualityReview[],
 ): string {
   const stringify = (value: unknown) => JSON.stringify(value, null, 2);
 
   return `import type {
   DemandAnalysis,
   DuplicateAnalysis,
+  QualityReview,
   RiskAnalysis,
 } from '@/domain/analysis/types';
 
@@ -135,6 +139,8 @@ export const SEEDED_DUPLICATE_ANALYSES: DuplicateAnalysis[] = ${stringify(duplic
 export const SEEDED_RISK_ANALYSES: RiskAnalysis[] = ${stringify(risks)};
 
 export const SEEDED_DEMAND_ANALYSES: DemandAnalysis[] = ${stringify(demands)};
+
+export const SEEDED_QUALITY_REVIEWS: QualityReview[] = ${stringify(qualityReviews)};
 `;
 }
 
@@ -182,11 +188,14 @@ async function main(): Promise<void> {
   const wantDuplicates = options.only === 'all' || options.only === 'duplicates';
   const wantRisk = options.only === 'all' || options.only === 'risk';
   const wantDemands = options.only === 'all' || options.only === 'demands';
+  const wantQuality = options.only === 'all' || options.only === 'quality';
 
   const callCount =
     (wantDuplicates ? digests.length : 0) +
     (wantRisk ? digests.length : 0) +
-    (wantDemands ? liveDemands.length : 0);
+    (wantDemands ? liveDemands.length : 0) +
+    // 품질검증은 관점이 둘이라 도구 하나에 두 번 부른다.
+    (wantQuality ? digests.length * 2 : 0);
 
   log(`도구 ${digests.length}건, 수요 ${liveDemands.length}건`);
   log(`모델 호출 예정 ${callCount}회`);
@@ -202,6 +211,7 @@ async function main(): Promise<void> {
   const duplicates: DuplicateAnalysis[] = [];
   const risks: RiskAnalysis[] = [];
   const demandAnalyses: DemandAnalysis[] = [];
+  const qualityReviews: QualityReview[] = [];
   let failed = 0;
 
   if (wantDuplicates) {
@@ -262,11 +272,32 @@ async function main(): Promise<void> {
     }
   }
 
+  if (wantQuality) {
+    log('\n멀티 LLM 품질검증…');
+    const results = await mapLimited(digests, CONCURRENCY, async (entry) => {
+      const review = await reviewQuality({
+        toolVersionId: entry.tool.currentVersionId,
+        tool: entry.digest,
+      });
+      log(
+        review
+          ? `  ✓ ${entry.tool.name} — ${review.verdict}${review.disagreement ? ' (판정 갈림)' : ''}`
+          : `  ✗ ${entry.tool.name} — 실패`,
+      );
+      return review;
+    });
+    for (const result of results) {
+      if (result) qualityReviews.push(result);
+      else failed += 1;
+    }
+  }
+
   // --only 로 일부만 돌렸을 때 나머지를 날려 버리지 않는다.
   const existing = (await import('../src/repositories/demo/seed-analyses')) as {
     SEEDED_DUPLICATE_ANALYSES: DuplicateAnalysis[];
     SEEDED_RISK_ANALYSES: RiskAnalysis[];
     SEEDED_DEMAND_ANALYSES: DemandAnalysis[];
+    SEEDED_QUALITY_REVIEWS: QualityReview[];
   };
 
   await writeFile(
@@ -275,6 +306,7 @@ async function main(): Promise<void> {
       wantDuplicates ? duplicates : existing.SEEDED_DUPLICATE_ANALYSES,
       wantRisk ? risks : existing.SEEDED_RISK_ANALYSES,
       wantDemands ? demandAnalyses : existing.SEEDED_DEMAND_ANALYSES,
+      wantQuality ? qualityReviews : existing.SEEDED_QUALITY_REVIEWS,
     ),
     'utf8',
   );

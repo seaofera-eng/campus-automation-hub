@@ -6,6 +6,9 @@ import type {
   DemandMatchOutcome,
   DuplicateAnalysis,
   DuplicateFinding,
+  QualityReview,
+  QualityReviewResult,
+  QualityVerdict,
   RiskAnalysis,
   RiskFactorSuggestion,
 } from '@/domain/analysis/types';
@@ -75,6 +78,16 @@ function toRisk(row: Row): RiskAnalysis {
       description: string;
       mandatory: boolean;
     }[],
+    provenance: toProvenance(row),
+  };
+}
+
+function toQualityReview(row: Row): QualityReview {
+  return {
+    toolVersionId: row.tool_version_id as ToolVersionId,
+    results: (row.results ?? []) as QualityReviewResult[],
+    disagreement: Boolean(row.disagreement),
+    verdict: row.verdict as QualityVerdict,
     provenance: toProvenance(row),
   };
 }
@@ -183,6 +196,30 @@ export function createSupabaseAnalysisRepository(): AnalysisRepository {
       });
       throwOnError(error, '수요 매칭 분석 저장');
       return analysis;
+    },
+
+    async getQualityReview(toolVersionId: ToolVersionId): Promise<QualityReview | null> {
+      const supabase = await getUserClient();
+      const { data, error } = await supabase
+        .from('quality_reviews')
+        .select('*')
+        .eq('tool_version_id', toolVersionId)
+        .maybeSingle();
+      throwOnError(error, '품질검증 조회');
+      return data ? toQualityReview(data) : null;
+    },
+
+    async upsertQualityReview(review: QualityReview): Promise<QualityReview> {
+      const supabase = await getUserClient();
+      const { error } = await supabase.from('quality_reviews').upsert({
+        tool_version_id: review.toolVersionId,
+        results: review.results,
+        disagreement: review.disagreement,
+        verdict: review.verdict,
+        ...fromProvenance(review.provenance),
+      });
+      throwOnError(error, '품질검증 저장');
+      return review;
     },
   };
 }

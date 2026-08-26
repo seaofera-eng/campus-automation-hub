@@ -21,8 +21,10 @@ import { RISK_FACTORS } from '@/domain/tool/risk-checklist-rules';
 import type { RiskFactorCode } from '@/domain/tool/risk-checklist-rules';
 import {
   loadDuplicateAnalysis,
+  loadQualityReview,
   loadRiskAnalysis,
   type DuplicateAnalysisView,
+  type QualityReviewView,
   type RiskAnalysisView,
 } from '@/application/analysis/query';
 import { requireUser, toActor } from '@/lib/auth/current-user';
@@ -194,6 +196,8 @@ export interface ReviewDetail {
   duplicateAnalysis: DuplicateAnalysisView | null;
   /** 미리 돌려 둔 위험도 분석. 체크리스트를 미리 채우는 데 쓴다. */
   riskAnalysis: RiskAnalysisView | null;
+  /** 서로 다른 모델 둘이 등록 내용을 교차 검증한 결과. */
+  qualityReview: QualityReviewView | null;
 }
 
 const RISK_FACTOR_LABELS: ReadonlyMap<RiskFactorCode, string> = new Map(
@@ -223,9 +227,10 @@ export async function loadReviewDetail(toolId: string): Promise<ReviewDetail> {
   const personNames = new Map(profiles.map((profile) => [profile.id, profile.name]));
 
   // 저장된 분석을 읽기만 한다. 여기서 모델을 부르지 않는다.
-  const [duplicateAnalysis, riskAnalysis] = await Promise.all([
+  const [duplicateAnalysis, riskAnalysis, qualityReview] = await Promise.all([
     loadDuplicateAnalysis(tool.currentVersionId, tool.campusId),
     loadRiskAnalysis(tool.currentVersionId, tool.campusId, checklist, RISK_FACTOR_LABELS),
+    loadQualityReview(tool.currentVersionId, tool.campusId),
   ]);
 
   return {
@@ -258,6 +263,7 @@ export async function loadReviewDetail(toolId: string): Promise<ReviewDetail> {
       (tool.status === 'SUBMITTED' || tool.status === 'HUMAN_REVIEW'),
     duplicateAnalysis,
     riskAnalysis,
+    qualityReview,
   };
 }
 

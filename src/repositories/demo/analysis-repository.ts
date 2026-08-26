@@ -2,6 +2,7 @@ import 'server-only';
 import type {
   DemandAnalysis,
   DuplicateAnalysis,
+  QualityReview,
   RiskAnalysis,
 } from '@/domain/analysis/types';
 import type { CampusId, DemandId, ToolVersionId } from '@/domain/shared/ids';
@@ -71,6 +72,23 @@ export function createDemoAnalysisRepository(): AnalysisRepository {
         if (index >= 0) db.demandAnalyses[index] = clone(analysis);
         else db.demandAnalyses.push(clone(analysis));
         return clone(analysis);
+      });
+    },
+
+    async getQualityReview(toolVersionId: ToolVersionId): Promise<QualityReview | null> {
+      const db = await loadDb();
+      const found = db.qualityReviews.find((row) => row.toolVersionId === toolVersionId);
+      return found ? clone(found) : null;
+    },
+
+    async upsertQualityReview(review: QualityReview): Promise<QualityReview> {
+      return mutateDb((db) => {
+        const index = db.qualityReviews.findIndex(
+          (row) => row.toolVersionId === review.toolVersionId,
+        );
+        if (index >= 0) db.qualityReviews[index] = clone(review);
+        else db.qualityReviews.push(clone(review));
+        return clone(review);
       });
     },
   };

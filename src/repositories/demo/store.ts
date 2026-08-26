@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import type {
   DemandAnalysis,
   DuplicateAnalysis,
+  QualityReview,
   RiskAnalysis,
 } from '@/domain/analysis/types';
 import type {
@@ -43,7 +44,7 @@ import { buildDemoSeed } from './seed';
  * 운영용 저장소가 아니다. 실제 배포에서는 Supabase 구현을 사용한다.
  */
 
-export const DEMO_SCHEMA_VERSION = 2;
+export const DEMO_SCHEMA_VERSION = 3;
 
 export interface DemoDatabase {
   schemaVersion: number;
@@ -74,6 +75,7 @@ export interface DemoDatabase {
   duplicateAnalyses: DuplicateAnalysis[];
   riskAnalyses: RiskAnalysis[];
   demandAnalyses: DemandAnalysis[];
+  qualityReviews: QualityReview[];
 }
 
 function dataDir(): string {
