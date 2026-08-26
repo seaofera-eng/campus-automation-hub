@@ -254,6 +254,13 @@ export interface ObservabilityRepository {
 
   insertUsageEvent(event: UsageEvent): Promise<void>;
   countUsageByTool(toolId: ToolId): Promise<{ views: number; launches: number }>;
+  /**
+   * 도구별로 실행 링크를 누른 **서로 다른 사람** 수.
+   *
+   * 순위 계산에 쓴다. 실행 횟수를 그대로 세면 한 사람이 여러 번 누른 것이
+   * 여러 사람이 쓴 것처럼 보인다. 로그인하지 않은 실행은 세지 않는다.
+   */
+  countDistinctLaunchUsers(campusId: CampusId): Promise<Record<string, number>>;
 
   listNotifications(userId: UserId, onlyUnread: boolean): Promise<Notification[]>;
   insertNotification(notification: Notification): Promise<Notification>;

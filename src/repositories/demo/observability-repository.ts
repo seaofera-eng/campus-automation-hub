@@ -114,6 +114,24 @@ export function createDemoObservabilityRepository(): ObservabilityRepository {
       return { views, launches };
     },
 
+    async countDistinctLaunchUsers(campusId: CampusId): Promise<Record<string, number>> {
+      const db = await loadDb();
+      const seen = new Map<string, Set<string>>();
+
+      for (const event of db.usageEvents) {
+        if (event.campusId !== campusId) continue;
+        if (event.eventType !== 'LAUNCH') continue;
+        // 익명 실행은 사람 수를 셀 수 없다. 세지 않는다.
+        if (event.userId === null) continue;
+
+        const users = seen.get(event.toolId) ?? new Set<string>();
+        users.add(event.userId);
+        seen.set(event.toolId, users);
+      }
+
+      return Object.fromEntries([...seen].map(([toolId, users]) => [toolId, users.size]));
+    },
+
     async listNotifications(userId: UserId, onlyUnread: boolean): Promise<Notification[]> {
       const db = await loadDb();
       return clone(

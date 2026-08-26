@@ -2,13 +2,14 @@
 
 import {
   ClipboardCheck,
+  Home,
   LayoutDashboard,
   Lightbulb,
-  Settings,
-  Wrench,
-  Wand2,
-  Home,
   Megaphone,
+  Settings,
+  Trophy,
+  Wand2,
+  Wrench,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -40,6 +41,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   { href: '/dashboard', label: '대시보드', icon: LayoutDashboard },
   { href: '/tools', label: '자동화 도구', icon: Wrench },
   { href: '/demands', label: '업무 수요', icon: Lightbulb },
+  { href: '/ranking', label: '도구 순위', icon: Trophy },
   { href: '/reviews', label: '검토 작업', icon: ClipboardCheck, requires: 'REVIEW' },
   { href: '/improvements', label: '개선 요청', icon: Wand2 },
   { href: '/notices', label: '공지', icon: Megaphone },

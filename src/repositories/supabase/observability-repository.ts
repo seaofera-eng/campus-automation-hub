@@ -206,6 +206,29 @@ export function createSupabaseObservabilityRepository(): ObservabilityRepository
       return { views: viewRes.count ?? 0, launches: launchRes.count ?? 0 };
     },
 
+    async countDistinctLaunchUsers(campusId: CampusId): Promise<Record<string, number>> {
+      const supabase = await getUserClient();
+      // 도구 수가 많지 않아 한 번에 읽고 앱에서 센다. 도구가 수천 개가 되면
+      // 집계 뷰로 옮겨야 한다.
+      const { data, error } = await supabase
+        .from('usage_events')
+        .select('tool_id, user_id')
+        .eq('campus_id', campusId)
+        .eq('event_type', 'LAUNCH')
+        .not('user_id', 'is', null);
+      throwOnError(error, '실행 사용자 집계');
+
+      const seen = new Map<string, Set<string>>();
+      for (const row of data ?? []) {
+        const toolId = String(row.tool_id);
+        const users = seen.get(toolId) ?? new Set<string>();
+        users.add(String(row.user_id));
+        seen.set(toolId, users);
+      }
+
+      return Object.fromEntries([...seen].map(([toolId, users]) => [toolId, users.size]));
+    },
+
     async listNotifications(userId: UserId, onlyUnread: boolean): Promise<Notification[]> {
       const supabase = await getUserClient();
       let query = supabase
