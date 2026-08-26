@@ -27,21 +27,33 @@ import {
 } from '@/domain/improvement/types';
 import type { ImpactLevel, ImprovementType, UrgencyLevel } from '@/domain/improvement/types';
 
-/** 개선 요청 등록. 도구 상세와 개선 요청 목록 양쪽에서 쓴다. */
+/**
+ * 개선 요청 등록. 도구 상세와 통합 표준화 화면에서 쓴다.
+ *
+ * 초안(`initial*`)을 받을 수 있다. 통합 표준화가 "이 기능들을 흡수하세요"를
+ * 채워 넣는 데 쓴다 — 같은 내용을 사람이 다시 옮겨 적게 하지 않는다.
+ * 채워진 뒤에는 평범한 개선 요청이라 고치고 지울 수 있다.
+ */
 export function ImprovementForm({
   toolId,
   toolName,
   triggerLabel = '개선 요청',
+  initialTitle = '',
+  initialDetail = '',
+  initialRequestType = 'USABILITY',
 }: {
   toolId: string;
   toolName: string;
   triggerLabel?: string;
+  initialTitle?: string;
+  initialDetail?: string;
+  initialRequestType?: ImprovementType;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState('');
-  const [requestType, setRequestType] = useState<ImprovementType>('USABILITY');
-  const [detail, setDetail] = useState('');
+  const [title, setTitle] = useState(initialTitle);
+  const [requestType, setRequestType] = useState<ImprovementType>(initialRequestType);
+  const [detail, setDetail] = useState(initialDetail);
   const [businessImpact, setBusinessImpact] = useState<ImpactLevel>('MEDIUM');
   const [urgency, setUrgency] = useState<UrgencyLevel>('MEDIUM');
   const [error, setError] = useState<string | null>(null);

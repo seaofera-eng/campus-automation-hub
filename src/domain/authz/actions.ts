@@ -47,6 +47,7 @@ export const PERMISSION_ACTIONS = [
   'admin:categories',
   'admin:auditLogs',
   'admin:notices',
+  'admin:consolidation',
 ] as const;
 
 export type PermissionAction = (typeof PERMISSION_ACTIONS)[number];

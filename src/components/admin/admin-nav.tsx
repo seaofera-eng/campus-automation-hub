@@ -14,6 +14,7 @@ const ITEMS: readonly { href: string; label: string; requires?: AdminPermission 
   { href: '/admin', label: '현황' },
   { href: '/admin/users', label: '사용자', requires: 'MANAGE_USERS' },
   { href: '/admin/categories', label: '카테고리', requires: 'MANAGE_CATEGORIES' },
+  { href: '/admin/consolidation', label: '통합 표준화', requires: 'MANAGE_TOOLS' },
   { href: '/admin/audit-logs', label: '감사 로그', requires: 'VIEW_AUDIT' },
 ];
 

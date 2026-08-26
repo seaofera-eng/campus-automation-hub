@@ -48,3 +48,25 @@ test('분석을 돌리지 않았으면 점수를 지어내지 않는다', async 
     main.getByText(/표시할 점수나 판정을 임의로 만들지 않습니다/).first(),
   ).toBeVisible();
 });
+
+test('통합 표준화는 분석 전과 "겹치는 게 없다"를 구분해 말한다', async ({ page }) => {
+  await loginAs(page, '관리자');
+  await navigateTo(page, '관리');
+
+  await page.getByRole('navigation', { name: '관리 메뉴' }).getByRole('link', {
+    name: '통합 표준화',
+  }).click();
+  await page.waitForURL('**/admin/consolidation');
+
+  const main = mainContent(page);
+
+  await expect(main.getByRole('heading', { name: '통합 표준화' })).toBeVisible();
+
+  // 아직 pnpm ai:analyze 를 돌리지 않았다. "겹치는 도구가 없습니다"가 아니라
+  // "아직 안 돌렸습니다"여야 한다. 둘은 다른 이야기다.
+  await expect(main.getByText(/중복 분석을 아직 돌리지 않았습니다/)).toBeVisible();
+  await expect(main.getByText(/겹치는 도구가 없다는 뜻이 아닙니다/)).toBeVisible();
+
+  // 어떻게 묶었는지를 화면에서 밝힌다.
+  await expect(main.getByRole('heading', { name: /어떻게 묶었습니까/ })).toBeVisible();
+});

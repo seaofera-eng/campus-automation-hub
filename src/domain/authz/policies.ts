@@ -169,6 +169,10 @@ export function can(actor: Actor, action: PermissionAction, context: ResourceCon
     case 'admin:notices':
       return may(actor, 'MANAGE_NOTICES');
 
+    case 'admin:consolidation':
+      // 통합은 남의 도구를 고치자는 제안이다. 도구 관리 권한이 있어야 한다.
+      return may(actor, 'MANAGE_TOOLS');
+
     default: {
       // 새 동작을 actions.ts 에 추가하고 여기에 규칙을 넣지 않으면 컴파일 오류가 난다.
       const exhaustive: never = action;
