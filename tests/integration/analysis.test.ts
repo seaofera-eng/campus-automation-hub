@@ -13,7 +13,12 @@ import type { DemandId, ToolId, ToolVersionId } from '@/domain/shared/ids';
 import type { RiskChecklist, RiskFactorCode } from '@/domain/tool/risk-checklist-rules';
 import { RISK_FACTORS, emptyChecklistItems } from '@/domain/tool/risk-checklist-rules';
 import { getRepositories } from '@/lib/di/container';
-import { DEMO_CAMPUS_ID, setupIsolatedStore, teardownIsolatedStore } from './helpers';
+import {
+  DEMO_CAMPUS_ID,
+  clearSeededAnalyses,
+  setupIsolatedStore,
+  teardownIsolatedStore,
+} from './helpers';
 
 /**
  * 저장된 AI 분석을 읽는 경로.
@@ -28,6 +33,12 @@ import { DEMO_CAMPUS_ID, setupIsolatedStore, teardownIsolatedStore } from './hel
 
 beforeEach(setupIsolatedStore);
 afterEach(teardownIsolatedStore);
+
+/**
+ * 데모 시드에는 미리 돌려 둔 진짜 분석이 들어 있다. 여기서 보려는 것은 읽기
+ * 경로의 규칙이지 그 데이터가 아니므로, 매번 치우고 필요한 것만 심는다.
+ */
+beforeEach(clearSeededAnalyses);
 
 const RISK_FACTOR_LABELS: ReadonlyMap<RiskFactorCode, string> = new Map(
   RISK_FACTORS.map((factor) => [factor.code, factor.label]),

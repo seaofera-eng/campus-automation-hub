@@ -327,6 +327,64 @@ function buildToolSeeds(): SeedToolInput[] {
       },
     },
     {
+      /*
+       * 회의록 도구와 **일부러 겹치게** 둔 신청 건.
+       *
+       * 이 플랫폼이 존재하는 이유가 "옆 부서가 같은 걸 또 만들고 있다"인데,
+       * 데모에 그 사례가 없으면 중복 탐지도 통합 표준화도 보여 줄 것이 없다.
+       *
+       * 만든 사람도 부서도 다르고 쓴 표현도 다르다. 글자만 비교해서는 잘 안
+       * 걸리고, 하는 일을 읽어야 걸린다 — 그게 이 기능이 필요한 이유다.
+       * 검토 대기 상태로 두어 검토자가 승인 전에 마주치게 한다.
+       */
+      id: DEMO_TOOL_IDS.meetingNotesDuplicate,
+      versionId: DEMO_VERSION_IDS.meetingNotesDuplicate,
+      name: `${DEMO_PREFIX} 미팅 노트 자동 정리기`,
+      summary: '녹음한 회의 내용을 정리하고 누가 무엇을 하기로 했는지 뽑아 줍니다.',
+      categoryId: DEMO_CATEGORY_IDS.documentMeeting,
+      runtimeKind: 'WEB',
+      recommendedFor: ['STAFF', 'PROFESSOR'],
+      ownerUserId: DEMO_USER_IDS.developer2,
+      developerUserIds: [DEMO_USER_IDS.developer2],
+      status: 'SUBMITTED',
+      tags: ['미팅', '노트', '정리'],
+      createdDaysAgo: 3,
+      version: {
+        versionLabel: 'v1.0',
+        changeNote: '최초 등록',
+        problemStatement:
+          '주간 회의가 끝나면 녹음을 다시 들으며 정리하느라 30분 넘게 걸립니다. 누가 무엇을 맡았는지도 나중에 다시 물어봐야 할 때가 많습니다.',
+        keyFeatures: [
+          '녹음 파일을 글로 옮기고 주제별로 묶기',
+          '정한 것과 미룬 것 나누기',
+          '사람별로 맡은 일 뽑아내기',
+          '학과 회의록 양식에 맞춰 내보내기',
+        ],
+        currentWorkflow:
+          '회의 녹음 → 다시 들으며 받아쓰기 → 양식에 옮기기 → 맡은 일 따로 정리 → 참석자에게 공유',
+        automatedWorkflow:
+          '회의 녹음 업로드 → 정리 초안 자동 생성 → 작성자가 손보기 → 참석자에게 공유',
+        inputData: '회의 녹음 파일 또는 받아쓴 글, 참석자 목록',
+        outputData: '정리된 회의 기록, 사람별 할 일 목록',
+        expectedUsers: '학과 사무실 조교와 행정 담당자',
+        automationLevel: 'HUMAN_IN_THE_LOOP',
+        security: {
+          classifications: classifications({
+            INTERNAL: '회의에서 오간 이야기',
+            PERSONAL: '참석자 이름',
+          }),
+          sendsDataExternally: false,
+          externalTransferTargets: '',
+          dataStorageLocation: '학과 사무실 PC',
+          dataRetentionPeriod: '',
+          hasExecutionLog: false,
+          requiresHumanApproval: true,
+        },
+        repositoryUrl: '',
+        serviceUrl: 'https://example.test/demo/meeting-note-tidy',
+      },
+    },
+    {
       id: DEMO_TOOL_IDS.excelAggregation,
       versionId: DEMO_VERSION_IDS.excelAggregation,
       name: `${DEMO_PREFIX} 학과별 엑셀 취합 자동화`,

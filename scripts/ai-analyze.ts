@@ -1,8 +1,13 @@
 /**
  * 데모 데이터에 들어갈 AI 분석을 미리 돌린다.
  *
+ * 키는 `.env.local` 에 둡니다 (gitignore 에 있어 커밋되지 않습니다):
+ *
+ * ```
+ * AI_GATEWAY_API_KEY=<충남대 AI 포털 키>
+ * ```
+ *
  * ```powershell
- * $env:ANTHROPIC_API_KEY = "sk-ant-..."
  * pnpm ai:analyze            # 전부
  * pnpm ai:analyze -- --only=duplicates   # duplicates / risk / demands / quality
  * pnpm ai:analyze -- --dry-run   # 부를 횟수와 예상 비용만
@@ -134,13 +139,19 @@ function renderSeedFile(
  * 생성 시각: ${new Date().toISOString()}
  */
 
-export const SEEDED_DUPLICATE_ANALYSES: DuplicateAnalysis[] = ${stringify(duplicates)};
+/*
+ * id 들이 \`as unknown as\` 를 거치는 이유: 도메인의 id 는 브랜드 타입인데
+ * JSON 으로 한 번 왕복하면 그 표시가 벗겨집니다. 값 자체는 타입이 붙은 코드가
+ * 만든 것이라 모양은 맞습니다.
+ */
 
-export const SEEDED_RISK_ANALYSES: RiskAnalysis[] = ${stringify(risks)};
+export const SEEDED_DUPLICATE_ANALYSES = ${stringify(duplicates)} as unknown as DuplicateAnalysis[];
 
-export const SEEDED_DEMAND_ANALYSES: DemandAnalysis[] = ${stringify(demands)};
+export const SEEDED_RISK_ANALYSES = ${stringify(risks)} as unknown as RiskAnalysis[];
 
-export const SEEDED_QUALITY_REVIEWS: QualityReview[] = ${stringify(qualityReviews)};
+export const SEEDED_DEMAND_ANALYSES = ${stringify(demands)} as unknown as DemandAnalysis[];
+
+export const SEEDED_QUALITY_REVIEWS = ${stringify(qualityReviews)} as unknown as QualityReview[];
 `;
 }
 
@@ -148,8 +159,10 @@ async function main(): Promise<void> {
   const options = parseOptions(process.argv.slice(2));
 
   if (!options.dryRun && !isAiEnabled()) {
-    log('ANTHROPIC_API_KEY 가 없습니다.');
-    log('  PowerShell:  $env:ANTHROPIC_API_KEY = "sk-ant-..."');
+    log('API 키가 없습니다.');
+    log('  .env.local 에 다음 줄을 넣어 주세요:');
+    log('    AI_GATEWAY_API_KEY=<충남대 AI 포털 키>');
+    log('  포털: https://aiportal.cnu.ac.kr/dashboard/developers');
     log('부를 횟수와 예상 비용만 보려면 --dry-run 을 붙이세요.');
     process.exitCode = 1;
     return;

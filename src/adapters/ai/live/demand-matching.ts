@@ -35,6 +35,8 @@ const SYSTEM = `당신은 대학에서 "이런 업무 자동화가 있으면 좋
   도구 설명에 없는 기능을 있다고 보지 마세요.
 - missingFeatures 에는 그 도구가 못 하는 것을 적습니다. 이것이 개발 범위가 됩니다.
 - 도구가 요청과 관련 없으면 결과에서 빼세요. 억지로 채우지 마세요.
+- score 는 그 도구가 요청을 몇 퍼센트나 채우는지입니다. **0~100 사이의 정수**로
+  적으세요. 0.8 같은 비율이 아니라 80 입니다.
 
 outcome 은 전체 판단입니다:
 - COVERED: 기존 도구 하나로 요청이 그대로 해결됩니다.
@@ -53,7 +55,12 @@ const SCHEMA = {
         type: 'object',
         properties: {
           toolId: { type: 'string' },
-          score: { type: 'number' },
+          // 게이트웨이가 integer 에 minimum/maximum 을 받지 않는다.
+          // 정수라는 것만 스키마로 막고, 범위는 프롬프트로 못 박는다.
+          score: {
+            type: 'integer',
+            description: '요청을 몇 퍼센트나 채우는지. 0 부터 100 까지의 정수.',
+          },
           coveredFeatures: { type: 'array', items: { type: 'string' } },
           missingFeatures: { type: 'array', items: { type: 'string' } },
           explanation: { type: 'string' },

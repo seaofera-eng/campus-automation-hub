@@ -37,6 +37,40 @@ describe('scrub — 식별 정보 가리기', () => {
   });
 });
 
+describe('id 는 가리지 않는다', () => {
+  /**
+   * 실제로 겪은 버그다. UUID 의 `00000006-` 마디가 학번 패턴(7~10자리)에 걸려
+   * `[번호]-` 로 뭉개졌다. 모델은 뭉개진 id 를 돌려주고, 우리는 그걸 "보낸 적 없는
+   * 도구"로 보고 버렸다. 중복 탐지와 수요 매칭이 조용히 빈 결과를 냈다.
+   */
+  it('UUID 가 학번 패턴에 걸려 뭉개지지 않는다', () => {
+    const digest = { id: '00000006-0000-4000-8000-000000000001', name: '도구' };
+    expect(scrubDigest(digest).id).toBe('00000006-0000-4000-8000-000000000001');
+  });
+
+  it('id 옆의 다른 필드는 그대로 가린다', () => {
+    const digest = {
+      id: '00000006-0000-4000-8000-000000000001',
+      summary: '학번 20231234 를 다룹니다',
+    };
+    const result = scrubDigest(digest);
+
+    expect(result.id).toBe('00000006-0000-4000-8000-000000000001');
+    expect(result.summary).toBe('학번 [번호] 를 다룹니다');
+  });
+
+  it('중첩된 후보 목록 안의 id 도 지킨다', () => {
+    const payload = {
+      source: { id: '00000006-0000-4000-8000-000000000001' },
+      candidates: [{ id: '00000006-0000-4000-8000-000000000002', name: '다른 도구' }],
+    };
+    const result = scrubDigest(payload);
+
+    expect(result.source.id).toBe('00000006-0000-4000-8000-000000000001');
+    expect(result.candidates[0]?.id).toBe('00000006-0000-4000-8000-000000000002');
+  });
+});
+
 describe('scrubDigest — 중첩 구조 전체', () => {
   it('배열과 객체 안쪽까지 훑는다', () => {
     const digest = {

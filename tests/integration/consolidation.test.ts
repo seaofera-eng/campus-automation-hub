@@ -5,7 +5,12 @@ import type { DuplicateVerdict } from '@/domain/analysis/types';
 import type { ToolId, ToolVersionId } from '@/domain/shared/ids';
 import { MAX_PAGE_SIZE } from '@/domain/shared/pagination';
 import { getRepositories } from '@/lib/di/container';
-import { DEMO_CAMPUS_ID, setupIsolatedStore, teardownIsolatedStore } from './helpers';
+import {
+  DEMO_CAMPUS_ID,
+  clearSeededAnalyses,
+  setupIsolatedStore,
+  teardownIsolatedStore,
+} from './helpers';
 
 /**
  * 통합 표준화.
@@ -19,6 +24,9 @@ import { DEMO_CAMPUS_ID, setupIsolatedStore, teardownIsolatedStore } from './hel
 
 beforeEach(setupIsolatedStore);
 afterEach(teardownIsolatedStore);
+
+// 시드의 진짜 분석을 치우고 이 테스트가 원하는 것만 심는다.
+beforeEach(clearSeededAnalyses);
 
 vi.mock('@/lib/auth/current-user', async () => {
   const actual = await vi.importActual<typeof CurrentUserModule>('@/lib/auth/current-user');

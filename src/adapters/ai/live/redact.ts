@@ -131,13 +131,28 @@ export function scrub(value: string): string {
   );
 }
 
+/**
+ * 가리지 않고 그대로 두는 키.
+ *
+ * `id` 는 우리가 만든 UUID 다. 사람이 쓴 글이 아니라 기계가 붙인 이름표라
+ * 가릴 개인정보가 없다.
+ *
+ * 그리고 **가리면 안 된다.** UUID 의 `00000006-...` 같은 마디가 학번 패턴
+ * (7~10자리 숫자)에 걸려 `[번호]-...` 로 뭉개지면, 모델은 뭉개진 id 를 돌려주고
+ * 우리는 그걸 "보낸 적 없는 도구"로 보고 버린다. 판단이 통째로 사라진다.
+ * 실제로 그랬다 — 중복 탐지와 수요 매칭이 조용히 빈 결과를 냈다.
+ */
+const UNSCRUBBED_KEYS: ReadonlySet<string> = new Set(['id']);
+
 /** digest 안의 모든 문자열에 scrub 를 적용한다. */
 export function scrubDigest<T>(digest: T): T {
   if (typeof digest === 'string') return scrub(digest) as T;
   if (Array.isArray(digest)) return digest.map((item) => scrubDigest(item)) as T;
   if (digest !== null && typeof digest === 'object') {
     return Object.fromEntries(
-      Object.entries(digest).map(([key, value]) => [key, scrubDigest(value)]),
+      Object.entries(digest).map(([key, value]) =>
+        UNSCRUBBED_KEYS.has(key) ? [key, value] : [key, scrubDigest(value)],
+      ),
     ) as T;
   }
   return digest;

@@ -3,12 +3,24 @@ import Anthropic from '@anthropic-ai/sdk';
 /**
  * 모델 호출 하나로 모으는 자리.
  *
- * 여기만 거치므로 재시도·비용 집계·실패 처리를 한 곳에서 한다.
+ * 여기만 거치므로 비용 집계·실패 처리를 한 곳에서 한다.
+ *
+ * ## 교내 AI 포털을 거친다
+ *
+ * 모델 회사에 직접 쏘지 않고 **충남대 AI 포털**(`aiportal.cnu.ac.kr`)의 게이트웨이를
+ * 거친다. 학내 플랫폼에서 이게 중요한 이유는 둘이다.
+ *
+ * - 키를 학교가 관리한다. 개인이 발급받은 키가 코드에 박히지 않는다.
+ * - "데이터가 어디로 나가느냐"에 답할 때 한 단계가 줄어든다. 교내 포털을
+ *   거친다는 사실 자체가 답의 일부다.
+ *
+ * 게이트웨이가 Anthropic Messages API 를 그대로 중계하므로 SDK 를 그대로 쓴다.
+ * 구조화 출력(`output_config`)과 adaptive thinking 도 통과하는 것을 확인했다.
  *
  * ## 키가 없으면
  *
- * 예외를 던지지 않고 `null` 을 돌려준다. 호출부는 그걸 보고 Noop 결과로 떨어진다.
- * 시연 중 네트워크가 끊기거나 키가 빠져도 플랫폼은 그대로 돌아가야 한다.
+ * 예외를 던지지 않고 `null` 을 돌려준다. 호출부는 그걸 보고 "분석 없음"으로
+ * 떨어진다. 시연 중 네트워크가 끊기거나 키가 빠져도 플랫폼은 그대로 돌아가야 한다.
  */
 
 /** 근거를 조리 있게 쓰는 판단용. 중복·위험·매칭. */
@@ -17,13 +29,30 @@ export const JUDGE_MODEL = 'claude-opus-5';
 /** 교차 검증에서 다른 관점을 맡는 모델. 같은 모델을 두 번 부르면 교차가 아니다. */
 export const CROSS_CHECK_MODEL = 'claude-sonnet-5';
 
+/**
+ * 교내 포털의 Anthropic 호환 엔드포인트.
+ *
+ * SDK 가 여기에 `/v1/messages` 를 붙여 부른다.
+ * 모델 회사에 직접 붙이려면 `AI_GATEWAY_BASE_URL=https://api.anthropic.com` 으로
+ * 덮어쓰면 된다 — 그때는 진짜 Anthropic 키가 필요하다.
+ */
+const DEFAULT_BASE_URL = 'https://factchat-cloud.mindlogic.ai/v1/gateway/claude';
+
 let cached: Anthropic | null | undefined;
 
 export function getClient(): Anthropic | null {
   if (cached !== undefined) return cached;
 
-  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
-  cached = apiKey ? new Anthropic({ apiKey }) : null;
+  // 포털 키를 먼저 본다. ANTHROPIC_API_KEY 는 모델 회사에 직접 붙일 때를 위해 남겨 둔다.
+  const apiKey =
+    process.env.AI_GATEWAY_API_KEY?.trim() || process.env.ANTHROPIC_API_KEY?.trim();
+
+  cached = apiKey
+    ? new Anthropic({
+        apiKey,
+        baseURL: process.env.AI_GATEWAY_BASE_URL?.trim() || DEFAULT_BASE_URL,
+      })
+    : null;
   return cached;
 }
 
@@ -42,7 +71,13 @@ export interface AiCallUsage {
   elapsedMs: number;
 }
 
-/** 2026-06 기준 1M 토큰당 단가 (USD) */
+/**
+ * 1M 토큰당 단가 (USD, 2026-06 정가 기준).
+ *
+ * 교내 포털을 거치면 실제 청구는 학교와 포털 사이에서 일어나므로 이 값이 곧
+ * 우리가 내는 돈은 아니다. 그래도 "이 기능이 자원을 얼마나 쓰는가"를 같은 잣대로
+ * 말할 수 있어야 해서 정가로 환산해 둔다.
+ */
 const PRICING: Record<string, { input: number; output: number }> = {
   'claude-opus-5': { input: 5, output: 25 },
   'claude-sonnet-5': { input: 2, output: 10 },

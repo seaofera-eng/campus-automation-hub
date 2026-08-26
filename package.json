@@ -20,7 +20,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "demo:reset": "node scripts/reset-demo.mjs",
-    "ai:analyze": "tsx scripts/ai-analyze.ts"
+    "ai:analyze": "tsx --env-file-if-exists=.env.local scripts/ai-analyze.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

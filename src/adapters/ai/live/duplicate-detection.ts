@@ -46,8 +46,9 @@ const SYSTEM = `당신은 대학의 업무 자동화 도구 등록을 검토하�
 - DIFFERENTIATE: 둘 다 필요하지만 언제 어느 쪽을 쓰는지 구분이 필요합니다.
 - PROCEED: 겹치지 않습니다. 그대로 진행하면 됩니다.
 
-verdict 는 NEAR_IDENTICAL / HIGH_OVERLAP / RELATED / INDEPENDENT 중 하나이고
-score 는 0~100 입니다. INDEPENDENT 인 후보는 결과에서 빼세요.
+verdict 는 NEAR_IDENTICAL / HIGH_OVERLAP / RELATED / INDEPENDENT 중 하나입니다.
+score 는 겹치는 정도이며 **0 부터 100 사이의 정수**로 적으세요. 0.8 같은 비율이
+아니라 80 입니다. INDEPENDENT 인 후보는 결과에서 빼세요.
 
 설명은 검토자가 읽습니다. 한국어로, 개발 용어 없이 씁니다.`;
 
@@ -64,7 +65,12 @@ const SCHEMA = {
             type: 'string',
             enum: ['NEAR_IDENTICAL', 'HIGH_OVERLAP', 'RELATED', 'INDEPENDENT'],
           },
-          score: { type: 'number' },
+          // 게이트웨이가 integer 에 minimum/maximum 을 받지 않는다.
+          // 정수라는 것만 스키마로 막고, 범위는 프롬프트로 못 박는다.
+          score: {
+            type: 'integer',
+            description: '겹치는 정도. 0 부터 100 까지의 정수. 비율(0~1)이 아니다.',
+          },
           overlapping: { type: 'array', items: { type: 'string' } },
           distinct: { type: 'array', items: { type: 'string' } },
           recommendation: {

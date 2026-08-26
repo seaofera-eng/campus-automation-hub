@@ -47,6 +47,13 @@ export const DEMO_TOOL_IDS = {
   grantSummary: asId<ToolId>(uuid(6, 4)),
   regulationChatbot: asId<ToolId>(uuid(6, 5)),
   inquiryClassifier: asId<ToolId>(uuid(6, 6)),
+  /**
+   * 회의록 도구와 **일부러 겹치게** 둔 신청 건.
+   *
+   * 이 플랫폼이 존재하는 이유가 "다른 부서가 같은 걸 또 만들고 있다"인데,
+   * 데모 데이터에 그 사례가 없으면 중복 탐지도 통합 표준화도 보여 줄 것이 없다.
+   */
+  meetingNotesDuplicate: asId<ToolId>(uuid(6, 7)),
 } as const;
 
 export const DEMO_VERSION_IDS = {
@@ -56,6 +63,7 @@ export const DEMO_VERSION_IDS = {
   grantSummary: asId<ToolVersionId>(uuid(7, 4)),
   regulationChatbot: asId<ToolVersionId>(uuid(7, 5)),
   inquiryClassifier: asId<ToolVersionId>(uuid(7, 6)),
+  meetingNotesDuplicate: asId<ToolVersionId>(uuid(7, 7)),
 } as const;
 
 export const DEMO_DEMAND_IDS = {

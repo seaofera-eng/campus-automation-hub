@@ -132,8 +132,19 @@ function validate(value: unknown): { passed: boolean; findings: QualityFinding[]
     });
   }
 
-  // "통과"라면서 지적을 단 경우는 지적 쪽을 믿는다.
-  const passed = Boolean(row.passed) && findings.length === 0;
+  /*
+   * 통과 여부는 모델이 스스로 매긴 `passed` 가 아니라 **심각도로 정한다.**
+   *
+   * 심각도를 세 단계로 나눠 놓고 판정에서 안 쓰면 나눈 의미가 없다. 참고(NOTE)
+   * 한 줄만 있어도 탈락시키면 모든 도구가 탈락하고, 그러면 이 기능은 아무것도
+   * 구분하지 못한다. 실제로 그랬다 — 첫 실행에서 6건이 전부 FAIL 이었다.
+   *
+   * NOTE 는 "적어 두면 좋을 것"이다. 승인을 막을 이유가 아니다.
+   * 판정을 가르는 것은 BLOCKER 와 WARNING 이다.
+   */
+  const passed = !findings.some(
+    (finding) => finding.severity === 'BLOCKER' || finding.severity === 'WARNING',
+  );
 
   return { passed, findings };
 }
