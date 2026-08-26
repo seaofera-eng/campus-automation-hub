@@ -1,10 +1,12 @@
 import { Lock, Pencil } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { listDemandAttachments } from '@/application/demands/attachments';
 import { listDemandComments } from '@/application/demands/comments';
 import { loadDemandDetail } from '@/application/demands/query';
 import { loadAwardState } from '@/application/rewards/tokens';
 import { AwardTokensPanel } from '@/components/demands/award-tokens-panel';
+import { DemandAttachments } from '@/components/demands/demand-attachments';
 import { DemandComments } from '@/components/demands/demand-comments';
 import { PhaseNotice } from '@/components/common/phase-notice';
 import { DemandStatusBadge, ToolStatusBadge } from '@/components/common/status-badge';
@@ -31,8 +33,12 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ i
   const { id } = await params;
   const detail = await guardPage(() => loadDemandDetail(id));
   const comments = await guardPage(() => listDemandComments(id));
+  const attachments = await guardPage(() => listDemandAttachments(id));
   const awardState = await guardPage(() => loadAwardState(detail.actor, id));
   const { demand, permissions } = detail;
+
+  // 자료는 수요를 올린 사람만 붙이고 뗀다.
+  const canAttach = demand.requesterUserId === detail.actor.id;
 
   return (
     <div className="flex flex-col gap-5">
@@ -241,6 +247,20 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ i
               )}
             </CardContent>
           </Card>
+
+          {/* 붙일 수도 없고 붙은 것도 없으면 빈 카드를 만들지 않는다.
+              컴포넌트 안에서 null 을 돌려주면 껍데기 Card 만 남는다. */}
+          {canAttach || attachments.length > 0 ? (
+            <Card>
+              <CardContent className="pt-5">
+                <DemandAttachments
+                  demandId={demand.id}
+                  initialAttachments={attachments}
+                  canManage={canAttach}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card>
             <CardContent className="pt-5">

@@ -27,6 +27,9 @@ const { listNotices, saveNotice } = await import('@/application/notices/manage')
 const { addDemandComment, deleteDemandComment, listDemandComments } = await import(
   '@/application/demands/comments'
 );
+const { addDemandAttachment, listDemandAttachments, removeDemandAttachment } = await import(
+  '@/application/demands/attachments'
+);
 const { DEMO_DEMAND_IDS, DEMO_TOOL_IDS } = await import('@/repositories/demo/seed-ids');
 const { demoProfile, setupIsolatedStore, teardownIsolatedStore } = await import('./helpers');
 
@@ -257,5 +260,108 @@ describe('수요 문의', () => {
 
     const comments = await listDemandComments(DEMO_DEMAND_IDS.grantAlerts);
     expect(comments.some((comment) => comment.id === created.id)).toBe(false);
+  });
+});
+
+describe('수요 참고 자료', () => {
+  /** 1x1 투명 PNG. 실제 바이트를 넣어야 서버 검사를 통과한다. */
+  const PNG = new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+  ]);
+
+  it('수요를 올린 사람은 자료를 붙일 수 있다', async () => {
+    const requester = await signInAs('requester');
+
+    const saved = await addDemandAttachment(requester, {
+      demandId: DEMO_DEMAND_IDS.meetingTasks,
+      fileName: '회의록 서식.png',
+      mimeType: 'image/png',
+      bytes: PNG,
+    });
+
+    expect(saved.fileName).toBe('회의록 서식.png');
+    // 저장 경로에 사용자가 정한 파일명을 쓰지 않는다.
+    expect(saved.storagePath).not.toContain('회의록');
+    expect(saved.storagePath).toContain(saved.id);
+  });
+
+  it('남의 수요에는 자료를 붙일 수 없다', async () => {
+    const other = await signInAs('developer');
+
+    await expect(
+      addDemandAttachment(other, {
+        demandId: DEMO_DEMAND_IDS.meetingTasks,
+        fileName: '끼워넣기.png',
+        mimeType: 'image/png',
+        bytes: PNG,
+      }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('허용하지 않는 형식은 막는다', async () => {
+    const requester = await signInAs('requester');
+
+    await expect(
+      addDemandAttachment(requester, {
+        demandId: DEMO_DEMAND_IDS.meetingTasks,
+        fileName: '스크립트.svg',
+        // SVG 는 스크립트를 품을 수 있어 허용 목록에서 뺐다.
+        mimeType: 'image/svg+xml',
+        bytes: PNG,
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+  });
+
+  it('빈 파일은 막는다', async () => {
+    const requester = await signInAs('requester');
+
+    await expect(
+      addDemandAttachment(requester, {
+        demandId: DEMO_DEMAND_IDS.meetingTasks,
+        fileName: '빈파일.png',
+        mimeType: 'image/png',
+        bytes: new Uint8Array(0),
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+  });
+
+  it('붙인 사람만 뗄 수 있다', async () => {
+    const requester = await signInAs('requester');
+    const saved = await addDemandAttachment(requester, {
+      demandId: DEMO_DEMAND_IDS.meetingTasks,
+      fileName: '뗄 파일.png',
+      mimeType: 'image/png',
+      bytes: PNG,
+    });
+
+    const other = await signInAs('developer');
+    await expect(
+      removeDemandAttachment(other, DEMO_DEMAND_IDS.meetingTasks, saved.id),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+
+    await signInAs('requester');
+    await removeDemandAttachment(requester, DEMO_DEMAND_IDS.meetingTasks, saved.id);
+
+    const left = await listDemandAttachments(DEMO_DEMAND_IDS.meetingTasks);
+    expect(left.some((row) => row.id === saved.id)).toBe(false);
+  });
+
+  /** 다른 수요의 첨부 ID 를 넣어도 지워지면 안 된다. */
+  it('다른 수요의 첨부는 지워지지 않는다', async () => {
+    const requester = await signInAs('requester');
+    const saved = await addDemandAttachment(requester, {
+      demandId: DEMO_DEMAND_IDS.meetingTasks,
+      fileName: '남겨둘 파일.png',
+      mimeType: 'image/png',
+      bytes: PNG,
+    });
+
+    const other = await signInAs('requester2');
+    await expect(
+      removeDemandAttachment(other, DEMO_DEMAND_IDS.complaintRouting, saved.id),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+
+    const left = await listDemandAttachments(DEMO_DEMAND_IDS.meetingTasks);
+    expect(left.some((row) => row.id === saved.id)).toBe(true);
   });
 });

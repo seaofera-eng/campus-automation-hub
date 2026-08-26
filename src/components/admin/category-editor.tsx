@@ -75,6 +75,7 @@ export function CategoryDialog({
         {isEdit ? (
           <Button variant="ghost" size="sm" aria-label={`${category.name} 수정`}>
             <Pencil aria-hidden="true" />
+            수정
           </Button>
         ) : (
           <Button>
@@ -136,7 +137,7 @@ export function CategoryDialog({
 
           <label
             htmlFor="cat-active"
-            className="flex cursor-pointer items-center gap-3 rounded-md border border-border p-3 text-sm"
+            className="flex cursor-pointer items-start gap-3 rounded-md border border-border p-3 text-sm"
           >
             <Checkbox
               id="cat-active"
@@ -146,11 +147,19 @@ export function CategoryDialog({
             <span>
               <span className="block font-medium text-fg">사용 중</span>
               <span className="block text-xs text-fg-muted">
-                해제하면 새 도구 등록 시 선택할 수 없습니다.
-                {toolCount ? ` 이미 등록된 ${toolCount}건은 그대로 유지됩니다.` : ''}
+                해제하면 새 도구를 등록할 때 이 카테고리를 고를 수 없습니다.
               </span>
             </span>
           </label>
+
+          {/* 쓰이는 중인 카테고리를 내리려 할 때만 알린다.
+              평소에도 늘 떠 있으면 읽지 않게 된다. */}
+          {isEdit && !isActive && (toolCount ?? 0) > 0 ? (
+            <Alert tone="warning" title={`이 카테고리로 등록된 도구가 ${toolCount}건 있습니다`}>
+              그 도구들은 그대로 남고 분류도 유지됩니다. 다만 목록 필터에서 이 카테고리가
+              빠지므로 찾기 어려워질 수 있습니다.
+            </Alert>
+          ) : null}
         </div>
 
         <DialogFooter>

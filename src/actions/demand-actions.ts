@@ -5,9 +5,20 @@ import { joinDemand, linkToolToDemand, unlinkToolFromDemand } from '@/applicatio
 import { saveDemandDraft, transitionDemand } from '@/application/demands/register';
 import { withAudit } from '@/application/shared/audit';
 import { DEMAND_STATUS_LABELS, MATCH_TYPE_LABELS } from '@/domain/demand/types';
+import {
+  addDemandAttachment,
+  listDemandAttachments,
+  removeDemandAttachment,
+} from '@/application/demands/attachments';
+import type { DemandAttachmentView } from '@/application/demands/attachments';
 import { addDemandComment, deleteDemandComment } from '@/application/demands/comments';
+import { validationFailed } from '@/domain/shared/errors';
 import { run, type ActionResult } from '@/lib/actions/result';
 import { requireUser } from '@/lib/auth/current-user';
+import {
+  demandAttachmentMetaSchema,
+  removeDemandAttachmentSchema,
+} from '@/lib/validation/attachment';
 import { parseOrThrow } from '@/lib/validation/common';
 import { addDemandCommentSchema, deleteDemandCommentSchema } from '@/lib/validation/demand';
 import {
@@ -216,5 +227,77 @@ export async function deleteDemandCommentAction(input: unknown): Promise<ActionR
     await deleteDemandComment(actor, data.commentId);
     revalidatePath('/demands', 'layout');
     return null;
+  });
+}
+
+/**
+ * 수요 자료 붙이기 (리뷰 6.4절).
+ *
+ * 파일 이름에 개인정보가 들어갈 수 있으므로 감사 로그 요약에 이름을 넣지 않습니다.
+ */
+export async function addDemandAttachmentAction(
+  formData: FormData,
+): Promise<ActionResult<DemandAttachmentView[]>> {
+  return run(async () => {
+    const actor = await requireUser();
+
+    const file = formData.get('file');
+    if (!(file instanceof File)) {
+      throw validationFailed({ file: '올릴 파일을 선택해 주세요.' });
+    }
+
+    const meta = parseOrThrow(demandAttachmentMetaSchema, {
+      demandId: String(formData.get('demandId') ?? ''),
+      fileName: file.name,
+      mimeType: file.type,
+      byteSize: file.size,
+    });
+
+    const bytes = new Uint8Array(await file.arrayBuffer());
+
+    await withAudit(
+      actor,
+      {
+        action: 'demand.attachment.add',
+        targetType: 'demand',
+        targetId: meta.demandId,
+        changedFields: ['attachments'],
+        summary: '수요에 자료를 붙였습니다.',
+      },
+      () =>
+        addDemandAttachment(actor, {
+          demandId: meta.demandId,
+          fileName: meta.fileName,
+          mimeType: meta.mimeType,
+          bytes,
+        }),
+    );
+
+    revalidateDemand(meta.demandId);
+    return listDemandAttachments(meta.demandId);
+  });
+}
+
+export async function removeDemandAttachmentAction(
+  input: unknown,
+): Promise<ActionResult<DemandAttachmentView[]>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const data = parseOrThrow(removeDemandAttachmentSchema, input);
+
+    await withAudit(
+      actor,
+      {
+        action: 'demand.attachment.remove',
+        targetType: 'demand',
+        targetId: data.demandId,
+        changedFields: ['attachments'],
+        summary: '수요에 붙인 자료를 뗐습니다.',
+      },
+      () => removeDemandAttachment(actor, data.demandId, data.attachmentId),
+    );
+
+    revalidateDemand(data.demandId);
+    return listDemandAttachments(data.demandId);
   });
 }

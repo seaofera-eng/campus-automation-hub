@@ -188,11 +188,24 @@ export async function upsertCategory(
 
   if (input.categoryId && !existing) throw notFound('카테고리');
 
+  // 코드는 식별자 성격이라 겹치면 안 된다. 겹친 채로 두면 도구 목록 필터에서
+  // 어느 카테고리를 가리키는지 알 수 없게 된다.
+  const all = await repositories.reference.listCategories(actor.campusId);
+  const normalizedCode = input.code.trim().toUpperCase();
+  const duplicate = all.find(
+    (category) => category.code.toUpperCase() === normalizedCode && category.id !== existing?.id,
+  );
+  if (duplicate) {
+    throw conflict(
+      `'${normalizedCode}' 코드는 이미 '${duplicate.name}' 카테고리가 쓰고 있습니다. 다른 코드를 적어 주세요.`,
+    );
+  }
+
   const now = new Date().toISOString();
   return repositories.reference.upsertCategory({
     id: existing?.id ?? newId<CategoryId>(),
     campusId: actor.campusId as CampusId,
-    code: input.code,
+    code: normalizedCode,
     name: input.name,
     description: input.description,
     sortOrder: input.sortOrder,

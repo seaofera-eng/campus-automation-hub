@@ -79,3 +79,28 @@ export const removeAttachmentSchema = z.object({
   toolId: z.string().min(1),
   attachmentId: z.string().min(1),
 });
+
+/** 수요 첨부 (리뷰 6.4절). 도구 첨부와 같은 형식·크기 규칙을 씁니다. */
+export const demandAttachmentMetaSchema = z.object({
+  demandId: z.string().min(1),
+  fileName: z.string().min(1, '파일 이름을 읽을 수 없습니다.'),
+  mimeType: z
+    .string()
+    .min(1, '파일 형식을 읽을 수 없습니다.')
+    .refine((value) => value in ALLOWED_ATTACHMENT_TYPES, {
+      message: `허용되지 않는 파일 형식입니다. ${Object.values(ALLOWED_ATTACHMENT_TYPES).join(', ')} 형식만 올릴 수 있습니다.`,
+    }),
+  byteSize: z
+    .number()
+    .int()
+    .positive('빈 파일은 올릴 수 없습니다.')
+    .max(
+      MAX_ATTACHMENT_BYTES,
+      `파일 크기는 ${humanFileSize(MAX_ATTACHMENT_BYTES)} 까지만 올릴 수 있습니다. 파일을 나누거나 압축해 주세요.`,
+    ),
+});
+
+export const removeDemandAttachmentSchema = z.object({
+  demandId: z.string().min(1),
+  attachmentId: z.string().min(1),
+});
