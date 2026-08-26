@@ -24,7 +24,7 @@ build      통과
 
 AI 중복 탐지·위험 자동평가·멀티 LLM 검증·순위·토큰은 **2·3단계**입니다.
 지금은 인터페이스와 빈 어댑터, 예약 테이블만 있습니다
-(→ [docs/AI_ROADMAP.md](docs/AI_ROADMAP.md)).
+(→ [docs/ROADMAP-AI.md](docs/ROADMAP-AI.md)).
 
 ## 빠른 시작
 
@@ -116,7 +116,8 @@ pnpm demo:reset   # DEMO 데이터 초기화
 | [SETUP.md](docs/SETUP.md) | 설치, Supabase 전환 |
 | [TESTING.md](docs/TESTING.md) | 테스트 구조와 범위 |
 | [DEMO_SCENARIO.md](docs/DEMO_SCENARIO.md) | 손으로 확인하는 순서 |
-| [AI_ROADMAP.md](docs/AI_ROADMAP.md) | 2·3단계 계획과 붙일 때 주의점 |
+| [OVERVIEW.md](docs/OVERVIEW.md) | **구조 한눈에 — 심사위원용 요약** |
+| [ROADMAP-AI.md](docs/ROADMAP-AI.md) | AI 기능 설계와 실제로 겪은 문제들 |
 | [DECISIONS.md](docs/DECISIONS.md) | 설계 결정 기록 |
 | [PROGRESS.md](docs/PROGRESS.md) | 단계별 진행 기록 |
 

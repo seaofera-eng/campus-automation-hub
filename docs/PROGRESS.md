@@ -404,7 +404,7 @@ tests/integration/admin.test.ts   ← 20개
 ```
 e2e/{helpers.ts,full-workflow.spec.ts}
 docs/{ARCHITECTURE,DATA_MODEL,SECURITY,SETUP,WORKFLOW,
-      AI_ROADMAP,TESTING,DEMO_SCENARIO,DECISIONS}.md
+      OVERVIEW,ROADMAP-AI,TESTING,DEMO_SCENARIO,DECISIONS}.md
 README.md  CLAUDE.md
 ```
 
