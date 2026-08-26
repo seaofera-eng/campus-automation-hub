@@ -23,11 +23,40 @@ import Anthropic from '@anthropic-ai/sdk';
  * 떨어진다. 시연 중 네트워크가 끊기거나 키가 빠져도 플랫폼은 그대로 돌아가야 한다.
  */
 
-/** 근거를 조리 있게 쓰는 판단용. 중복·위험·매칭. */
-export const JUDGE_MODEL = 'claude-opus-5';
+/**
+ * 어느 모델을 쓸지.
+ *
+ * 환경변수로 갈아 끼울 수 있다. 비용을 줄이려면 `.env.local` 에서 내리면 된다:
+ *
+ * ```
+ * AI_JUDGE_MODEL=claude-sonnet-5
+ * ```
+ *
+ * 다만 **중복 탐지는 내리기 전에 결과를 보고 정하세요.** 겹치는 도구를 잡아내는
+ * 일은 여러 항목을 동시에 붙들고 "같은 문제를 같은 방식으로 푸는가"를 판단해야
+ * 해서, 모델을 내리면 근거 인용이 먼저 부실해집니다. 시연에서 보여 줄 장면이
+ * 거기서 나옵니다.
+ */
 
-/** 교차 검증에서 다른 관점을 맡는 모델. 같은 모델을 두 번 부르면 교차가 아니다. */
-export const CROSS_CHECK_MODEL = 'claude-sonnet-5';
+/** 근거를 조리 있게 쓰는 판단용. 중복·위험·매칭. */
+export const JUDGE_MODEL = process.env.AI_JUDGE_MODEL?.trim() || 'claude-opus-5';
+
+/** 품질검증 — 내용 일관성을 보는 쪽. */
+export const REVIEW_MODEL_A = process.env.AI_REVIEW_MODEL_A?.trim() || 'claude-opus-5';
+
+/** 품질검증 — 규정·보안을 보는 쪽. */
+export const REVIEW_MODEL_B = process.env.AI_REVIEW_MODEL_B?.trim() || 'claude-sonnet-5';
+
+/**
+ * 두 관점이 같은 모델로 겹쳤는지.
+ *
+ * 겹치면 교차 검증이 아니다. 같은 모델에게 두 번 물으면 같은 각도에서 두 번
+ * 보는 것이고, 놓친 것은 두 번 다 놓친다. 막지는 않고 알린다 — 비용 때문에
+ * 일부러 그렇게 두는 선택도 있을 수 있다.
+ */
+export function crossCheckCollapsed(): boolean {
+  return REVIEW_MODEL_A === REVIEW_MODEL_B;
+}
 
 /**
  * 교내 포털의 Anthropic 호환 엔드포인트.

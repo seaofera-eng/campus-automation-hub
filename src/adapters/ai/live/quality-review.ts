@@ -7,7 +7,7 @@ import type {
 } from '@/domain/analysis/types';
 import { aggregateQualityResults } from '@/domain/analysis/types';
 import type { ToolVersionId } from '@/domain/shared/ids';
-import { CROSS_CHECK_MODEL, JUDGE_MODEL, ask } from './client';
+import { REVIEW_MODEL_A, REVIEW_MODEL_B, ask } from './client';
 import { scrubDigest, type ToolDigest } from './redact';
 
 /**
@@ -193,8 +193,8 @@ export async function reviewQuality(
   const digest = scrubDigest(request.tool);
 
   const [consistency, policy] = await Promise.all([
-    runPerspective('CONSISTENCY', JUDGE_MODEL, CONSISTENCY_SYSTEM, digest),
-    runPerspective('POLICY', CROSS_CHECK_MODEL, POLICY_SYSTEM, digest),
+    runPerspective('CONSISTENCY', REVIEW_MODEL_A, CONSISTENCY_SYSTEM, digest),
+    runPerspective('POLICY', REVIEW_MODEL_B, POLICY_SYSTEM, digest),
   ]);
 
   const results = [consistency, policy].filter((result): result is QualityReviewResult => result !== null);

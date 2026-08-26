@@ -19,7 +19,14 @@
  * 숫자를 지어내지 않는다.
  */
 
-export { isAiEnabled, drainUsage, JUDGE_MODEL, CROSS_CHECK_MODEL } from './live/client';
+export {
+  isAiEnabled,
+  drainUsage,
+  crossCheckCollapsed,
+  JUDGE_MODEL,
+  REVIEW_MODEL_A,
+  REVIEW_MODEL_B,
+} from './live/client';
 export type { AiCallUsage } from './live/client';
 
 export { toToolDigest, toDemandDigest, scrub, scrubDigest } from './live/redact';

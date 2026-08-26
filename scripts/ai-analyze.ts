@@ -35,6 +35,7 @@ import {
   analyzeDemand,
   analyzeDuplicates,
   analyzeRisk,
+  crossCheckCollapsed,
   drainUsage,
   isAiEnabled,
   reviewQuality,
@@ -212,6 +213,14 @@ async function main(): Promise<void> {
 
   log(`도구 ${digests.length}건, 수요 ${liveDemands.length}건`);
   log(`모델 호출 예정 ${callCount}회`);
+
+  if (wantQuality && crossCheckCollapsed()) {
+    log('');
+    log('⚠ 품질검증의 두 관점이 같은 모델로 설정되어 있습니다.');
+    log('  같은 모델에게 두 번 물으면 교차 검증이 아닙니다 — 놓친 것은 두 번 다 놓칩니다.');
+    log('  .env.local 에서 AI_REVIEW_MODEL_A 와 AI_REVIEW_MODEL_B 를 다르게 두세요.');
+    log('');
+  }
 
   if (options.dryRun) {
     // 도구 하나당 입력 대략 4~6천 토큰, 출력 1~2천 토큰으로 잡은 어림값이다.
