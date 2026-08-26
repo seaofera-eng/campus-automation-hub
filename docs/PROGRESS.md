@@ -2,6 +2,27 @@
 
 > 단계별로 무엇을 만들고 왜 그렇게 했는지 남긴 기록입니다.
 > 전체 개요는 [../README.md](../README.md), 설계 결정은 [DECISIONS.md](DECISIONS.md).
+>
+> **작업을 이어받으신다면 [NEXT-SESSION.md](NEXT-SESSION.md) 부터 보세요.**
+
+---
+
+## 진행 중: 디자인 단계 적용 (2026-08-26)
+
+디자인 시스템([DESIGN-CNU-Campus-Automation.md](DESIGN-CNU-Campus-Automation.md))을
+Phase 1(뼈대) → Phase 2(컴포넌트)까지 적용했습니다. 작업은 `main` 을 건드리지 않도록
+worktree `../26_AI_platform-design` 의 `feature/design-phase1` 브랜치에서 합니다.
+
+| Phase | 내용 | 상태 |
+|---|---|---|
+| 1 | 토큰·타이포·앱셸·버튼·카드·배지·입력 | ✅ Gate 1 승인 |
+| 2 | 도구 카드·배지 계열 분리·표·탭·지표 카드 | ✅ Gate 2 대기 |
+| 3 | hover·로딩·빈 화면·모바일·transition | ⬜ 리뷰 반영 후 |
+
+Phase 2 의 핵심은 **배지 색 계열을 갈라 놓은 것**입니다. 진행 상태와 위험도가
+둘 다 초록·주황·빨강을 써서 목록에서 구분이 안 됐습니다. 상태는 브랜드·중립,
+위험도는 의미색+방패로 나눴고, 데이터 분류는 아예 배지에서 빼내 **각진 칩**으로
+모양을 달리했습니다 — 분류는 상태가 아니라 사실이기 때문입니다.
 
 ---
 
