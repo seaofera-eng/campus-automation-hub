@@ -29,7 +29,7 @@ export default async function HomePage() {
     <div className="flex flex-col gap-8">
       <section className="rounded-card border border-border bg-surface p-6">
         <p className="text-sm text-fg-muted">{data.profile.name} 님, 안녕하세요.</p>
-        <h1 className="mt-1 text-2xl font-bold text-fg">
+        <h1 className="mt-1 text-xl font-bold text-fg">
           필요한 도구를 찾고, 없으면 함께 만듭니다
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-fg-muted">

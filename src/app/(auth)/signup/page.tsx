@@ -16,7 +16,7 @@ export default async function SignUpPage() {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 py-10">
       <div>
-        <h1 className="text-2xl font-bold text-fg">가입하기</h1>
+        <h1 className="text-xl font-bold text-fg">가입하기</h1>
         <p className="mt-1 text-sm text-fg-muted">
           교내 구성원이 만든 업무 자동화 도구를 쓰고, 필요한 것을 요청할 수 있습니다.
         </p>

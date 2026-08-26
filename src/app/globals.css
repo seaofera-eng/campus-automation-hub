@@ -1,42 +1,102 @@
 @import 'tailwindcss';
+/* 본문 글꼴. CDN 이 아니라 패키지에서 가져와 함께 빌드한다 — 시연 자리에서
+   망이 끊겨도 글꼴이 바뀌지 않아야 한다. dynamic-subset 이라 실제로 쓰이는
+   글자 조각만 내려받는다. */
+@import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 
 /* =============================================================================
-   디자인 토큰
-   대학 행정 시스템의 신뢰감은 유지하되 딱딱하지 않게: 차분한 남색 계열 primary,
-   넉넉한 여백, 명확한 상태 색. 모든 전경/배경 조합은 WCAG AA(4.5:1) 이상.
+   디자인 토큰 — CNU Campus Automation Design System v1.0 (Phase 1)
+   기준 문서: docs/DESIGN-CNU-Campus-Automation.md
+
+   ## 토큰 이름을 바꾸지 않은 이유
+
+   디자인 문서는 `paper` `ink` `canvas` 같은 이름을 쓰지만, 여기서는 기존의
+   `surface` `fg` `bg` 를 그대로 두고 **값만** CNU 팔레트로 바꿨다.
+   이름을 바꾸면 화면 60여 개를 전부 고쳐야 하는데, 그건 Phase 1 이 하지 말라고
+   못박은 "페이지별 세부 리디자인"이다. 문서 §17 도 "페이지별 component 는 그대로
+   두고 전역 token 을 상속받게 하라"고 적고 있다.
+
+   대신 브랜드색은 `--color-cnu-*` 로 따로 두어, 새로 만드는 화면에서 문서의
+   이름으로 바로 쓸 수 있게 했다.
+
+   ## 색 비율
+
+   CNU Blue 를 넓은 면적에 쓰지 않는다. 사이드바도 헤더도 흰 바탕이고, 파랑은
+   지금 눌러야 할 것과 지금 선택된 것에만 쓴다. Magenta 는 AI·신규 표시 같은
+   작은 강조에만 쓰며 Primary 버튼에는 쓰지 않는다 (문서 §3.2).
    ========================================================================== */
 @theme {
-  --color-bg: oklch(98.5% 0.003 250);
-  --color-surface: oklch(100% 0 0);
-  --color-surface-muted: oklch(96.8% 0.005 250);
-  --color-border: oklch(90% 0.008 250);
-  --color-border-strong: oklch(82% 0.012 250);
+  /* ---------------------------------------------------------------- 브랜드 */
+  --color-cnu-blue: #164a9b;
+  --color-cnu-blue-bright: #2563c7;
+  --color-cnu-blue-deep: #0b2f6b;
+  --color-cnu-blue-soft: #eaf1fb;
+  --color-cnu-magenta: #c52a7a;
+  --color-cnu-magenta-soft: #fbeaf3;
 
-  --color-fg: oklch(24% 0.02 255);
-  --color-fg-muted: oklch(46% 0.015 255);
-  --color-fg-subtle: oklch(58% 0.012 255);
+  /* ------------------------------------------------------------------ 표면 */
+  --color-bg: #f7f9fc; /* canvas — 본문 바탕 */
+  --color-surface: #ffffff; /* paper — 카드·사이드바·헤더 */
+  --color-surface-muted: #f1f4f8; /* cloud — 눌림·비활성 */
+  --color-fog: #e7ecf2; /* 구분선보다 진한 면 */
+  --color-border: #e1e7ef;
+  --color-border-strong: #c8d1dd;
 
-  --color-primary: oklch(46% 0.13 255);
-  --color-primary-hover: oklch(40% 0.13 255);
-  --color-primary-fg: oklch(100% 0 0);
-  --color-primary-soft: oklch(95% 0.03 255);
+  /* ------------------------------------------------------------------ 글자 */
+  --color-fg: #18202b; /* ink */
+  --color-fg-muted: #344054; /* ink-soft */
+  --color-fg-subtle: #667085; /* graphite */
 
-  --color-success: oklch(48% 0.12 155);
-  --color-success-soft: oklch(95% 0.04 155);
-  --color-warning: oklch(52% 0.13 75);
-  --color-warning-soft: oklch(96% 0.05 85);
-  --color-danger: oklch(48% 0.18 22);
-  --color-danger-soft: oklch(95% 0.04 22);
-  --color-info: oklch(48% 0.11 235);
-  --color-info-soft: oklch(95% 0.03 235);
-  --color-neutral: oklch(50% 0.01 255);
-  --color-neutral-soft: oklch(95% 0.005 255);
+  /* --------------------------------------------------- primary = CNU Blue */
+  --color-primary: #164a9b;
+  --color-primary-hover: #0b2f6b;
+  --color-primary-fg: #ffffff;
+  --color-primary-soft: #eaf1fb;
 
-  --radius-card: 0.75rem;
+  /* ------------------------------ accent = CNU Magenta. 작은 강조에만 쓴다 */
+  --color-accent: #c52a7a;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #fbeaf3;
+
+  /* ------------------------------ 의미색. 브랜드색과 섞지 않는다 (문서 §3.2) */
+  --color-success: #23845b;
+  --color-success-soft: #eaf7f1;
+  --color-warning: #b26a00;
+  --color-warning-soft: #fff4df;
+  --color-danger: #c63d43;
+  --color-danger-soft: #fdedee;
+  --color-info: #2e65b0;
+  --color-info-soft: #eaf2fc;
+  --color-neutral: #667085;
+  --color-neutral-soft: #f1f4f8;
+
+  /* ------------------------------------------------------------------ 모양 */
+  --radius-sm: 6px;
+  --radius-md: 10px; /* 버튼·입력 */
+  --radius-lg: 14px;
+  --radius-card: 14px; /* 카드 */
+
+  /* 그림자는 얕게. 카드가 떠다니기보다 정돈돼 보여야 한다 (문서 §6) */
+  --shadow-card: 0 1px 3px rgb(16 24 40 / 0.06), 0 1px 2px rgb(16 24 40 / 0.04);
+  --shadow-floating: 0 8px 24px rgb(16 24 40 / 0.12);
+
+  /* ------------------------------------------------------------------ 글꼴 */
+  /* 문서 §4 의 계층을 Tailwind 크기 토큰에 얹었다. 화면마다 크기를 새로 정하지
+     않고 이 다섯 단으로만 쓴다. 12px 미만은 쓰지 않는다. */
+  --text-xs: 0.8125rem; /* 13px — 메타정보 */
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.9375rem; /* 15px — 기본 본문 */
+  --text-sm--line-height: 1.6;
+  --text-base: 1.0625rem; /* 17px — 카드 제목, 소개 문구 */
+  --text-base--line-height: 1.55;
+  --text-lg: 1.375rem; /* 22px — 섹션 제목 */
+  --text-lg--line-height: 1.4;
+  --text-xl: 1.875rem; /* 30px — 페이지 제목 */
+  --text-xl--line-height: 1.3;
 
   --font-sans:
-    'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Malgun Gothic',
-    '맑은 고딕', system-ui, sans-serif;
+    'Pretendard Variable', Pretendard, Inter, 'Noto Sans KR', -apple-system,
+    BlinkMacSystemFont, 'Malgun Gothic', '맑은 고딕', system-ui, sans-serif;
   --font-mono: 'D2Coding', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
@@ -57,6 +117,14 @@
     line-height: 1.65;
     word-break: keep-all;
     overflow-wrap: break-word;
+  }
+
+  /* 제목은 진하게 하되 줄간격은 좁힌다. 본문 1.65 를 그대로 쓰면 뜬다. */
+  h1,
+  h2,
+  h3 {
+    line-height: 1.35;
+    letter-spacing: -0.01em;
   }
 
   /* 키보드 사용자에게만 포커스 링을 보여준다 */

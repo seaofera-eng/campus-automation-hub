@@ -32,17 +32,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </a>
 
         <div className="flex flex-1">
+          {/* 사이드바는 흰 바탕이다. CNU Blue 를 넓은 면적에 쓰지 않는다 (디자인 문서 §7). */}
           <aside className="hidden w-60 shrink-0 border-r border-border bg-surface md:block">
-            <div className="flex h-14 items-center gap-2 border-b border-border px-5">
-              <Link href="/dashboard" className="text-sm font-bold text-fg">
-                캠퍼스 자동화 관제
+            <div className="flex h-16 items-center border-b border-border px-5">
+              <Link href="/dashboard" className="group min-w-0">
+                {context.campusName ? (
+                  <span className="block truncate text-xs text-fg-subtle">
+                    {context.campusName}
+                  </span>
+                ) : null}
+                <span className="block truncate text-sm font-bold text-fg group-hover:text-primary">
+                  캠퍼스 자동화 관제
+                </span>
               </Link>
             </div>
             <Sidebar accountType={context.profile.accountType}
               adminPermissions={context.profile.adminPermissions} />
-            {context.campusName ? (
-              <p className="px-5 py-3 text-xs text-fg-subtle">{context.campusName}</p>
-            ) : null}
           </aside>
 
           <div className="flex min-w-0 flex-1 flex-col">
@@ -57,7 +62,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               adminPermissions={context.profile.adminPermissions} orientation="horizontal" />
             </div>
 
-            <main id="main-content" className="min-w-0 flex-1 p-4 sm:p-6">
+            {/*
+              본문 여백은 모바일 16 · 태블릿 24 · 데스크톱 32 (문서 §7).
+              최대 너비를 두는 이유: 넓은 화면에서 글줄이 끝까지 늘어나면
+              한 줄을 눈으로 따라가기 어려워진다.
+            */}
+            <main
+              id="main-content"
+              className="mx-auto w-full min-w-0 max-w-[1440px] flex-1 p-4 sm:p-6 lg:p-8"
+            >
               {children}
             </main>
           </div>

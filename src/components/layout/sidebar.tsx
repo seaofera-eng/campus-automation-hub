@@ -71,8 +71,8 @@ export function Sidebar({ accountType, adminPermissions, orientation = 'vertical
     <nav
       aria-label="주요 메뉴"
       className={cn(
-        'gap-1 p-3',
-        orientation === 'vertical' ? 'flex flex-col' : 'flex overflow-x-auto',
+        'gap-1',
+        orientation === 'vertical' ? 'flex flex-col p-3' : 'flex overflow-x-auto px-3 py-2',
       )}
     >
       {items.map((item) => {
@@ -83,11 +83,14 @@ export function Sidebar({ accountType, adminPermissions, orientation = 'vertical
             href={item.href}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              // 최소 40px 높이를 확보한다 (디자인 문서 §13).
+              'flex min-h-10 items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
               orientation === 'horizontal' && 'shrink-0 whitespace-nowrap',
+              // 선택 표시는 soft-fill 하나만 쓴다. 왼쪽 선까지 같이 넣으면
+              // 표시가 두 겹이 된다 (문서 §7).
               active
-                ? 'bg-primary-soft text-primary'
-                : 'text-fg-muted hover:bg-surface-muted hover:text-fg',
+                ? 'bg-primary-soft font-semibold text-primary'
+                : 'font-medium text-fg-muted hover:bg-surface-muted hover:text-fg',
             )}
           >
             <item.icon className="size-4.5 shrink-0" aria-hidden="true" />

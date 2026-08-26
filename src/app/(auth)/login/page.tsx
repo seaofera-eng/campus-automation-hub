@@ -24,7 +24,7 @@ export default async function LoginPage() {
 
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-10">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-fg">캠퍼스 자동화 관제 플랫폼</h1>
+          <h1 className="text-xl font-bold text-fg">캠퍼스 자동화 관제 플랫폼</h1>
           <p className="mt-2 text-sm text-fg-muted">
             교내에서 만들어진 AI 서비스와 업무 자동화 도구를 한곳에 모아 등록·검토·평가·개선합니다.
           </p>
