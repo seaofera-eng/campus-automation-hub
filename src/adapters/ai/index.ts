@@ -43,3 +43,14 @@ export type { DemandAnalysisRequest } from './live/demand-matching';
 
 export { reviewQuality } from './live/quality-review';
 export type { QualityReviewRequest } from './live/quality-review';
+
+/**
+ * 마법사 초안 다듬기만 예외다.
+ *
+ * 위 `analyze*` 넷은 **판단**이라 미리 돌려 저장한다. 이건 사람이 방금 버튼으로
+ * 고른 것을 문장으로 바꿔 주는 **받아쓰기**라, 미리 돌려 둘 대상 자체가 없다
+ * (아직 존재하지 않는 수요다). 그래서 화면 흐름 안에서 부른다.
+ * 실패하면 `null` 이고, 규칙으로 조립한 초안이 그대로 쓰인다.
+ */
+export { draftDemand, fallbackDraft } from './live/demand-draft';
+export type { DemandDraftRequest, DemandDraftResult } from './live/demand-draft';

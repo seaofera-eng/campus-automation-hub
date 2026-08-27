@@ -7,6 +7,7 @@ import {
   Lightbulb,
   Megaphone,
   Settings,
+  Sparkles,
   Trophy,
   Wand2,
   Wrench,
@@ -38,6 +39,8 @@ interface NavItem {
 
 const NAV_ITEMS: readonly NavItem[] = [
   { href: '/home', label: '홈', icon: Home },
+  // 마법사를 위쪽에 둔다. 자기 업무를 들고 온 사람이 제일 먼저 눌러야 할 곳이다.
+  { href: '/wizard', label: '맞춤 AI 찾기', icon: Sparkles },
   { href: '/dashboard', label: '대시보드', icon: LayoutDashboard },
   { href: '/tools', label: '자동화 도구', icon: Wrench },
   { href: '/demands', label: '업무 수요', icon: Lightbulb },

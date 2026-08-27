@@ -6,6 +6,7 @@ import { useState, useTransition } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import type { FieldPath } from 'react-hook-form';
 import { publishDemandAction, saveDemandDraftAction } from '@/actions/demand-actions';
+import type { DemandAttachmentView } from '@/application/demands/attachments';
 import { StringListInput } from '@/components/common/string-list-input';
 import { UnsavedChangesGuard } from '@/components/common/unsaved-changes-guard';
 import { Alert } from '@/components/ui/alert';
@@ -13,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DeadlinePicker } from '@/components/demands/deadline-picker';
+import { DemandAttachments } from '@/components/demands/demand-attachments';
 import { Field, Input, NativeSelect, Textarea, fieldAria } from '@/components/ui/field';
 import { WORK_FREQUENCIES, WORK_FREQUENCY_LABELS } from '@/domain/demand/types';
 import type { DemandStatus } from '@/domain/demand/types';
@@ -29,9 +31,16 @@ import type { DemandFormInput } from '@/lib/validation/demand';
 export function DemandForm({
   initialForm,
   demand,
+  initialAttachments = [],
 }: {
   initialForm?: DemandFormInput;
   demand: { id: string; status: DemandStatus } | null;
+  /**
+   * 이미 붙어 있는 자료. 수정 화면에서 넘긴다.
+   *
+   * 새 수요는 항상 비어 있다 — 저장 전에는 붙일 곳(수요 id)이 없기 때문이다.
+   */
+  initialAttachments?: readonly DemandAttachmentView[];
 }) {
   const router = useRouter();
   const [demandId, setDemandId] = useState<string | null>(demand?.id ?? null);
@@ -339,6 +348,52 @@ export function DemandForm({
               rows={3}
             />
           </Field>
+        </CardContent>
+      </Card>
+
+      {/*
+        참고 자료 (리뷰 2026-08-26 2.2절).
+
+        "처음 등록할 때는 해당 메뉴가 없고 수요가 등록되어야 메뉴가 있음."
+
+        파일을 붙이려면 붙일 곳(수요 id)이 먼저 있어야 한다는 것은 만드는
+        쪽 사정이고, 쓰는 사람에게는 "왜 지금은 못 올리지"로만 보인다.
+        그래서 **자리는 처음부터 보여주고**, 저장이 필요하면 그 자리에서
+        바로 저장할 수 있게 한다.
+      */}
+      <Card>
+        <CardHeader>
+          <CardTitle>참고 자료 (선택)</CardTitle>
+          <p className="text-sm text-fg-muted">
+            엑셀 서식이나 예시 파일을 하나 붙여 주시면 설명 열 줄보다 빠릅니다.
+          </p>
+        </CardHeader>
+
+        <CardContent>
+          {demandId ? (
+            <DemandAttachments
+              demandId={demandId}
+              initialAttachments={initialAttachments}
+              canManage
+            />
+          ) : (
+            <div className="flex flex-col items-start gap-3 rounded-card border border-dashed border-border-strong bg-surface-muted p-4">
+              <p className="text-sm text-fg-muted">
+                파일은 수요를 한 번 저장한 뒤에 붙일 수 있습니다. 아래 버튼을 누르면
+                지금까지 쓰신 내용을 임시저장하고, 이 자리에 파일 올리는 칸이 나타납니다.
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => saveDraft()}
+                disabled={pending}
+              >
+                <Save aria-hidden="true" />
+                {pending ? '저장 중…' : '임시저장하고 파일 붙이기'}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

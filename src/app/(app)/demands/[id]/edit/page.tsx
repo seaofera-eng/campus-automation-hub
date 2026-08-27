@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { listDemandAttachments } from '@/application/demands/attachments';
 import { loadDemandForm } from '@/application/demands/query';
 import { DemandForm } from '@/components/demands/demand-form';
 import { DEMAND_STATUS_LABELS } from '@/domain/demand/types';
@@ -9,6 +10,7 @@ export const metadata: Metadata = { title: '수요 수정' };
 export default async function EditDemandPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { demand, initialForm } = await guardPage(() => loadDemandForm(id));
+  const attachments = await guardPage(() => listDemandAttachments(id));
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
@@ -19,7 +21,11 @@ export default async function EditDemandPage({ params }: { params: Promise<{ id:
         </p>
       </div>
 
-      <DemandForm initialForm={initialForm} demand={demand} />
+      <DemandForm
+        initialForm={initialForm}
+        demand={demand}
+        initialAttachments={attachments}
+      />
     </div>
   );
 }
