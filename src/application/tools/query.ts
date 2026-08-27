@@ -136,11 +136,14 @@ async function enrich(
 
   return Promise.all(
     tools.map(async (tool) => {
-      const [version, evaluations, improvements, usage] = await Promise.all([
+      const [version, evaluations, improvements, usage, checklist] = await Promise.all([
         repositories.tools.getVersion(tool.currentVersionId),
         repositories.evaluations.listByTool(tool.id),
         repositories.improvements.listByTool(tool.id),
         repositories.observability.countUsageByTool(tool.id),
+        // 목록 카드에 위험도를 보여주기 위해 함께 읽는다. 이미 도구당 네 번을
+        // 병렬로 부르고 있어 한 번 더 붙는다고 성격이 달라지지 않는다.
+        repositories.reviews.getChecklist(tool.currentVersionId),
       ]);
 
       const summary = summarizeEvaluations(evaluations);
@@ -158,6 +161,7 @@ async function enrich(
         openImprovementCount: improvements.filter(
           (request) => request.status !== 'CLOSED' && request.status !== 'REJECTED',
         ).length,
+        riskLevel: checklist?.riskLevel ?? null,
       } satisfies ToolListItem;
     }),
   );

@@ -315,4 +315,12 @@ export interface ToolListItem {
   launchCount: number;
   averageOverallScore: number | null;
   openImprovementCount: number;
+  /**
+   * 검토자가 확정한 위험 등급. 체크리스트가 아직 없으면 null.
+   *
+   * 목록 카드에서 위험 정보가 먼저 보여야 한다는 요구를 위해 담는다.
+   * null 은 "위험이 없다"가 아니라 "아직 판단하지 않았다"이므로 화면에서
+   * 다르게 적는다.
+   */
+  riskLevel: RiskLevel | null;
 }

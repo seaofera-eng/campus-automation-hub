@@ -34,8 +34,11 @@ export function EmptyState({
       )}
       {...props}
     >
-      <Icon className="size-8 text-fg-subtle" aria-hidden="true" />
-      <p className="mt-4 font-semibold text-fg">{title}</p>
+      {/* 아이콘을 옅은 원 안에 넣어 '비어 있음'이 사고처럼 보이지 않게 한다 */}
+      <span className="flex size-12 items-center justify-center rounded-full bg-surface-muted">
+        <Icon className="size-6 text-fg-subtle" aria-hidden="true" />
+      </span>
+      <p className="mt-4 text-base font-semibold text-fg">{title}</p>
       {description ? (
         <p className="mt-1.5 max-w-md text-sm text-fg-muted">{description}</p>
       ) : null}

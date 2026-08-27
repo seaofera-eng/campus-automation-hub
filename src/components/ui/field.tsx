@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils/cn';
  */
 
 const controlClasses = [
-  'w-full rounded-md border border-border-strong bg-surface px-3 text-fg',
+  'w-full rounded-md border border-border-strong bg-surface px-3.5 text-fg',
   'placeholder:text-fg-subtle',
   'transition-colors focus-visible:border-primary',
   'disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-fg-subtle',
@@ -18,14 +18,14 @@ const controlClasses = [
 ].join(' ');
 
 export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={cn(controlClasses, 'h-10 text-sm', className)} {...props} />;
+  return <input className={cn(controlClasses, 'h-[42px] text-sm', className)} {...props} />;
 }
 
 export function Textarea({
   className,
   ...props
 }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={cn(controlClasses, 'min-h-24 py-2 text-sm', className)} {...props} />;
+  return <textarea className={cn(controlClasses, 'min-h-28 py-2.5 text-sm', className)} {...props} />;
 }
 
 /** 네이티브 select. 옵션이 단순한 곳에서는 radix Select 대신 이쪽을 쓴다. */
@@ -33,7 +33,7 @@ export function NativeSelect({
   className,
   ...props
 }: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select className={cn(controlClasses, 'h-10 pr-8 text-sm', className)} {...props} />;
+  return <select className={cn(controlClasses, 'h-[42px] pr-8 text-sm', className)} {...props} />;
 }
 
 export function FieldLabel({

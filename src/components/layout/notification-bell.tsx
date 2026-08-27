@@ -31,7 +31,7 @@ export function NotificationBell({ notifications }: { notifications: readonly No
         <Popover.Content
           align="end"
           sideOffset={8}
-          className="z-50 w-80 overflow-hidden rounded-card border border-border bg-surface shadow-lg"
+          className="z-50 w-80 overflow-hidden rounded-card border border-border bg-surface shadow-floating"
         >
           <p className="border-b border-border px-4 py-3 text-sm font-semibold text-fg">알림</p>
 
