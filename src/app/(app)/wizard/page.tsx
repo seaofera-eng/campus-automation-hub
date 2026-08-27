@@ -19,7 +19,7 @@ export default async function WizardPage() {
   await guardPage(loadNewDemandForm);
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="mx-auto w-full max-w-5xl">
       <WizardFlow />
     </div>
   );

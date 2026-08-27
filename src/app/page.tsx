@@ -2,6 +2,7 @@ import { ArrowRight, LayoutGrid, Sparkles } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LandingArtwork } from '@/components/landing/landing-artwork';
+import { SignalLine } from '@/components/ui/signal-line';
 
 /**
  * 랜딩 화면 (리뷰 2026-08-26 2절).
@@ -96,10 +97,15 @@ export default function LandingPage() {
         {/* 갈림길 — 이 화면의 본론                                             */}
         {/* ------------------------------------------------------------------ */}
         <section className="mt-12 sm:mt-16">
-          <h2 className="text-lg font-bold text-fg">어느 쪽으로 오셨나요?</h2>
-          <p className="mt-1 text-sm text-fg-muted">
-            둘 중 아무거나 골라도 됩니다. 나중에 서로 오갈 수 있습니다.
-          </p>
+          <div className="flex items-start gap-3">
+            <SignalLine className="min-h-11" />
+            <div>
+              <h2 className="text-lg font-bold text-fg">어느 쪽으로 오셨나요?</h2>
+              <p className="mt-1 text-sm text-fg-muted">
+                둘 중 아무거나 골라도 됩니다. 나중에 서로 오갈 수 있습니다.
+              </p>
+            </div>
+          </div>
 
           <div className="mt-5 grid gap-5 md:grid-cols-2">
             {/* 마법사를 왼쪽에 둔다. 도움이 더 필요한 쪽이 먼저 보여야 한다. */}
