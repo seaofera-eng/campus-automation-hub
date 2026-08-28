@@ -68,6 +68,19 @@ const CONCURRENCY = 3;
 interface Options {
   dryRun: boolean;
   only: 'all' | 'duplicates' | 'risk' | 'demands' | 'quality';
+  /**
+   * 지금 쓰고 있는 `.data` 에도 바로 반영할지.
+   *
+   * ## 왜 필요한가
+   *
+   * 시드 파일(`seed-analyses.ts`)은 **데이터를 처음 만들 때만** 읽힌다.
+   * 이미 `.data` 가 있으면 `pnpm demo:reset` 으로 지워야 새 분석이 보이는데,
+   * 그러면 그동안 올린 도구·수요·평가가 전부 함께 사라진다.
+   *
+   * 리뷰 중에는 그게 곤란하다. 그래서 **분석 네 종류만** 현재 데이터에
+   * 덮어쓰는 길을 둔다. 나머지는 손대지 않는다.
+   */
+  apply: boolean;
 }
 
 function parseOptions(argv: readonly string[]): Options {
@@ -76,7 +89,11 @@ function parseOptions(argv: readonly string[]): Options {
   if (!(valid as readonly string[]).includes(only)) {
     throw new Error(`--only 는 ${valid.join(' / ')} 중 하나여야 합니다. 받은 값: ${only}`);
   }
-  return { dryRun: argv.includes('--dry-run'), only: only as Options['only'] };
+  return {
+    dryRun: argv.includes('--dry-run'),
+    only: only as Options['only'],
+    apply: argv.includes('--apply'),
+  };
 }
 
 /** 동시 실행 수를 제한하며 하나씩 흘려 보낸다. */
@@ -336,7 +353,63 @@ async function main(): Promise<void> {
   const { calls, totalCost } = drainUsage();
   log(`\n저장했습니다 — ${OUTPUT_PATH}`);
   log(`성공 ${calls.length}회 / 실패 ${failed}회 · 비용 $${totalCost.toFixed(4)}`);
-  log('`pnpm demo:reset` 후 앱을 띄우면 화면에 반영됩니다.');
+  if (options.apply) {
+    await applyToLocalData({
+      duplicates: wantDuplicates ? duplicates : null,
+      risks: wantRisk ? risks : null,
+      demandAnalyses: wantDemands ? demandAnalyses : null,
+      qualityReviews: wantQuality ? qualityReviews : null,
+    });
+  } else {
+    log('');
+    log('아직 화면에는 반영되지 않았습니다. 둘 중 하나를 하세요:');
+    log('  · `pnpm ai:analyze -- --apply` — 지금 데이터에 분석만 덮어씁니다 (올린 도구는 그대로)');
+    log('  · `pnpm demo:reset` — 데이터를 처음 상태로 되돌립니다 (올린 도구도 함께 사라집니다)');
+  }
+}
+
+/**
+ * 지금 쓰고 있는 `.data/demo-db.json` 에 분석 결과만 덮어쓴다.
+ *
+ * ## 왜 필요한가
+ *
+ * 시드 파일(`seed-analyses.ts`)은 **데이터를 처음 만들 때만** 읽힌다. 이미
+ * `.data` 가 있으면 `pnpm demo:reset` 으로 지워야 새 분석이 보이는데, 그러면
+ * 그동안 올린 도구·수요·평가가 전부 함께 사라진다. 리뷰 중에는 그게 곤란하다.
+ *
+ * **분석 네 종류 외에는 아무것도 건드리지 않는다.** 도구·수요·평가·감사 로그는
+ * 그대로 둔다.
+ *
+ * 파일이 없으면 아무 일도 하지 않는다 — 앱을 한 번도 안 띄운 상태라 곧
+ * 시드에서 새로 만들어지고, 그때 시드 파일이 읽힌다.
+ */
+async function applyToLocalData(next: {
+  duplicates: DuplicateAnalysis[] | null;
+  risks: RiskAnalysis[] | null;
+  demandAnalyses: DemandAnalysis[] | null;
+  qualityReviews: QualityReview[] | null;
+}): Promise<void> {
+  let raw: string;
+  try {
+    raw = await readFile(DB_PATH, 'utf8');
+  } catch {
+    log('');
+    log(`반영할 데이터가 없습니다 — ${DB_PATH}`);
+    log('앱을 한 번 띄우면 시드에서 새로 만들어지고, 그때 이 분석이 함께 들어갑니다.');
+    return;
+  }
+
+  const db = JSON.parse(raw) as Record<string, unknown>;
+  if (next.duplicates) db.duplicateAnalyses = next.duplicates;
+  if (next.risks) db.riskAnalyses = next.risks;
+  if (next.demandAnalyses) db.demandAnalyses = next.demandAnalyses;
+  if (next.qualityReviews) db.qualityReviews = next.qualityReviews;
+
+  await writeFile(DB_PATH, JSON.stringify(db, null, 2), 'utf8');
+
+  log('');
+  log(`지금 데이터에 반영했습니다 — ${DB_PATH}`);
+  log('올린 도구·수요·평가는 그대로입니다. 앱을 다시 띄우면 화면에 나옵니다.');
 }
 
 main().catch((error: unknown) => {

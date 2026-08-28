@@ -66,29 +66,35 @@ export default function LandingPage() {
         {/* ------------------------------------------------------------------ */}
         {/* 소개                                                                */}
         {/* ------------------------------------------------------------------ */}
-        <section className="flex flex-col gap-8 lg:flex-row lg:items-center lg:gap-12">
-          <div className="flex min-w-0 flex-1 flex-col gap-4">
-            <span className="w-fit rounded-sm border border-primary/30 bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary">
-              충남대학교
-            </span>
-            <h1 className="text-xl font-bold leading-tight text-fg sm:text-[2.25rem]">
-              반복되는 업무,
-              <br />
-              이미 누군가 자동화해 뒀을지도 모릅니다.
-            </h1>
-            <p className="max-w-xl text-base text-fg-muted">
-              교내에서 만든 AI·업무 자동화 도구를 한 곳에서 찾고, 없으면 만들어 달라고
-              요청하는 곳입니다.
-            </p>
-          </div>
+        {/*
+          받은 그림에 제목("나에게 필요한 도구를 찾아보자!")과 설명이 **그림
+          안에** 그려져 있다. 그래서 옆에 HTML 제목을 또 두지 않는다 — 두 벌이
+          나란히 있으면 어느 쪽을 읽어야 할지 헷갈린다.
 
-          <div className="w-full shrink-0 lg:w-[420px]">
+          대신 그림을 이 화면의 머리로 크게 쓰고, 화면 낭독기를 위해 같은
+          문장을 `sr-only` 제목과 `alt` 에 남긴다. **그림이 안 떠도 무슨
+          화면인지는 남는다.**
+        */}
+        <section className="flex flex-col items-center gap-4">
+          <span className="w-fit rounded-sm border border-primary/30 bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary">
+            충남대학교
+          </span>
+
+          <h1 className="sr-only">
+            나에게 필요한 도구를 찾아보자 — 교내에서 만든 AI·업무 자동화 도구를 한 곳에서
+            찾고, 없으면 만들어 달라고 요청하는 곳입니다.
+          </h1>
+
+          <div className="w-full max-w-3xl">
             <LandingArtwork
               slot="hero"
-              label="대표 이미지"
-              note="첫 화면 오른쪽에 들어갑니다."
-              width={840}
-              height={630}
+              src="/landing/hero.png"
+              label="나에게 필요한 도구를 찾아보자 — 문제에 맞는 AI 도구를 쉽고 빠르게 추천해 드립니다."
+              note="첫 화면 머리에 들어갑니다."
+              width={1447}
+              height={1087}
+              priority
+              sizes="(min-width: 768px) 768px, 100vw"
             />
           </div>
         </section>

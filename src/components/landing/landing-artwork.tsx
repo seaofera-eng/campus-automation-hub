@@ -33,6 +33,7 @@ export function LandingArtwork({
   height,
   src,
   priority = false,
+  sizes = '(min-width: 1024px) 300px, 100vw',
 }: {
   /** 파일 이름에 쓸 이름. `public/landing/<slot>.png` 로 받는다. */
   slot: string;
@@ -46,6 +47,8 @@ export function LandingArtwork({
   src?: string;
   /** 첫 화면에 바로 보이는 그림이면 켠다. 늦게 뜨는 것이 눈에 띈다. */
   priority?: boolean;
+  /** 화면에서 실제로 차지하는 폭. 내려받을 크기를 정한다. */
+  sizes?: string;
 }) {
   if (src) {
     return (
@@ -55,8 +58,12 @@ export function LandingArtwork({
         width={width}
         height={height}
         priority={priority}
-        // 실제로 그려지는 폭. 이 값으로 내려받을 크기가 정해진다.
-        sizes="(min-width: 1024px) 320px, 100vw"
+        /*
+          실제로 그려지는 폭. 이 값으로 내려받을 크기가 정해진다.
+          자리마다 크기가 달라서 부르는 쪽이 정한다 — 마법사 옆 그림은 300px,
+          랜딩 머리 그림은 768px 다. 하나로 고정하면 한쪽이 흐려진다.
+        */
+        sizes={sizes}
         className="h-auto w-full select-none"
       />
     );
