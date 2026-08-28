@@ -25,6 +25,18 @@ import { LandingArtwork } from '@/components/landing/landing-artwork';
  * "어느 쪽으로 오셨나요?" 제목도 뺐다. 카드 두 장이 이미 그 질문을 하고
  * 있어서 같은 말을 한 번 더 하는 셈이었다.
  *
+ * 아래에 있던 소개 카드 세 장("흩어진 도구를 한 곳에" 등)도 뺐다. 그림 안에
+ * 같은 말이 이미 적혀 있었고, 그 자리 때문에 그림이 가로를 채우지 못했다.
+ *
+ * ## 한 화면에 담는다
+ *
+ * 스크롤해야 그림이 보이면 그림을 넣은 의미가 없다. 그래서 세로가 넉넉한
+ * 화면(`lg` 이상)에서는 높이를 화면에 맞추고, 그림이 **남는 높이만** 차지하게
+ * 한다. 위쪽 카드가 자리를 잡은 뒤 남는 만큼만 쓰므로 넘칠 일이 없다.
+ *
+ * 좁은 화면에서는 그대로 흐르게 둔다. 모바일에서 높이를 강제하면 주소
+ * 표시줄이 오르내릴 때 내용이 잘린다.
+ *
  * ## 로그인을 요구하지 않는다
  *
  * 이 화면은 `(app)` 밖에 있어서 사이드바도 세션도 없다. 두 버튼 모두
@@ -36,27 +48,12 @@ export const metadata: Metadata = {
   title: '캠퍼스 자동화 관제 플랫폼',
 };
 
-const HIGHLIGHTS = [
-  {
-    title: '흩어진 도구를 한 곳에',
-    body: '학과·부서마다 따로 만들던 자동화 도구를 한 곳에 모읍니다.',
-  },
-  {
-    title: '쓰기 전에 확인합니다',
-    body: '어떤 자료를 다루는지 검토를 거친 도구만 올라옵니다.',
-  },
-  {
-    title: '쓴 사람이 남긴 평가',
-    body: '실제로 써 본 사람의 평가가 쌓입니다. 점수는 익명입니다.',
-  },
-];
-
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-bg">
+    <main className="flex min-h-screen flex-col bg-bg lg:h-dvh lg:min-h-0 lg:overflow-hidden">
       {/* 상단 바 — 사이드바가 없는 화면이라 여기서만 정체를 밝힌다 */}
-      <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5">
+      <header className="shrink-0 border-b border-border bg-surface">
+        <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-5">
           <span className="text-base font-bold text-fg">캠퍼스 자동화 관제 플랫폼</span>
           <Link
             href="/login"
@@ -67,7 +64,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-5xl flex-col gap-6 px-5 py-10 sm:py-12">
+      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-5 py-6 lg:min-h-0 lg:py-5">
         {/*
           화면 낭독기를 위한 제목.
 
@@ -91,7 +88,7 @@ export default function LandingPage() {
           */}
           <Link
             href="/wizard"
-            className="group flex flex-col gap-3 rounded-card bg-primary p-6 text-primary-fg shadow-card transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:p-7"
+            className="group flex flex-col gap-2 rounded-card bg-primary p-5 text-primary-fg shadow-card transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <div className="flex items-center gap-2.5">
               <Sparkles className="size-6" aria-hidden="true" />
@@ -118,7 +115,7 @@ export default function LandingPage() {
 
           <Link
             href="/home"
-            className="group flex flex-col gap-3 rounded-card border border-border bg-surface p-6 shadow-card transition-colors hover:border-border-strong hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:p-7"
+            className="group flex flex-col gap-2 rounded-card border border-border bg-surface p-5 shadow-card transition-colors hover:border-border-strong hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <LayoutGrid className="size-6 text-fg-muted" aria-hidden="true" />
 
@@ -139,41 +136,34 @@ export default function LandingPage() {
         </section>
 
         {/* ------------------------------------------------------------------ */}
-        {/* 무엇을 하는 곳인가                                                  */}
-        {/* ------------------------------------------------------------------ */}
-        <section className="grid gap-3 sm:grid-cols-3">
-          {HIGHLIGHTS.map((item) => (
-            <div key={item.title} className="rounded-card border border-border bg-surface p-5">
-              <h3 className="text-sm font-bold text-fg">{item.title}</h3>
-              <p className="mt-1 text-sm text-fg-muted">{item.body}</p>
-            </div>
-          ))}
-        </section>
-
-        {/* ------------------------------------------------------------------ */}
         {/* 그림 — 맨 아래. 분위기를 만들 뿐 어디로도 데려가지 않는다            */}
         {/* ------------------------------------------------------------------ */}
-        <section className="flex flex-col items-center gap-3">
-          <span className="w-fit rounded-sm border border-primary/30 bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary">
-            충남대학교
-          </span>
+        {/*
+          남은 높이를 그림이 가져간다.
 
-          <div className="w-full max-w-3xl">
-            <LandingArtwork
-              slot="hero"
-              src="/landing/hero.png"
-              label="나에게 필요한 도구를 찾아보자 — 문제에 맞는 AI 도구를 쉽고 빠르게 추천해 드립니다."
-              note="첫 화면 아래쪽에 들어갑니다."
-              width={1447}
-              height={1087}
-              sizes="(min-width: 768px) 768px, 100vw"
-            />
-          </div>
+          `flex-1 min-h-0` 이라 위쪽 카드들이 자리를 잡은 뒤 **남는 만큼만**
+          차지한다. 그림이 커서 화면을 넘기는 일이 없다.
+
+          `object-contain` 이라 비율은 그대로다 — 4:3 그림을 16:9 화면에 맞추면
+          좌우가 남는데, 잘라내는 것보다 낫다. 그림 안에 제목이 그려져 있어서
+          잘리면 글자가 사라진다.
+        */}
+        <section className="flex min-h-0 flex-1 items-center justify-center">
+          <LandingArtwork
+            slot="hero"
+            src="/landing/hero.png"
+            label="나에게 필요한 도구를 찾아보자 — 문제에 맞는 AI 도구를 쉽고 빠르게 추천해 드립니다."
+            note="첫 화면 아래쪽에 들어갑니다."
+            width={1447}
+            height={1087}
+            sizes="(min-width: 1024px) 1024px, 100vw"
+            fit="contain"
+          />
         </section>
       </div>
 
-      <footer className="border-t border-border bg-surface">
-        <div className="mx-auto max-w-5xl px-5 py-6 text-xs text-fg-subtle">
+      <footer className="shrink-0 border-t border-border bg-surface">
+        <div className="mx-auto max-w-4xl px-5 py-3.5 text-xs text-fg-subtle">
           충남대학교 캠퍼스 자동화 관제 플랫폼 · 교내 구성원용
         </div>
       </footer>

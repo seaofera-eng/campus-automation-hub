@@ -34,6 +34,7 @@ export function LandingArtwork({
   src,
   priority = false,
   sizes = '(min-width: 1024px) 300px, 100vw',
+  fit = 'width',
 }: {
   /** 파일 이름에 쓸 이름. `public/landing/<slot>.png` 로 받는다. */
   slot: string;
@@ -49,6 +50,14 @@ export function LandingArtwork({
   priority?: boolean;
   /** 화면에서 실제로 차지하는 폭. 내려받을 크기를 정한다. */
   sizes?: string;
+  /**
+   * 어떻게 맞출지.
+   *
+   * - `width` — 가로를 채우고 높이는 비율대로. 보통 이쪽이다.
+   * - `contain` — **부모가 정한 상자 안에** 비율을 지켜 들어간다. 남는 높이를
+   *   채워야 할 때 쓴다. 부모에 높이가 있어야 한다.
+   */
+  fit?: 'width' | 'contain';
 }) {
   if (src) {
     return (
@@ -64,7 +73,11 @@ export function LandingArtwork({
           랜딩 머리 그림은 768px 다. 하나로 고정하면 한쪽이 흐려진다.
         */
         sizes={sizes}
-        className="h-auto w-full select-none"
+        className={
+          fit === 'contain'
+            ? 'h-full max-h-full w-full object-contain select-none'
+            : 'h-auto w-full select-none'
+        }
       />
     );
   }
