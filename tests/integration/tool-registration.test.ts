@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { saveDraft, submitTool } from '@/application/tools/register';
+import { saveDraft, startNewVersion, submitTool } from '@/application/tools/register';
+import { addAttachment } from '@/application/tools/attachments';
 import { DomainError } from '@/domain/shared/errors';
 import { getRepositories } from '@/lib/di/container';
 import { emptyToolForm, toolSubmitSchema, type ToolFormInput } from '@/lib/validation/tool';
@@ -33,8 +34,8 @@ function completeForm(overrides: Partial<ToolFormInput> = {}): ToolFormInput {
     classifications: form.classifications.map((entry) =>
       entry.classification === 'INTERNAL' ? { ...entry, inUse: true } : entry,
     ),
-    dataStorageLocation: '교내 서버',
-    dataRetentionPeriod: '처리 후 즉시 삭제',
+    // 실제로 쓸 방법이 있어야 신청할 수 있다 (리뷰 2026-08-27 3절)
+    serviceUrl: 'https://tool.demo.university.test/meeting-notes',
     ...overrides,
   };
 }
@@ -185,9 +186,18 @@ describe('신청 검증 규칙', () => {
     }
   });
 
-  it('보관기간이 비어 있으면 거부한다', () => {
-    const result = toolSubmitSchema.safeParse(completeForm({ dataRetentionPeriod: '' }));
-    expect(result.success).toBe(false);
+  it('보관기간은 더 이상 등록자에게 묻지 않는다', () => {
+    /*
+     * 리뷰 2026-08-27 3.2절에서 뺀 항목이다. 만드는 사람 대부분이 쓸 말이
+     * 없었고, 그렇게 채워진 칸은 검토에 도움이 되지 않으면서 등록만 막았다.
+     *
+     * 위험 판단에서 빠진 것은 아니다 — 검토자가 위험 체크리스트에서 직접
+     * 판단한다. 물어보는 사람이 바뀌었을 뿐이다.
+     */
+    const result = toolSubmitSchema.safeParse(
+      completeForm({ dataRetentionPeriod: '', dataStorageLocation: '' }),
+    );
+    expect(result.success).toBe(true);
   });
 
   it('주요 기능이 없으면 거부한다', () => {
@@ -201,5 +211,165 @@ describe('신청 검증 규칙', () => {
     expect(result.success).toBe(false);
     // 임시저장 기준으로는 통과해야 한다.
     expect(emptyToolForm().name).toBe('');
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 실제로 쓸 수 있는 도구만 검토로 넘긴다 (리뷰 2026-08-27 3절)                 */
+/* -------------------------------------------------------------------------- */
+
+describe('쓸 방법이 없는 도구', () => {
+  it('주소도 파일도 없으면 신청을 거부한다', async () => {
+    const developer = await demoProfile('developer');
+    // 설명은 완벽하지만 실체가 없는 도구.
+    const form = completeForm({ serviceUrl: '', repositoryUrl: '' });
+    const { toolId } = await saveDraft(developer, { form });
+
+    await expect(submitTool(developer, { toolId, form })).rejects.toThrowError(
+      /실제로 쓸 방법/,
+    );
+
+    // 거부됐으면 상태가 그대로여야 한다. 반쯤 넘어가면 안 된다.
+    const tool = await getRepositories().tools.getTool(toolId);
+    expect(tool?.status).toBe('DRAFT');
+  });
+
+  it('소스 저장소 주소만 있어도 신청은 된다', async () => {
+    const developer = await demoProfile('developer');
+    const form = completeForm({
+      serviceUrl: '',
+      repositoryUrl: 'https://git.demo.university.test/meeting-notes',
+    });
+    const { toolId } = await saveDraft(developer, { form });
+
+    await submitTool(developer, { toolId, form });
+    expect((await getRepositories().tools.getTool(toolId))?.status).toBe('SUBMITTED');
+  });
+
+  it('프로그램 파일을 붙이면 주소가 없어도 신청된다', async () => {
+    const developer = await demoProfile('developer');
+    const form = completeForm({ serviceUrl: '', repositoryUrl: '' });
+    const { toolId, versionId } = await saveDraft(developer, { form });
+
+    await addAttachment(developer, {
+      toolId: toolId as string,
+      kind: 'PROGRAM',
+      fileName: '회의록정리.zip',
+      mimeType: 'application/zip',
+      bytes: new Uint8Array([80, 75, 3, 4]),
+    });
+
+    // 첨부는 버전에 붙는다. 붙인 곳이 맞는지 확인한다.
+    const attached = await getRepositories().tools.listAttachments(versionId);
+    expect(attached.some((entry) => entry.kind === 'PROGRAM')).toBe(true);
+
+    await submitTool(developer, { toolId, form });
+    expect((await getRepositories().tools.getTool(toolId))?.status).toBe('SUBMITTED');
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 새 버전으로 고치기 (리뷰 2026-08-27 3절)                                     */
+/* -------------------------------------------------------------------------- */
+
+/** 승인까지 올려 둔 도구 하나. 새 버전 규칙을 보려면 여기서 시작해야 한다. */
+async function approvedTool() {
+  const developer = await demoProfile('developer');
+  const form = completeForm({ name: `승인된 도구 ${Date.now()}` });
+  const { toolId, versionId } = await saveDraft(developer, { form });
+  await submitTool(developer, { toolId, form });
+
+  const repositories = getRepositories();
+  const tool = await repositories.tools.getTool(toolId);
+  if (!tool) throw new Error('도구를 찾지 못했습니다.');
+  await repositories.tools.updateTool({ ...tool, status: 'APPROVED' });
+
+  return { developer, toolId, versionId };
+}
+
+describe('새 버전 만들기', () => {
+  it('승인된 도구를 바로 고칠 수는 없다', async () => {
+    const { developer, toolId } = await approvedTool();
+
+    // 검토를 통과한 내용이 소리 없이 바뀌면 검토가 무의미해진다.
+    await expect(
+      saveDraft(developer, { toolId: toolId as string, form: completeForm() }),
+    ).rejects.toThrowError(/새 버전/);
+  });
+
+  it('새 버전을 만들면 임시저장으로 돌아간다', async () => {
+    const { developer, toolId, versionId } = await approvedTool();
+
+    const newVersionId = await startNewVersion(developer, toolId as string);
+    expect(newVersionId).not.toBe(versionId);
+
+    const tool = await getRepositories().tools.getTool(toolId);
+    expect(tool?.status).toBe('DRAFT');
+    expect(tool?.currentVersionId).toBe(newVersionId);
+  });
+
+  it('이전 버전은 지우지 않는다', async () => {
+    const { developer, toolId, versionId } = await approvedTool();
+    await startNewVersion(developer, toolId as string);
+
+    // 이전 버전에 붙은 평가와 이력이 살아 있어야 한다.
+    expect(await getRepositories().tools.getVersion(versionId)).not.toBeNull();
+  });
+
+  it('첨부는 새 버전으로 따라온다', async () => {
+    const { developer, toolId } = await approvedTool();
+    await addAttachment(developer, {
+      toolId: toolId as string,
+      kind: 'PROGRAM',
+      fileName: '도구.zip',
+      mimeType: 'application/zip',
+      bytes: new Uint8Array([80, 75, 3, 4]),
+    });
+
+    const newVersionId = await startNewVersion(developer, toolId as string);
+
+    // 매번 다시 올리게 하면 아무도 안 고친다.
+    const copied = await getRepositories().tools.listAttachments(newVersionId);
+    expect(copied.some((entry) => entry.fileName === '도구.zip')).toBe(true);
+  });
+
+  it('버전 번호가 올라간다', async () => {
+    const { developer, toolId } = await approvedTool();
+    const newVersionId = await startNewVersion(developer, toolId as string);
+
+    const version = await getRepositories().tools.getVersion(newVersionId);
+    expect(version?.versionLabel).toBe('v1.1');
+    // 무엇을 고치는지는 본인이 적는다. 지어내지 않는다.
+    expect(version?.changeNote).toBe('');
+  });
+
+  it('남의 도구에는 새 버전을 만들 수 없다', async () => {
+    const { toolId } = await approvedTool();
+    const other = await demoProfile('requester');
+
+    await expect(startNewVersion(other, toolId as string)).rejects.toThrowError(DomainError);
+  });
+
+  it('검토 중인 도구에는 새 버전을 만들 수 없다', async () => {
+    const developer = await demoProfile('developer');
+    const form = completeForm({ name: `검토 중 도구 ${Date.now()}` });
+    const { toolId } = await saveDraft(developer, { form });
+    await submitTool(developer, { toolId, form });
+
+    // 검토자가 보던 내용이 발밑에서 바뀌면 안 된다.
+    await expect(startNewVersion(developer, toolId as string)).rejects.toThrowError(
+      /검토가 진행 중/,
+    );
+  });
+
+  it('임시저장 상태에서는 새 버전이 필요 없다', async () => {
+    const developer = await demoProfile('developer');
+    const { toolId } = await saveDraft(developer, {
+      form: completeForm({ name: `초안 도구 ${Date.now()}` }),
+    });
+
+    await expect(startNewVersion(developer, toolId as string)).rejects.toThrowError(
+      /바로 수정할 수 있습니다/,
+    );
   });
 });

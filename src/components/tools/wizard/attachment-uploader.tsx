@@ -31,7 +31,8 @@ export function AttachmentUploader({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = useState<readonly AttachmentView[]>(initialAttachments);
-  const [kind, setKind] = useState<AttachmentKind>('USER_MANUAL');
+  // 기본값을 프로그램 파일로 둔다 — 이 화면에 오는 가장 큰 이유다 (리뷰 3절).
+  const [kind, setKind] = useState<AttachmentKind>('PROGRAM');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -55,7 +56,7 @@ export function AttachmentUploader({
     }
     if (!(file.type in ALLOWED_ATTACHMENT_TYPES)) {
       setError(
-        `올릴 수 없는 형식입니다. ${Object.values(ALLOWED_ATTACHMENT_TYPES).join(', ')} 형식만 가능합니다.`,
+        `올릴 수 없는 형식입니다. ${[...new Set(Object.values(ALLOWED_ATTACHMENT_TYPES))].join(', ')} 형식만 가능합니다. 실행 파일은 zip 으로 압축해서 올려 주세요.`,
       );
       return;
     }

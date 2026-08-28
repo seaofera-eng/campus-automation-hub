@@ -72,8 +72,6 @@ const STEP_FIELDS: readonly (readonly FieldPath<ToolFormInput>[])[] = [
     'classifications',
     'sendsDataExternally',
     'externalTransferTargets',
-    'dataStorageLocation',
-    'dataRetentionPeriod',
     'hasExecutionLog',
     'requiresHumanApproval',
   ],

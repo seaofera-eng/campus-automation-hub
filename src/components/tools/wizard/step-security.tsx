@@ -4,7 +4,7 @@ import { Lock } from 'lucide-react';
 import { Controller, useWatch } from 'react-hook-form';
 import { Alert } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Field, Input, Textarea, fieldAria } from '@/components/ui/field';
+import { Field, Textarea, fieldAria } from '@/components/ui/field';
 import { DATA_CLASSIFICATION_LABELS, isSensitiveClassification } from '@/domain/tool/types';
 import { cn } from '@/lib/utils/cn';
 import { StepSection, type StepProps } from './shared';
@@ -127,34 +127,18 @@ export function StepSecurity({ form }: StepProps) {
           </Field>
         ) : null}
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="데이터 저장 위치"
-            htmlFor="dataStorageLocation"
-            required
-            error={errors.dataStorageLocation?.message}
-          >
-            <Input
-              {...register('dataStorageLocation')}
-              {...fieldAria('dataStorageLocation', undefined, errors.dataStorageLocation?.message)}
-              placeholder="예: 교내 서버 / 국내 클라우드"
-            />
-          </Field>
+        {/*
+          저장 위치·보관 기간은 더 이상 묻지 않는다 (리뷰 2026-08-27 3.2절).
 
-          <Field
-            label="보관 기간"
-            htmlFor="dataRetentionPeriod"
-            required
-            hint="정하지 않은 것 자체가 위험 요소로 평가됩니다."
-            error={errors.dataRetentionPeriod?.message}
-          >
-            <Input
-              {...register('dataRetentionPeriod')}
-              {...fieldAria('dataRetentionPeriod', 'hint', errors.dataRetentionPeriod?.message)}
-              placeholder="예: 처리 후 즉시 삭제 / 6개월"
-            />
-          </Field>
-        </div>
+          "[데이터 저장 위치]. [보관 기간]은 필요 없는 항목으로 삭제해야함"
+
+          만드는 사람 대부분이 "내 PC" 나 "몰라요" 밖에 쓸 말이 없었고, 그렇게
+          채워진 칸은 검토에 도움이 되지 않으면서 등록만 막았다.
+
+          **위험 판단에서 빠진 것은 아니다.** 검토자가 위험 체크리스트의
+          "데이터 보관기간 미설정" 항목에서 직접 판단한다. 물어보는 사람이
+          등록자에서 검토자로 바뀌었을 뿐이다.
+        */}
 
         <div className="grid gap-2 sm:grid-cols-2">
           <Controller

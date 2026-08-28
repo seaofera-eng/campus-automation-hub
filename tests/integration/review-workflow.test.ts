@@ -41,8 +41,8 @@ function completeForm(name: string): ToolFormInput {
     classifications: form.classifications.map((entry) =>
       entry.classification === 'INTERNAL' ? { ...entry, inUse: true } : entry,
     ),
-    dataStorageLocation: '교내 서버',
-    dataRetentionPeriod: '6개월',
+    // 실제로 쓸 방법이 있어야 신청할 수 있다 (리뷰 2026-08-27 3절)
+    serviceUrl: 'https://tool.demo.university.test/review-target',
   };
 }
 

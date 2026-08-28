@@ -129,6 +129,59 @@ export function StepBasic({ form, data }: StepProps) {
         </Field>
       </StepSection>
 
+      {/*
+        이 도구를 실제로 어떻게 쓰는가 (리뷰 2026-08-27 3절).
+
+        "가장 치명적인 것은 자동화 도구를 올릴 수가 없음. 파일이든, URL이든
+         연결시켜야하는데 그것을 넣을 수 있는 칸이 없음."
+
+        저장·조회는 처음부터 되어 있었는데 **입력칸만 없었다.** 그래서 설명만
+        올라가고 실체는 못 올리는 상태였다.
+
+        프로그램 파일은 폼이 아니라 4단계 첨부로 붙는다. 여기서는 주소 두 개를
+        받고, 셋 중 하나도 없으면 등록 신청을 막는다.
+      */}
+      <StepSection
+        title="이 도구를 어떻게 쓰나요"
+        description="바로 여는 주소 · 받아서 쓰는 파일 · 소스 저장소 중 하나는 있어야 등록을 신청할 수 있습니다."
+      >
+        <Field
+          label="바로 여는 주소"
+          htmlFor="serviceUrl"
+          hint="웹에서 바로 쓸 수 있으면 그 주소를 적어 주세요. 도구 화면에 '서비스 열기' 버튼으로 나옵니다."
+          error={errors.serviceUrl?.message}
+        >
+          <Input
+            {...register('serviceUrl')}
+            {...fieldAria('serviceUrl', 'hint', errors.serviceUrl?.message)}
+            type="url"
+            inputMode="url"
+            placeholder="https://example.cnu.ac.kr/my-tool"
+          />
+        </Field>
+
+        <Field
+          label="소스 저장소 주소"
+          htmlFor="repositoryUrl"
+          hint="GitHub 처럼 코드를 올려 둔 곳이 있으면 적어 주세요. 없어도 됩니다."
+          error={errors.repositoryUrl?.message}
+        >
+          <Input
+            {...register('repositoryUrl')}
+            {...fieldAria('repositoryUrl', 'hint', errors.repositoryUrl?.message)}
+            type="url"
+            inputMode="url"
+            placeholder="https://github.com/..."
+          />
+        </Field>
+
+        <p className="rounded-card border border-border bg-surface-muted p-3 text-xs text-fg-muted">
+          엑셀 매크로나 받아서 돌리는 프로그램이라면 주소 대신{' '}
+          <strong className="font-semibold text-fg">4단계에서 프로그램 파일</strong>을 붙여
+          주세요. zip 으로 압축해서 올리시면 됩니다.
+        </p>
+      </StepSection>
+
       <StepSection
         title="무엇을 위한 도구인가"
         description="검토자가 필요성을 판단하는 근거가 됩니다."

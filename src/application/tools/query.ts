@@ -17,11 +17,13 @@ import type {
   AutomationTool,
   AutomationToolVersion,
   DataClassification,
+  ToolAccessKind,
   ToolCategory,
   ToolListItem,
   ToolStatus,
   ToolStatusHistoryEntry,
 } from '@/domain/tool/types';
+import { availableAccess } from '@/domain/tool/types';
 import type { ToolEvaluation } from '@/domain/evaluation/types';
 import type { ReviewComment } from '@/domain/review/types';
 import { requireUser, toActor } from '@/lib/auth/current-user';
@@ -269,7 +271,16 @@ export interface ToolDetail {
     canSubmit: boolean;
     canEvaluate: boolean;
     canRequestImprovement: boolean;
+    /**
+     * 새 버전을 만들어 수정할 수 있는가 (리뷰 2026-08-27 3절).
+     *
+     * 검토를 통과한 도구는 바로 고칠 수 없다. 사본을 떠서 임시저장으로
+     * 되돌린 뒤 고치고 다시 신청한다.
+     */
+    canStartNewVersion: boolean;
   };
+  /** 이 도구를 실제로 쓸 수 있는 방법. 없으면 빈 배열이다. */
+  access: ToolAccessKind[];
 }
 
 export async function loadToolDetail(toolId: string): Promise<ToolDetail> {
@@ -369,6 +380,13 @@ export async function loadToolDetail(toolId: string): Promise<ToolDetail> {
       canEdit:
         can(actor, 'tool:update', readContext(tool)) &&
         (tool.status === 'DRAFT' || tool.status === 'REVISION_REQUIRED'),
+      // 검토가 끝난 뒤에만. 검토 중(SUBMITTED·HUMAN_REVIEW)에 새 버전을 만들면
+      // 검토자가 보던 내용이 발밑에서 바뀐다.
+      canStartNewVersion:
+        can(actor, 'tool:createVersion', readContext(tool)) &&
+        (tool.status === 'PILOT' ||
+          tool.status === 'APPROVED' ||
+          tool.status === 'SUSPENDED'),
       canSubmit:
         can(actor, 'tool:submit', readContext(tool)) &&
         (tool.status === 'DRAFT' || tool.status === 'REVISION_REQUIRED') &&
@@ -380,5 +398,10 @@ export async function loadToolDetail(toolId: string): Promise<ToolDetail> {
       canRequestImprovement:
         can(actor, 'improvement:create') && tool.status !== 'RETIRED',
     },
+    access: availableAccess({
+      serviceUrl: version.serviceUrl,
+      repositoryUrl: version.repositoryUrl,
+      hasProgramFile: attachments.some((entry) => entry.kind === 'PROGRAM'),
+    }),
   };
 }

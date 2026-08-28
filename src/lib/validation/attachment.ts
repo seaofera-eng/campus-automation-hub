@@ -8,6 +8,15 @@ import { ATTACHMENT_KINDS } from '@/domain/tool/types';
  * 필요한 형식만 열어 둔다.
  *
  * SVG 는 스크립트를 품을 수 있어 이미지지만 허용하지 않는다.
+ *
+ * ## 프로그램 파일 (리뷰 2026-08-27 3절)
+ *
+ * "파일이든, URL이든 연결시켜야하는데 그것을 넣을 수 있는 칸이 없음."
+ *
+ * 그래서 압축 파일(zip)과 엑셀 매크로(xlsm)를 열었다. **실행 파일(.exe)은
+ * 열지 않는다.** 학내 플랫폼에서 exe 를 그대로 받아 돌리게 하면, 검토를
+ * 통과한 파일과 누군가 바꿔치기한 파일을 사용자가 구분할 방법이 없다.
+ * 압축해서 올리면 최소한 받는 사람이 열어 보고 판단할 기회가 생긴다.
  */
 
 export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10MB — DB 제약과 같은 값
@@ -23,6 +32,13 @@ export const ALLOWED_ATTACHMENT_TYPES: Record<string, string> = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+  // 프로그램 파일. 브라우저마다 zip 을 두 가지 중 하나로 보낸다.
+  // `application/octet-stream` 은 열지 않는다 — exe 도 그 값으로 오기 때문에
+  // 열어 두면 위의 exe 금지가 무의미해진다.
+  'application/zip': 'zip',
+  'application/x-zip-compressed': 'zip',
+  // 엑셀 매크로. 학내에서 제일 흔한 자동화 형태다.
+  'application/vnd.ms-excel.sheet.macroEnabled.12': 'xlsm',
 };
 
 export const ATTACHMENT_ACCEPT_ATTRIBUTE = Object.keys(ALLOWED_ATTACHMENT_TYPES).join(',');

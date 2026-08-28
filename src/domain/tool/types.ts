@@ -225,6 +225,7 @@ export interface ToolSecurityProfile {
 }
 
 export const ATTACHMENT_KINDS = [
+  'PROGRAM',
   'COVER_IMAGE',
   'USER_MANUAL',
   'TEST_RESULT',
@@ -234,12 +235,56 @@ export const ATTACHMENT_KINDS = [
 export type AttachmentKind = (typeof ATTACHMENT_KINDS)[number];
 
 export const ATTACHMENT_KIND_LABELS: Record<AttachmentKind, string> = {
+  PROGRAM: '프로그램 파일',
   COVER_IMAGE: '대표 이미지',
   USER_MANUAL: '사용 설명서',
   TEST_RESULT: '테스트 결과',
   SECURITY_REVIEW: '개인정보·보안 검토자료',
   OTHER: '기타 자료',
 };
+
+/**
+ * 이 도구를 실제로 쓸 수 있는가 (리뷰 2026-08-27 3절).
+ *
+ * "가장 치명적인 것은 자동화 도구를 올릴 수가 없음. 파일이든, URL이든
+ *  연결시켜야하는데 그것을 넣을 수 있는 칸이 없음."
+ *
+ * 설명만 있고 실체가 없는 도구는 **카탈로그가 아니라 목록일 뿐이다.**
+ * 그래서 등록 신청 전에 셋 중 하나는 반드시 있어야 한다.
+ *
+ *   1. 바로 여는 주소 (`serviceUrl`)
+ *   2. 받아서 돌리는 파일 (`PROGRAM` 첨부)
+ *   3. 소스 저장소 (`repositoryUrl`)
+ *
+ * 셋의 우선순위가 다르다. 웹 도구는 1번이 있어야 하고, 엑셀 매크로 같은 것은
+ * 2번뿐이다. 3번만 있는 것은 "코드는 있으니 알아서 받아 쓰라"는 뜻이라
+ * 허용은 하되 제일 약한 연결로 본다.
+ */
+export interface ToolAccess {
+  serviceUrl: string;
+  repositoryUrl: string;
+  /** PROGRAM 첨부가 붙어 있는가 */
+  hasProgramFile: boolean;
+}
+
+export type ToolAccessKind = 'SERVICE' | 'PROGRAM' | 'REPOSITORY';
+
+/**
+ * 어떤 방법으로 쓸 수 있는지. 없으면 빈 배열이다.
+ * 화면은 이 순서대로 버튼을 그린다 — 앞이 더 바로 쓸 수 있는 것이다.
+ */
+export function availableAccess(access: ToolAccess): ToolAccessKind[] {
+  const kinds: ToolAccessKind[] = [];
+  if (access.serviceUrl.trim() !== '') kinds.push('SERVICE');
+  if (access.hasProgramFile) kinds.push('PROGRAM');
+  if (access.repositoryUrl.trim() !== '') kinds.push('REPOSITORY');
+  return kinds;
+}
+
+/** 등록 신청을 받아도 되는가. 하나라도 있으면 된다. */
+export function hasUsableAccess(access: ToolAccess): boolean {
+  return availableAccess(access).length > 0;
+}
 
 export interface ToolAttachment {
   id: AttachmentId;

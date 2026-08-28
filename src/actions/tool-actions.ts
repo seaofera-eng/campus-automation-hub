@@ -4,7 +4,12 @@ import { revalidatePath } from 'next/cache';
 import { withAudit } from '@/application/shared/audit';
 import { addAttachment, listAttachments, removeAttachment } from '@/application/tools/attachments';
 import type { AttachmentView } from '@/application/tools/attachments';
-import { draftChangedFields, saveDraft, submitTool } from '@/application/tools/register';
+import {
+  draftChangedFields,
+  saveDraft,
+  startNewVersion,
+  submitTool,
+} from '@/application/tools/register';
 import { recordToolLaunch } from '@/application/tools/usage';
 import { validationFailed } from '@/domain/shared/errors';
 import { asId } from '@/domain/shared/ids';
@@ -14,7 +19,12 @@ import { run, type ActionResult } from '@/lib/actions/result';
 import { requireUser } from '@/lib/auth/current-user';
 import { attachmentMetaSchema, removeAttachmentSchema } from '@/lib/validation/attachment';
 import { parseOrThrow } from '@/lib/validation/common';
-import { saveDraftSchema, submitToolSchema, toolIdSchema } from '@/lib/validation/tool';
+import {
+  saveDraftSchema,
+  startNewVersionSchema,
+  submitToolSchema,
+  toolIdSchema,
+} from '@/lib/validation/tool';
 
 /**
  * 도구 서버 액션.
@@ -80,6 +90,38 @@ export async function submitToolAction(input: unknown): Promise<ActionResult<{ t
     revalidatePath('/reviews');
 
     return { toolId: toolId as string };
+  });
+}
+
+/**
+ * 새 버전을 만들어 수정에 들어간다 (리뷰 2026-08-27 3절).
+ *
+ * 승인된 도구를 바로 고치면 검토가 무의미해지므로, 사본을 떠서 임시저장으로
+ * 되돌린다. 고쳐서 다시 신청하면 검토를 새로 받는다.
+ */
+export async function startNewVersionAction(
+  input: unknown,
+): Promise<ActionResult<{ toolId: string }>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const data = parseOrThrow(startNewVersionSchema, input);
+
+    await withAudit(
+      actor,
+      {
+        action: 'tool.version.create',
+        targetType: 'tool',
+        targetId: data.toolId,
+        changedFields: ['currentVersionId', 'status'],
+        summary: '수정을 위해 새 버전을 만들었습니다.',
+      },
+      () => startNewVersion(actor, data.toolId),
+    );
+
+    revalidatePath('/tools');
+    revalidatePath(`/tools/${data.toolId}`);
+
+    return { toolId: data.toolId };
   });
 }
 

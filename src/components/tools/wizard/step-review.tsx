@@ -128,8 +128,6 @@ export function StepReview({
             label="외부 전송"
             value={values.sendsDataExternally ? values.externalTransferTargets || '있음' : '없음'}
           />
-          <SummaryRow label="저장 위치" value={values.dataStorageLocation} />
-          <SummaryRow label="보관 기간" value={values.dataRetentionPeriod} />
           <SummaryRow
             label="사람 최종 확인"
             value={values.requiresHumanApproval ? '있음' : '없음'}

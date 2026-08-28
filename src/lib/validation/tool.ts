@@ -141,24 +141,41 @@ export const toolSubmitSchema = toolDraftSchema.superRefine((value, context) => 
     });
   }
 
-  requireFilled(
-    context,
-    value.dataStorageLocation,
-    'dataStorageLocation',
-    '데이터를 어디에 저장하는지 적어 주세요. (예: 교내 서버, 국내 클라우드)',
-  );
-  requireFilled(
-    context,
-    value.dataRetentionPeriod,
-    'dataRetentionPeriod',
-    '데이터를 얼마나 보관하는지 적어 주세요. 보관기간을 정하지 않은 것 자체가 위험 요소로 평가됩니다.',
-  );
+  /*
+   * 저장 위치·보관 기간은 더 이상 등록자에게 묻지 않는다 (리뷰 2026-08-27 3.2절).
+   *
+   * 만드는 사람 대부분이 "내 PC" 나 "몰라요" 밖에 쓸 말이 없었고, 그렇게 채워진
+   * 칸은 검토에 도움이 되지 않으면서 등록만 막았다.
+   *
+   * **위험 판단에서 빠진 것은 아니다.** 검토자가 위험 체크리스트에서 직접
+   * 판단하고(`risk-checklist-rules.ts` 의 "데이터 보관기간 미설정"), 값이 있으면
+   * 상세·검토 화면에 그대로 보인다. 묻는 사람이 등록자에서 검토자로 바뀌었을 뿐이다.
+   */
+
+  /*
+   * 실제로 쓸 수 있어야 등록 신청을 받는다 (리뷰 2026-08-27 3절).
+   *
+   * "가장 치명적인 것은 자동화 도구를 올릴 수가 없음."
+   *
+   * 설명만 있고 실체가 없으면 카탈로그가 아니라 목록일 뿐이다. 다만 프로그램
+   * 파일은 폼이 아니라 첨부로 붙으므로 **여기서는 주소 두 개만 본다.**
+   * 파일까지 함께 보는 최종 판단은 서버(`submitTool`)가 한다.
+   */
 });
+
+/** 주소·파일 중 아무것도 없을 때 쓸 안내. 화면과 서버가 같은 문장을 쓴다. */
+export const NO_ACCESS_MESSAGE =
+  '이 도구를 실제로 쓸 방법을 하나는 알려 주세요. 바로 여는 주소, 받아서 쓰는 프로그램 파일, 소스 저장소 주소 중 하나면 됩니다.';
 
 /** 저장 시 사용하는 식별자. 신규 등록이면 toolId 가 없다. */
 export const saveDraftSchema = z.object({
   toolId: z.string().optional(),
   form: toolDraftSchema,
+});
+
+/** 새 버전 만들기 (리뷰 2026-08-27 3절). 도구 하나만 지목하면 된다. */
+export const startNewVersionSchema = z.object({
+  toolId: z.string().min(1),
 });
 
 export const submitToolSchema = z.object({

@@ -18,7 +18,8 @@ import { EvaluationForm } from '@/components/evaluations/evaluation-form';
 import { ImprovementForm } from '@/components/improvements/improvement-form';
 import { DetailAccordion } from '@/components/tools/detail-accordion';
 import { FieldList, FieldRow } from '@/components/tools/detail-field';
-import { LaunchToolButton } from '@/components/tools/launch-tool-button';
+import { NewVersionButton } from '@/components/tools/new-version-button';
+import { ToolAccessPanel } from '@/components/tools/tool-access-panel';
 import { StatusTransitionDialog } from '@/components/tools/status-transition-dialog';
 import { ToolDetailTabs, type DetailTab } from '@/components/tools/tool-detail-tabs';
 import { Alert } from '@/components/ui/alert';
@@ -59,6 +60,10 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
   after(() => recordToolView(detail.actor, tool.id));
 
   const usedClassifications = version.security.classifications.filter((entry) => entry.inUse);
+
+  // 프로그램 파일은 "쓰기" 영역에서 크게, 나머지 자료는 아래 목록에서 작게 보여준다.
+  const programFiles = detail.attachments.filter((entry) => entry.kind === 'PROGRAM');
+  const referenceFiles = detail.attachments.filter((entry) => entry.kind !== 'PROGRAM');
 
   const tabs: DetailTab[] = [
     {
@@ -470,9 +475,6 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
               <ImprovementForm toolId={tool.id} toolName={tool.name} />
             ) : null}
 
-            {version.serviceUrl ? (
-              <LaunchToolButton toolId={tool.id} serviceUrl={version.serviceUrl} />
-            ) : null}
             {permissions.canEdit ? (
               <Button variant="secondary" asChild>
                 <Link href={`/tools/${tool.id}/edit`}>
@@ -488,6 +490,14 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
                   등록 신청
                 </Link>
               </Button>
+            ) : null}
+            {/* 검토를 통과한 도구는 새 버전을 만들어 고친다 (리뷰 3절) */}
+            {permissions.canStartNewVersion ? (
+              <NewVersionButton
+                toolId={tool.id}
+                toolName={tool.name}
+                statusLabel={TOOL_STATUS_LABELS[tool.status]}
+              />
             ) : null}
 
             {/* 실행 가능한 상태 전환만 나온다. 목록은 서버의 상태머신이 계산한다.
@@ -506,9 +516,23 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        {detail.attachments.length > 0 ? (
+        {/*
+          이 도구를 실제로 쓰는 곳 (리뷰 2026-08-27 3절).
+          "다운 받거나 실행할 수 있는 버튼이 없음."
+        */}
+        <ToolAccessPanel
+          toolId={tool.id}
+          access={detail.access}
+          serviceUrl={version.serviceUrl}
+          repositoryUrl={version.repositoryUrl}
+          programFiles={programFiles}
+          isOwner={detail.actor.id === tool.ownerUserId}
+        />
+
+        {/* 프로그램 파일은 위 영역에서 이미 크게 보여줬다. 여기는 참고 자료만. */}
+        {referenceFiles.length > 0 ? (
           <ul className="flex flex-wrap gap-2">
-            {detail.attachments.map((attachment) => (
+            {referenceFiles.map((attachment) => (
               <li key={attachment.id}>
                 <a
                   href={attachment.url}
