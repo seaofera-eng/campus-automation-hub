@@ -7,6 +7,7 @@ import {
 } from '@/application/reviews/workflow';
 import { saveDraft, submitTool } from '@/application/tools/register';
 import type { Profile } from '@/domain/identity/types';
+import { DomainError } from '@/domain/shared/errors';
 import { emptyChecklistItems } from '@/domain/tool/risk-checklist-rules';
 import type { RiskChecklistItem } from '@/domain/tool/risk-checklist-rules';
 import type { ToolId } from '@/domain/shared/ids';
@@ -376,5 +377,118 @@ describe('검토 의견', () => {
     expect(notifications.some((item) => item.kind === 'REVISION_REQUESTED')).toBe(true);
     // 알림 본문에 사유 원문을 담지 않는다 — 목록에 오래 남기 때문이다.
     expect(notifications.every((item) => !item.body.includes('보완이 필요합니다'))).toBe(true);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 알림 읽음 처리 (리뷰 2026-08-28 5절)                                        */
+/* -------------------------------------------------------------------------- */
+
+describe('알림', () => {
+  it('상태를 바꾸면 등록자에게 알림이 가고, 읽으면 표시가 사라진다', async () => {
+    const developer = await demoProfile('developer');
+    const reviewer = await demoProfile('reviewer');
+    const toolId = await submittedTool(developer, `알림 확인 도구 ${Date.now()}`);
+
+    await transitionToolStatus(reviewer, {
+      toolId: toolId as string,
+      toStatus: 'HUMAN_REVIEW',
+      reason: '',
+      reviewComment: '',
+    });
+
+    const repositories = getRepositories();
+    const unread = await repositories.observability.listNotifications(developer.id, true);
+    const notification = unread.find((entry) => entry.linkPath.includes(toolId as string));
+    expect(notification).toBeDefined();
+
+    await repositories.observability.markNotificationRead(
+      notification!.id,
+      new Date().toISOString(),
+    );
+
+    // 눌러도 표시가 남으면 "알림이 안 된다"로 보인다.
+    const stillUnread = await repositories.observability.listNotifications(developer.id, true);
+    expect(stillUnread.some((entry) => entry.id === notification!.id)).toBe(false);
+  });
+
+  it('알림은 그 도구의 상세로 데려간다', async () => {
+    const developer = await demoProfile('developer');
+    const reviewer = await demoProfile('reviewer');
+    const toolId = await submittedTool(developer, `알림 링크 도구 ${Date.now()}`);
+
+    await transitionToolStatus(reviewer, {
+      toolId: toolId as string,
+      toStatus: 'HUMAN_REVIEW',
+      reason: '',
+      reviewComment: '',
+    });
+
+    const unread = await getRepositories().observability.listNotifications(developer.id, true);
+    const notification = unread.find((entry) => entry.linkPath.includes(toolId as string));
+    expect(notification?.linkPath).toBe(`/tools/${toolId}`);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 이유를 묻지 않는 전환도 이력에 남는다 (리뷰 2026-08-28 5절)                  */
+/* -------------------------------------------------------------------------- */
+
+describe('검토 시작', () => {
+  it('이유 없이도 넘어간다', async () => {
+    const developer = await demoProfile('developer');
+    const reviewer = await demoProfile('reviewer');
+    const toolId = await submittedTool(developer, `검토 시작 도구 ${Date.now()}`);
+
+    // "검토시작을 누르면 [변경 이유]를 써야할 필요 없이 넘어가도 상관이 없을 것 같음"
+    await expect(
+      transitionToolStatus(reviewer, {
+        toolId: toolId as string,
+        toStatus: 'HUMAN_REVIEW',
+        reason: '',
+        reviewComment: '',
+      }),
+    ).resolves.toBe('HUMAN_REVIEW');
+  });
+
+  it('이유를 안 받아도 이력에는 문구가 남는다', async () => {
+    const developer = await demoProfile('developer');
+    const reviewer = await demoProfile('reviewer');
+    const toolId = await submittedTool(developer, `이력 문구 도구 ${Date.now()}`);
+
+    await transitionToolStatus(reviewer, {
+      toolId: toolId as string,
+      toStatus: 'HUMAN_REVIEW',
+      reason: '',
+      reviewComment: '',
+    });
+
+    // 빈 줄이 남으면 "왜 바뀌었지"에 답할 수 없다 (요구사항 7번).
+    const history = await getRepositories().tools.listStatusHistory(toolId);
+    const entry = history.find((item) => item.toStatus === 'HUMAN_REVIEW');
+    expect(entry?.reason.trim().length).toBeGreaterThan(5);
+  });
+
+  it('보완 요청은 여전히 이유를 요구한다', async () => {
+    const developer = await demoProfile('developer');
+    const reviewer = await demoProfile('reviewer');
+    const toolId = await submittedTool(developer, `보완 요청 도구 ${Date.now()}`);
+
+    await transitionToolStatus(reviewer, {
+      toolId: toolId as string,
+      toStatus: 'HUMAN_REVIEW',
+      reason: '',
+      reviewComment: '',
+    });
+
+    // 무엇을 고쳐야 하는지 남지 않으면 받는 쪽이 알 수 없다.
+    await expect(
+      transitionToolStatus(reviewer, {
+        toolId: toolId as string,
+        toStatus: 'REVISION_REQUIRED',
+        reason: '',
+        reviewComment: '',
+      }),
+    ).rejects.toThrowError(DomainError);
   });
 });

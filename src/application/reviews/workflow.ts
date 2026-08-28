@@ -13,7 +13,11 @@ import type {
 } from '@/domain/shared/ids';
 import type { ReviewAssignment, ReviewComment, ReviewCommentKind } from '@/domain/review/types';
 import type { RiskChecklist, RiskChecklistItem } from '@/domain/tool/risk-checklist-rules';
-import { assertReasonProvided, assertTransitionAllowed } from '@/domain/tool/status-machine';
+import {
+  assertReasonProvided,
+  assertTransitionAllowed,
+  defaultReason,
+} from '@/domain/tool/status-machine';
 import type { AutomationTool, RiskLevel, ToolStatus } from '@/domain/tool/types';
 import { TOOL_STATUS_LABELS } from '@/domain/tool/types';
 import { toActor } from '@/lib/auth/current-user';
@@ -58,7 +62,12 @@ export async function transitionToolStatus(
   if (input.toStatus === 'SUSPENDED') assertCan(toActor(actor), 'tool:suspend');
   if (input.toStatus === 'RETIRED') assertCan(toActor(actor), 'tool:retire');
 
-  assertReasonProvided(input.reason);
+  /*
+   * 판단이 담긴 전환에만 이유를 요구한다 (리뷰 2026-08-28 5절).
+   * 착수에 불과한 전환은 묻지 않되, **이력에는 기본 문구가 남는다.**
+   */
+  assertReasonProvided(tool.status, input.toStatus, input.reason);
+  const reason = input.reason.trim() || defaultReason(input.toStatus);
 
   // 위험 체크리스트는 PILOT·APPROVED 전환의 전제 조건이다.
   const checklist = await repositories.reviews.getChecklist(tool.currentVersionId);
@@ -80,7 +89,7 @@ export async function transitionToolStatus(
     toStatus: input.toStatus,
     changedBy: actor.id,
     changedAt: now,
-    reason: input.reason,
+    reason,
     reviewComment: input.reviewComment,
   });
 

@@ -15,6 +15,7 @@ import type {
   AutomationTool,
   AutomationToolVersion,
   ToolStatus,
+  ToolStatusHistoryEntry,
 } from '@/domain/tool/types';
 import { isSensitiveClassification } from '@/domain/tool/types';
 import { RISK_FACTORS } from '@/domain/tool/risk-checklist-rules';
@@ -198,6 +199,16 @@ export interface ReviewDetail {
   riskAnalysis: RiskAnalysisView | null;
   /** 서로 다른 모델 둘이 등록 내용을 교차 검증한 결과. */
   qualityReview: QualityReviewView | null;
+  /**
+   * 이 도구가 지금까지 거쳐 온 상태 (리뷰 2026-08-28 5절).
+   *
+   * "재신청을 한게 이력에 안남는거 같음."
+   *
+   * 이력은 남고 있었다. 다만 **검토 화면에 없어서** 보려면 도구 상세로
+   * 나갔다 와야 했다. 재신청된 도구를 볼 때 "전에 무엇을 지적했는가"가
+   * 제일 중요한 정보인데 그게 다른 화면에 있었다.
+   */
+  statusHistory: (ToolStatusHistoryEntry & { changedByName: string })[];
 }
 
 const RISK_FACTOR_LABELS: ReadonlyMap<RiskFactorCode, string> = new Map(
@@ -212,7 +223,7 @@ export async function loadReviewDetail(toolId: string): Promise<ReviewDetail> {
   const tool = await repositories.tools.getTool(asId<ToolId>(toolId));
   if (!tool || tool.deletedAt !== null) throw notFound('도구');
 
-  const [version, categories, profiles, assignment, checklist, comments] =
+  const [version, categories, profiles, assignment, checklist, comments, statusHistory] =
     await Promise.all([
       repositories.tools.getVersion(tool.currentVersionId),
       repositories.reference.listCategories(tool.campusId),
@@ -220,6 +231,7 @@ export async function loadReviewDetail(toolId: string): Promise<ReviewDetail> {
       repositories.reviews.getAssignmentForVersion(tool.currentVersionId),
       repositories.reviews.getChecklist(tool.currentVersionId),
       repositories.reviews.listComments(tool.id),
+      repositories.tools.listStatusHistory(tool.id),
     ]);
 
   if (!version) throw notFound('도구 버전');
@@ -264,6 +276,13 @@ export async function loadReviewDetail(toolId: string): Promise<ReviewDetail> {
     duplicateAnalysis,
     riskAnalysis,
     qualityReview,
+    // 최근 것이 위로. 재신청된 도구는 바로 위에 그 사실이 보여야 한다.
+    statusHistory: [...statusHistory]
+      .sort((left, right) => right.changedAt.localeCompare(left.changedAt))
+      .map((entry) => ({
+        ...entry,
+        changedByName: personNames.get(entry.changedBy) ?? '알 수 없음',
+      })),
   };
 }
 

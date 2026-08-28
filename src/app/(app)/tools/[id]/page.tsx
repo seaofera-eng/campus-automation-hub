@@ -511,6 +511,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
                   toStatus={rule.to}
                   label={rule.label}
                   destructive={rule.destructive}
+                  requiresReason={rule.requiresReason}
                 />
               ))}
           </div>

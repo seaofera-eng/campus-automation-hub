@@ -20,22 +20,35 @@ import type { ToolStatus } from '@/domain/tool/types';
 import { TOOL_STATUS_DESCRIPTIONS, TOOL_STATUS_LABELS } from '@/domain/tool/types';
 
 /**
- * 상태 전환 대화상자 (요구사항 7번·12번).
+ * 상태 전환 (요구사항 7번·12번 · 리뷰 2026-08-28 5절).
  *
- * 이유 입력이 필수다. 되돌리기 어려운 동작(사용 중지·폐기)은 빨간 버튼과
- * 별도 경고 문구로 구분한다. 여기서 막는 것은 사용자의 실수이고,
- * 권한과 전환 규칙은 서버가 다시 판단한다.
+ * ## 이유를 묻는 전환과 묻지 않는 전환
+ *
+ * "검토시작을 누르면 별도로 뜨는 창이 필요가 없음."
+ *
+ * 맞는 지적이다. **검토 시작은 판단이 아니라 착수다.** 적을 말이 없는데
+ * 창을 띄우면 매번 "확인하겠습니다"를 치게 되고, 그러면 그 칸이 의미를 잃는다.
+ * 정작 이유가 중요한 보완 요청·사용 중지에서도 대충 적게 된다.
+ *
+ * 그래서 `requiresReason` 이 꺼진 전환은 **창 없이 바로 실행한다.**
+ * 이력에는 서버가 기본 문구를 남기므로 요구사항 7번은 그대로 지켜진다.
+ *
+ * 되돌리기 어려운 동작(사용 중지·폐기)은 빨간 버튼과 별도 경고로 구분한다.
+ * 여기서 막는 것은 사용자의 실수이고, 권한과 전환 규칙은 서버가 다시 판단한다.
  */
 export function StatusTransitionDialog({
   toolId,
   toStatus,
   label,
   destructive,
+  requiresReason = true,
 }: {
   toolId: string;
   toStatus: ToolStatus;
   label: string;
   destructive: boolean;
+  /** 왜 바꾸는지 물어야 하는가. 끄면 눌렀을 때 바로 실행한다. */
+  requiresReason?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -67,6 +80,27 @@ export function StatusTransitionDialog({
       setFieldErrors(result.error.fields ?? {});
       setError(result.error.message);
     });
+  }
+
+  /*
+   * 이유를 안 받는 전환은 버튼 하나로 끝낸다.
+   *
+   * 실패하면 버튼 아래에 문구를 띄운다 — 창이 없으니 알릴 곳이 여기뿐이다.
+   */
+  if (!requiresReason) {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <Button
+          variant={destructive ? 'danger' : 'primary'}
+          size="sm"
+          onClick={submit}
+          disabled={pending}
+        >
+          {pending ? '처리 중…' : label}
+        </Button>
+        {error ? <p className="text-xs text-danger">{error}</p> : null}
+      </div>
+    );
   }
 
   return (

@@ -5,6 +5,7 @@ import {
   assertReasonProvided,
   assertTransitionAllowed,
   availableTransitions,
+  defaultReason,
   findTransition,
 } from '@/domain/tool/status-machine';
 import type { TransitionContext } from '@/domain/tool/status-machine';
@@ -190,12 +191,37 @@ describe('도구 상태 전환 — 위험도 차단 (요구사항 15번)', () =>
 });
 
 describe('상태 변경 이유', () => {
-  it('5자 미만이면 거부한다', () => {
-    expect(() => assertReasonProvided('짧음')).toThrowError(DomainError);
-    expect(() => assertReasonProvided('    ')).toThrowError(DomainError);
+  it('판단이 담긴 전환은 5자 미만이면 거부한다', () => {
+    // 보완 요청은 "무엇을 고쳐야 하는가"가 남지 않으면 받는 쪽이 알 수 없다.
+    expect(() => assertReasonProvided('HUMAN_REVIEW', 'REVISION_REQUIRED', '짧음')).toThrowError(
+      DomainError,
+    );
+    expect(() => assertReasonProvided('APPROVED', 'SUSPENDED', '    ')).toThrowError(DomainError);
   });
 
   it('5자 이상이면 통과한다', () => {
-    expect(() => assertReasonProvided('개인정보 처리 항목 보완 필요')).not.toThrow();
+    expect(() =>
+      assertReasonProvided('HUMAN_REVIEW', 'REVISION_REQUIRED', '개인정보 처리 항목 보완 필요'),
+    ).not.toThrow();
+  });
+
+  it('착수에 불과한 전환은 이유를 묻지 않는다', () => {
+    /*
+     * 리뷰 2026-08-28 5절: "검토 시작을 누르면 [변경 이유]를 써야 할 필요 없이
+     * 넘어가도 상관이 없을 것 같음"
+     *
+     * 매번 "확인하겠습니다"를 치게 하면 그 칸이 의미를 잃는다.
+     */
+    expect(() => assertReasonProvided('SUBMITTED', 'HUMAN_REVIEW', '')).not.toThrow();
+    expect(() => assertReasonProvided('HUMAN_REVIEW', 'PILOT', '')).not.toThrow();
+    expect(() => assertReasonProvided('PILOT', 'APPROVED', '')).not.toThrow();
+    expect(() => assertReasonProvided('SUBMITTED', 'DRAFT', '')).not.toThrow();
+  });
+
+  it('묻지 않는 전환도 이력에 남길 문구가 있다', () => {
+    // 빈 줄이 남으면 "왜 바뀌었지"에 답할 수 없다 (요구사항 7번).
+    for (const status of ['SUBMITTED', 'HUMAN_REVIEW', 'DRAFT', 'PILOT', 'APPROVED'] as const) {
+      expect(defaultReason(status).trim().length).toBeGreaterThan(5);
+    }
   });
 });
