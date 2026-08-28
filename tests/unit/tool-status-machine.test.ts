@@ -5,6 +5,7 @@ import {
   assertReasonProvided,
   assertTransitionAllowed,
   availableTransitions,
+  findTransition,
 } from '@/domain/tool/status-machine';
 import type { TransitionContext } from '@/domain/tool/status-machine';
 
@@ -25,8 +26,21 @@ function context(overrides: Partial<TransitionContext> = {}): TransitionContext 
 }
 
 describe('도구 상태 전환 — 허용된 전환', () => {
-  it('요구사항에 정의된 10개 전환만 존재한다', () => {
-    expect(TOOL_TRANSITIONS).toHaveLength(10);
+  it('정의된 11개 전환만 존재한다', () => {
+    // 10개였다가 '신청 취소하고 수정'(SUBMITTED→DRAFT)이 늘었다.
+    // 검토 시작 전까지는 만든 사람이 손볼 수 있어야 한다 (리뷰 2026-08-27 3절).
+    expect(TOOL_TRANSITIONS).toHaveLength(11);
+  });
+
+  it('검토 시작 전에는 만든 사람이 신청을 물릴 수 있다', () => {
+    const rule = findTransition('SUBMITTED', 'DRAFT');
+    expect(rule?.allowsOwner).toBe(true);
+    expect(rule?.requiredPermission).toBeNull();
+  });
+
+  it('검토가 시작된 뒤에는 물릴 수 없다', () => {
+    // 검토자가 읽고 있는 내용이 발밑에서 바뀌면 안 된다.
+    expect(findTransition('HUMAN_REVIEW', 'DRAFT')).toBeUndefined();
   });
 
   it.each(TOOL_TRANSITIONS.map((rule) => [rule.from, rule.to] as const))(

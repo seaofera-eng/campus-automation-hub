@@ -44,6 +44,26 @@ export const TOOL_TRANSITIONS: readonly TransitionRule[] = [
     destructive: false,
   },
   {
+    /*
+     * 신청 취소 (리뷰 2026-08-27 3절).
+     *
+     * "개발자가 자신이 올린 글을 수정할 수 있는 권한과 기능이 있어야 함."
+     *
+     * 신청해 놓고 검토가 시작되기 전까지는 만든 사람이 손볼 수 있어야 한다.
+     * 이 길이 없으면 오타 하나를 고치려고 검토자에게 부탁해야 하고,
+     * 검토자는 보완 요청을 눌러 줘야 한다. 둘 다 할 일이 아니다.
+     *
+     * **검토가 시작된 뒤(HUMAN_REVIEW)에는 없다.** 검토자가 읽고 있는 내용이
+     * 발밑에서 바뀌면 안 된다.
+     */
+    from: 'SUBMITTED',
+    to: 'DRAFT',
+    allowsOwner: true,
+    requiredPermission: null,
+    label: '신청 취소하고 수정',
+    destructive: false,
+  },
+  {
     from: 'HUMAN_REVIEW',
     to: 'REVISION_REQUIRED',
     allowsOwner: false,

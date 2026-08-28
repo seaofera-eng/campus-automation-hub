@@ -29,6 +29,8 @@ import {
   type WizardAnswers,
   type WizardOption,
 } from '@/domain/wizard';
+import { DemoFillButton } from '@/components/common/demo-fill-button';
+import { sampleWizardAnswers } from '@/lib/demo/samples';
 import { emptyDemandForm, type DemandFormInput } from '@/lib/validation/demand';
 import { cn } from '@/lib/utils/cn';
 
@@ -116,6 +118,36 @@ export function WizardFlow() {
     if (step > 1) setStep(step - 1);
   }
 
+  /**
+   * 시연용: 다섯 단계를 예시 답으로 채우고 바로 결과로 넘어간다.
+   *
+   * 예시 답은 데모 데이터의 회의록 도구와 겹치도록 골라 두었다. **마법사의
+   * 값어치는 없는 것을 만드는 데 있지 않고 이미 있는 것을 찾아 주는 데
+   * 있으므로**, 시연에서 "이미 이런 도구가 있습니다"가 나와야 한다.
+   *
+   * 단계를 하나씩 눌러 보여 주고 싶으면 이 버튼을 쓰지 않으면 된다 —
+   * 채우기만 하고 결과로 넘기지 않는 선택지는 두지 않았다. 그 경우에는
+   * 그냥 손으로 고르는 편이 시연에 낫다.
+   */
+  function fillWithSample() {
+    const sample = sampleWizardAnswers();
+    setAnswers(sample);
+    setError(null);
+
+    startTransition(async () => {
+      const result = await suggestToolsAction({ answers: sample });
+      if (!result.ok) {
+        // 실패하면 5단계에 세워 둔다. 답은 채워져 있으니 직접 눌러 진행할 수 있다.
+        setStep(WIZARD_STEP_COUNT);
+        setError(result.error.message);
+        return;
+      }
+      setSuggestions(result.data.tools);
+      setComparedCount(result.data.comparedCount);
+      setStage('RESULT');
+    });
+  }
+
   function requestNewTool() {
     setError(null);
     startTransition(async () => {
@@ -155,6 +187,15 @@ export function WizardFlow() {
   return (
     <div className="flex flex-col gap-4">
       <WizardIntro />
+
+      {/* 시연용. 1단계에서만 보여준다 — 고르던 답을 덮어쓰면 안 된다. */}
+      {step === 1 ? (
+        <DemoFillButton
+          label="예시로 채우고 결과 보기"
+          description="다섯 단계를 예시 답으로 채우고 바로 추천 결과를 보여줍니다."
+          onFill={fillWithSample}
+        />
+      ) : null}
 
       {/*
         한 장의 카드로 감싼다.

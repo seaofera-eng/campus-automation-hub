@@ -181,3 +181,36 @@ describe('고른 내용 요약', () => {
     expect(lines.some((line) => line.startsWith('직접 적은 내용'))).toBe(false);
   });
 });
+
+describe('검색어', () => {
+  it('모든 선택지에 검색어가 있다', () => {
+    /*
+     * 검색어가 비면 그 선택지를 고른 사람은 도구를 못 찾는다. 화면에는
+     * 아무 표시도 안 나므로 조용히 실패한다 — 실제로 이것 때문에 추천이
+     * 0건이었다.
+     */
+    for (const pool of [TASK_KINDS, INPUT_KINDS, OUTPUT_KINDS, FREQUENCY_OPTIONS, CONSTRAINT_OPTIONS]) {
+      for (const option of pool) {
+        expect(option.keywords.length).toBeGreaterThan(0);
+        for (const word of option.keywords) {
+          expect(word.trim()).not.toBe('');
+        }
+      }
+    }
+  });
+
+  it('고른 항목의 검색어가 질의에 실린다', () => {
+    const wizardAnswers = answers({ inputKinds: ['AUDIO'] });
+    const query = answersAsSimilarityInput(wizardAnswers, composeDemandDraft(wizardAnswers));
+
+    // "녹음·영상"을 골랐으면 "녹취"로도 도구를 찾을 수 있어야 한다.
+    expect(query.inputData).toContain('녹취');
+  });
+
+  it('검색어를 사람이 읽는 문장에는 넣지 않는다', () => {
+    // 초안은 신청서에 그대로 들어간다. 검색어가 섞이면 읽을 수 없는 글이 된다.
+    const draft = composeDemandDraft(answers({ inputKinds: ['AUDIO'] }));
+    expect(draft.currentWorkDescription).not.toContain('녹취');
+    expect(draft.inputMaterials).toBe('녹음·영상');
+  });
+});

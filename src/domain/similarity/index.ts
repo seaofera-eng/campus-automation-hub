@@ -89,6 +89,33 @@ export function jaccard(left: Set<string>, right: Set<string>): number {
   return union === 0 ? 0 : Math.round((shared / union) * 1000) / 10;
 }
 
+/**
+ * 왼쪽 조각이 오른쪽에 얼마나 들어 있는가 (0~100).
+ *
+ * ## Jaccard 와 무엇이 다른가
+ *
+ * Jaccard 는 분모가 **합집합**이라 두 글이 길이가 다르면 점수가 깎인다.
+ * 도구끼리 비교할 때는 그게 맞다 — 둘 다 비슷한 분량의 설명이고, 한쪽에만
+ * 잔뜩 있는 내용은 "다른 도구"라는 신호다.
+ *
+ * 마법사는 사정이 다르다. 사람이 고른 것은 낱말 몇 개고 도구 설명은 문단
+ * 몇 개다. 정확히 맞는 도구를 골라도 Jaccard 는 2점밖에 안 준다. 실제로
+ * 이것 때문에 추천이 0건이었다.
+ *
+ * 그래서 여기서 묻는 것은 다르다 — **내가 찾는 것이 이 도구에 들어 있는가.**
+ * 분모가 왼쪽(질의)뿐이라 도구 설명이 길어도 벌점이 없다.
+ */
+export function containment(query: Set<string>, target: Set<string>): number {
+  if (query.size === 0 || target.size === 0) return 0;
+
+  let shared = 0;
+  for (const gram of query) {
+    if (target.has(gram)) shared += 1;
+  }
+
+  return Math.round((shared / query.size) * 1000) / 10;
+}
+
 /** 글자로 비교한 항목별 결과. */
 export interface LexicalOverlap {
   candidateId: string;
@@ -121,6 +148,51 @@ const FIELD_WEIGHTS = {
 
 function overlapOf(left: string, right: string): number {
   return jaccard(trigrams(left), trigrams(right));
+}
+
+function containmentOf(query: string, target: string): number {
+  return containment(trigrams(query), trigrams(target));
+}
+
+/**
+ * 찾는 내용이 도구에 얼마나 들어 있는가.
+ *
+ * 길이가 크게 다른 둘을 비교할 때 쓴다 — 마법사에서 고른 낱말 몇 개와
+ * 도구 설명 문단 몇 개처럼. `compareLexically` 와 결과 모양은 같지만
+ * **묻는 질문이 다르다**: "둘이 비슷한가"가 아니라 "내가 찾는 게 여기 있는가".
+ *
+ * 도구끼리 중복을 볼 때는 쓰지 않는다. 짧은 설명 하나가 긴 설명 안에 모두
+ * 들어 있다고 해서 같은 도구인 것은 아니기 때문이다.
+ */
+export function searchLexically(
+  query: SimilarityInput,
+  candidate: SimilarityInput,
+): LexicalOverlap {
+  const byField = {
+    name: containmentOf(query.name, candidate.name),
+    problemStatement: containmentOf(query.problemStatement, candidate.problemStatement),
+    keyFeatures: containmentOf(query.keyFeatures.join(' '), candidate.keyFeatures.join(' ')),
+    inputOutput: containmentOf(
+      `${query.inputData} ${query.outputData}`,
+      `${candidate.inputData} ${candidate.outputData}`,
+    ),
+    tags: containmentOf(query.tags.join(' '), candidate.tags.join(' ')),
+  };
+
+  const overall =
+    byField.name * FIELD_WEIGHTS.name +
+    byField.problemStatement * FIELD_WEIGHTS.problemStatement +
+    byField.keyFeatures * FIELD_WEIGHTS.keyFeatures +
+    byField.inputOutput * FIELD_WEIGHTS.inputOutput +
+    byField.tags * FIELD_WEIGHTS.tags;
+
+  return {
+    candidateId: candidate.id,
+    overall: Math.round(overall * 10) / 10,
+    byField,
+    sameCategory:
+      query.categoryName !== '' && query.categoryName === candidate.categoryName,
+  };
 }
 
 /** 도구 두 건의 글자 겹침. */

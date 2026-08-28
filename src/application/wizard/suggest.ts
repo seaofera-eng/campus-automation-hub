@@ -5,7 +5,7 @@ import { summarizeEvaluations } from '@/domain/evaluation/scoring';
 import type { DemandDraft, WizardAnswers } from '@/domain/wizard';
 import { answersAsSimilarityInput, composeDemandDraft } from '@/domain/wizard';
 import { MAX_PAGE_SIZE } from '@/domain/shared/pagination';
-import { compareLexically, type SimilarityInput } from '@/domain/similarity';
+import { searchLexically, type SimilarityInput } from '@/domain/similarity';
 import type { AutomationTool, AutomationToolVersion } from '@/domain/tool/types';
 import { requireUser } from '@/lib/auth/current-user';
 import { getRepositories } from '@/lib/di/container';
@@ -34,8 +34,27 @@ import { getRepositories } from '@/lib/di/container';
  * 관계없는 도구를 열어 보게 만들고, 결국 "이 추천은 못 믿겠다"가 된다.
  */
 
-/** 이 아래로는 보여주지 않는다. 글자 겹침이 이 정도면 대개 남남이다. */
-const MIN_OVERLAP_TO_SHOW = 12;
+/**
+ * 보여줄지 말지를 두 가지로 가른다.
+ *
+ * ## 절대 점수로만 자를 수 없다
+ *
+ * `searchLexically` 가 내는 값은 "고른 낱말 조각 중 몇 %가 이 도구에 있나"라
+ * 절대값이 작다. 데모 데이터로 재어 보면 **맞는 도구 3.1점, 관계없는 도구
+ * 0.3점**이다. 값 자체는 작지만 **차이는 10배**다.
+ *
+ * 그래서 바닥값 하나로만 자르면 데이터가 조금만 달라져도 전부 통과하거나
+ * 전부 탈락한다. 바닥값과 **상대 격차**를 함께 본다.
+ *
+ * ## 억지로 채우지 않는다
+ *
+ * 관계없는 도구를 열어 보게 만들면 결국 "이 추천은 못 믿겠다"가 되고,
+ * 그러면 마법사 자체를 안 쓴다. 없으면 없다고 하는 편이 낫다.
+ */
+const MIN_OVERLAP_TO_SHOW = 1.5;
+
+/** 1등 대비 이 비율은 되어야 함께 보여준다. 동점끼리 몰려 나오는 것을 막는다. */
+const MIN_RATIO_TO_TOP = 0.4;
 
 /** 화면에 몇 개까지. 세 개를 넘으면 고르는 일이 다시 숙제가 된다. */
 const MAX_SUGGESTIONS = 3;
@@ -115,13 +134,17 @@ export async function suggestTools(answers: WizardAnswers): Promise<WizardSugges
       tool,
       version,
       categoryName,
-      overlap: compareLexically(query, toSimilarityInput(tool, version, categoryName)),
+      overlap: searchLexically(query, toSimilarityInput(tool, version, categoryName)),
     };
   });
 
-  const picked = scored
+  const ranked = scored
     .filter((entry) => entry.overlap.overall >= MIN_OVERLAP_TO_SHOW)
-    .sort((left, right) => right.overlap.overall - left.overlap.overall)
+    .sort((left, right) => right.overlap.overall - left.overlap.overall);
+
+  const top = ranked[0]?.overlap.overall ?? 0;
+  const picked = ranked
+    .filter((entry) => entry.overlap.overall >= top * MIN_RATIO_TO_TOP)
     .slice(0, MAX_SUGGESTIONS);
 
   const tools = await Promise.all(

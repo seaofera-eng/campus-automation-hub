@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ToolStatus } from '@/domain/tool/types';
 import { toolSubmitSchema, type ToolFormInput } from '@/lib/validation/tool';
+import { DemoFillButton } from '@/components/common/demo-fill-button';
+import { sampleToolForm } from '@/lib/demo/samples';
 import { cn } from '@/lib/utils/cn';
 import { StepBasic } from './step-basic';
 import { StepFeatures } from './step-features';
@@ -96,6 +98,30 @@ export function ToolWizard({ data, initialForm, tool, attachments }: ToolWizardP
   const { handleSubmit, setError, clearErrors, formState, getValues } = form;
 
   const isResubmission = tool?.status === 'REVISION_REQUIRED';
+
+  /**
+   * 시연용 예시로 폼을 채운다 (DEMO 모드에서만 버튼이 보인다).
+   *
+   * 카테고리는 여기서 정할 수 없다 — 저장소마다 id 가 다르다. 그래서 화면이
+   * 받은 목록에서 고른다. 이름이 안 맞으면 첫 번째를 쓴다. 시연 중에
+   * "카테고리를 고르세요" 오류로 멈추지 않게 하기 위해서다.
+   */
+  function fillWithSample() {
+    const sample = sampleToolForm();
+    const category =
+      data.categories.find((entry) => entry.name.includes('문서')) ?? data.categories[0];
+
+    form.reset(
+      { ...sample, categoryId: category ? (category.id as string) : '' },
+      // 채운 값은 "사람이 손댄 것"으로 본다. 저장하지 않고 나가면 경고가 떠야 한다.
+      { keepDefaultValues: true },
+    );
+    setStep(0);
+    setMessage({
+      tone: 'success',
+      text: '예시 내용을 채웠습니다. 그대로 두거나 고친 뒤 저장하세요.',
+    });
+  }
 
   /** 전체 스키마로 검사한 뒤 주어진 필드에 해당하는 오류만 폼에 붙인다. */
   function validateFields(fields: readonly FieldPath<ToolFormInput>[]): boolean {
@@ -238,6 +264,19 @@ export function ToolWizard({ data, initialForm, tool, attachments }: ToolWizardP
           );
         })}
       </ol>
+
+      {/*
+        시연용 예시 채우기 (DEMO 모드에서만).
+
+        새 도구를 만들 때만 보여준다. 이미 쓰던 내용을 예시로 덮어쓰면
+        작업이 날아간다.
+      */}
+      {tool === null ? (
+        <DemoFillButton
+          description="도구 등록 네 단계를 예시 내용으로 한 번에 채웁니다. 채운 뒤 고칠 수 있습니다."
+          onFill={fillWithSample}
+        />
+      ) : null}
 
       {message ? (
         <Alert tone={message.tone === 'success' ? 'success' : 'danger'}>{message.text}</Alert>

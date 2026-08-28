@@ -14,7 +14,7 @@ export default async function NewToolPage() {
       <div>
         <h1 className="text-xl font-bold text-fg">자동화 도구 등록</h1>
         <p className="mt-1 text-sm text-fg-muted">
-          5단계로 나뉘어 있습니다. 언제든 임시저장하고 나중에 이어서 작성할 수 있습니다.
+          4단계로 나뉘어 있습니다. 언제든 임시저장하고 나중에 이어서 작성할 수 있습니다.
         </p>
       </div>
 

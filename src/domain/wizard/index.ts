@@ -45,6 +45,22 @@ export interface WizardOption {
    * 라벨을 그대로 쓰면 "문서를 정리·요약하기 업무를 하고 있습니다" 처럼 어색해진다.
    */
   phrase: string;
+  /**
+   * 도구를 찾을 때 쓰는 낱말들.
+   *
+   * ## 왜 따로 두는가
+   *
+   * 라벨은 **고르기 쉽게** 지은 말이고, 도구 설명은 만든 사람이 **자기 말로**
+   * 쓴 문장이다. 둘은 같은 것을 가리켜도 글자가 안 겹친다. "녹음·영상"으로
+   * 도구를 찾으면 "회의 녹취록 텍스트"를 못 만난다.
+   *
+   * 실제로 이 때문에 마법사 추천이 0건이었다. 사람이 고른 답이 정확했는데도
+   * 화면에는 "맞는 도구를 찾지 못했습니다"가 나왔다.
+   *
+   * 그래서 같은 것을 부르는 다른 말을 여기 적어 둔다. 화면에는 안 나오고
+   * 검색에만 쓴다.
+   */
+  keywords: readonly string[];
 }
 
 /** STEP 1 — 무슨 일을 하고 싶나요? */
@@ -54,48 +70,56 @@ export const TASK_KINDS: readonly WizardOption[] = [
     label: '문서 정리·요약',
     hint: '회의록, 보고서, 긴 문서를 간추립니다',
     phrase: '긴 문서나 회의 내용을 읽고 요약해서 정리하는 일',
+    keywords: ['요약','정리','회의록','녹취','회의','간추리','핵심','정리본','회의 내용'],
   },
   {
     value: 'COLLECT',
     label: '자료 취합',
     hint: '여러 곳에서 온 파일을 하나로 모읍니다',
     phrase: '여러 부서나 여러 파일에 흩어진 자료를 하나로 모으는 일',
+    keywords: ['취합','모으','수집','통합','합치','집계','제출','파일 모음','병합'],
   },
   {
     value: 'CONVERT',
     label: '변환·서식 맞추기',
     hint: '파일 형식을 바꾸거나 양식을 통일합니다',
     phrase: '파일 형식을 바꾸거나 서로 다른 서식을 하나로 맞추는 일',
+    keywords: ['변환','서식','양식','형식','포맷','일괄','바꾸','통일','파일 변환'],
   },
   {
     value: 'NOTIFY',
     label: '알림·모니터링',
     hint: '새 공고나 변경 사항을 놓치지 않게 알려 줍니다',
     phrase: '새로 올라온 내용이나 바뀐 내용을 확인해서 알려 주는 일',
+    keywords: ['알림','공고','모니터링','확인','새 글','변경','메일 발송','안내','통보'],
   },
   {
     value: 'CLASSIFY',
     label: '분류·배분',
     hint: '들어온 것을 종류별로 나눠 담당자에게 넘깁니다',
     phrase: '들어온 건을 종류별로 나누고 맡을 사람에게 넘기는 일',
+    keywords: ['분류','배분','담당자','민원','접수','나누','라벨','배정','전달'],
   },
   {
     value: 'ANSWER',
     label: '문의 응대',
     hint: '반복되는 질문에 답할 초안을 만듭니다',
     phrase: '반복해서 들어오는 질문에 답할 내용을 준비하는 일',
+    keywords: ['문의','응대','질문','답변','챗봇','상담','규정','안내','자주 묻는'],
   },
   {
     value: 'ANALYZE',
     label: '집계·분석',
     hint: '숫자를 모아 표나 그래프로 만듭니다',
     phrase: '흩어진 숫자를 모아 집계하고 표나 그래프로 만드는 일',
+    keywords: ['집계','분석','통계','실적','현황','그래프','차트','합계','수치'],
   },
   {
     value: 'DRAFT',
     label: '문서 초안 작성',
     hint: '공문, 안내문, 보고서 초안을 씁니다',
     phrase: '공문이나 안내문 같은 문서의 초안을 쓰는 일',
+    keywords: ['초안','작성','공문','안내문','보고서','문서 작성','기안','메일 작성'],
   },
 ];
 
@@ -106,45 +130,50 @@ export const INPUT_KINDS: readonly WizardOption[] = [
     label: '한글·워드 문서',
     hint: '.hwp, .docx',
     phrase: '한글이나 워드 문서',
+    keywords: ['한글','워드','hwp','docx','문서','보고서','공문','문서 파일'],
   },
-  { value: 'EXCEL', label: '엑셀·CSV', hint: '.xlsx, .csv', phrase: '엑셀이나 CSV 표' },
-  { value: 'PDF', label: 'PDF', hint: '스캔본 포함', phrase: 'PDF 파일' },
-  { value: 'EMAIL', label: '이메일', hint: '받은 메일, 첨부파일', phrase: '이메일과 첨부파일' },
+  { value: 'EXCEL', label: '엑셀·CSV', hint: '.xlsx, .csv', phrase: '엑셀이나 CSV 표', keywords: ['엑셀','xlsx','csv','스프레드시트','표','시트','자료표'] },
+  { value: 'PDF', label: 'PDF', hint: '스캔본 포함', phrase: 'PDF 파일', keywords: ['pdf','스캔','문서','출력물'] },
+  { value: 'EMAIL', label: '이메일', hint: '받은 메일, 첨부파일', phrase: '이메일과 첨부파일', keywords: ['메일','이메일','메일함','첨부','수신','발신'] },
   {
     value: 'WEB',
     label: '웹페이지·게시판',
     hint: '학내 공지, 외부 공고 사이트',
     phrase: '웹페이지나 게시판에 올라온 글',
+    keywords: ['웹','홈페이지','게시판','공지','사이트','포털','게시물'],
   },
   {
     value: 'IMAGE',
     label: '이미지·스캔본',
     hint: '사진 찍은 서류, 스캔한 종이',
     phrase: '사진이나 스캔한 서류',
+    keywords: ['이미지','사진','스캔','서류','캡처','그림'],
   },
   {
     value: 'AUDIO',
     label: '녹음·영상',
     hint: '회의 녹음, 강의 영상',
     phrase: '회의 녹음이나 영상',
+    keywords: ['녹음','음성','영상','녹취','회의','강의','동영상','음원','회의 녹취록'],
   },
   {
     value: 'SYSTEM',
     label: '학내 시스템 자료',
     hint: '학사·행정 시스템에서 내려받은 것',
     phrase: '학내 시스템에서 내려받은 자료',
+    keywords: ['학사','행정','시스템','내려받','포털','데이터','원장'],
   },
 ];
 
 /** STEP 3 — 어떤 결과가 필요하나요? (여러 개) */
 export const OUTPUT_KINDS: readonly WizardOption[] = [
-  { value: 'SUMMARY', label: '요약문', hint: '핵심만 간추린 글', phrase: '요약된 글' },
-  { value: 'TABLE', label: '표·스프레드시트', hint: '정리된 엑셀 표', phrase: '정리된 표' },
-  { value: 'FILE', label: '변환된 파일', hint: 'PDF 등 원하는 형식', phrase: '원하는 형식으로 바뀐 파일' },
-  { value: 'MESSAGE', label: '알림 메시지', hint: '메일, 메신저로 받기', phrase: '메일이나 메신저 알림' },
-  { value: 'DOCUMENT', label: '문서 초안', hint: '바로 손볼 수 있는 원고', phrase: '손볼 수 있는 문서 초안' },
-  { value: 'LABEL', label: '분류 결과', hint: '종류·담당자가 붙은 목록', phrase: '분류가 끝난 목록' },
-  { value: 'CHART', label: '집계·그래프', hint: '합계, 추이 그래프', phrase: '집계 결과와 그래프' },
+  { value: 'SUMMARY', label: '요약문', hint: '핵심만 간추린 글', phrase: '요약된 글', keywords: ['요약','요약문','핵심','정리','간추린','요약 회의록','회의록'] },
+  { value: 'TABLE', label: '표·스프레드시트', hint: '정리된 엑셀 표', phrase: '정리된 표', keywords: ['표','엑셀','스프레드시트','정리표','통합','시트','목록'] },
+  { value: 'FILE', label: '변환된 파일', hint: 'PDF 등 원하는 형식', phrase: '원하는 형식으로 바뀐 파일', keywords: ['파일','변환','pdf','문서 파일','출력','산출물'] },
+  { value: 'MESSAGE', label: '알림 메시지', hint: '메일, 메신저로 받기', phrase: '메일이나 메신저 알림', keywords: ['알림','메일','메신저','발송','안내','통보','메시지'] },
+  { value: 'DOCUMENT', label: '문서 초안', hint: '바로 손볼 수 있는 원고', phrase: '손볼 수 있는 문서 초안', keywords: ['문서','초안','원고','공문','보고서','작성','회의록'] },
+  { value: 'LABEL', label: '분류 결과', hint: '종류·담당자가 붙은 목록', phrase: '분류가 끝난 목록', keywords: ['분류','목록','담당자','배정','태그','구분'] },
+  { value: 'CHART', label: '집계·그래프', hint: '합계, 추이 그래프', phrase: '집계 결과와 그래프', keywords: ['집계','그래프','차트','통계','합계','추이','현황'] },
 ];
 
 /** STEP 4 — 얼마나 자주 하나요? */
@@ -153,11 +182,11 @@ export interface FrequencyOption extends WizardOption {
 }
 
 export const FREQUENCY_OPTIONS: readonly FrequencyOption[] = [
-  { value: 'DAILY', label: '매일', hint: '하루에 한 번 이상', phrase: '매일' },
-  { value: 'WEEKLY', label: '매주', hint: '주 단위로 반복', phrase: '매주' },
-  { value: 'MONTHLY', label: '매월', hint: '월 단위로 반복', phrase: '매월' },
-  { value: 'SEMESTERLY', label: '학기마다', hint: '학기 초·말에 몰림', phrase: '학기마다' },
-  { value: 'IRREGULAR', label: '비정기', hint: '필요할 때만', phrase: '필요할 때마다' },
+  { value: 'DAILY', label: '매일', hint: '하루에 한 번 이상', phrase: '매일', keywords: ['매일','일간','하루'] },
+  { value: 'WEEKLY', label: '매주', hint: '주 단위로 반복', phrase: '매주', keywords: ['매주','주간','주 단위'] },
+  { value: 'MONTHLY', label: '매월', hint: '월 단위로 반복', phrase: '매월', keywords: ['매월','월간','월 단위'] },
+  { value: 'SEMESTERLY', label: '학기마다', hint: '학기 초·말에 몰림', phrase: '학기마다', keywords: ['학기','학기말','학기초'] },
+  { value: 'IRREGULAR', label: '비정기', hint: '필요할 때만', phrase: '필요할 때마다', keywords: ['비정기','수시','필요할 때'] },
 ];
 
 /**
@@ -178,6 +207,7 @@ export const CONSTRAINT_OPTIONS: readonly ConstraintOption[] = [
     label: '개인정보가 들어 있음',
     hint: '이름, 학번, 연락처, 주민등록번호 등',
     phrase: '개인을 알아볼 수 있는 정보가 들어 있습니다',
+    keywords: ['개인정보','이름','학번','연락처','주민등록번호'],
     maps: 'personal',
   },
   {
@@ -185,6 +215,7 @@ export const CONSTRAINT_OPTIONS: readonly ConstraintOption[] = [
     label: '학사·연구 정보가 들어 있음',
     hint: '성적, 연구과제, 심사 자료 등',
     phrase: '학사나 연구 관련 정보가 들어 있습니다',
+    keywords: ['학사','성적','연구','과제','심사'],
     maps: 'academic',
   },
   {
@@ -192,6 +223,7 @@ export const CONSTRAINT_OPTIONS: readonly ConstraintOption[] = [
     label: '사람이 최종 확인해야 함',
     hint: '결과를 그대로 내보내면 안 되는 일',
     phrase: '결과를 내보내기 전에 사람이 반드시 확인해야 합니다',
+    keywords: ['검토','확인','승인','사람'],
     maps: 'humanApproval',
   },
   {
@@ -199,18 +231,21 @@ export const CONSTRAINT_OPTIONS: readonly ConstraintOption[] = [
     label: '한 번에 처리할 양이 많음',
     hint: '수십~수백 건을 한꺼번에',
     phrase: '한 번에 많은 양을 처리해야 합니다',
+    keywords: ['대량','일괄','다건','한꺼번에'],
   },
   {
     value: 'DEADLINE',
     label: '마감이 정해져 있음',
     hint: '특정 시기에 반드시 끝나야 함',
     phrase: '정해진 마감까지 끝나야 합니다',
+    keywords: ['마감','기한','일정'],
   },
   {
     value: 'SHARED',
     label: '여러 사람이 함께 씀',
     hint: '부서 전체나 여러 학과가 사용',
     phrase: '여러 사람이 함께 사용합니다',
+    keywords: ['공유','부서','여러 사람','공동'],
   },
 ];
 
@@ -347,6 +382,13 @@ function labelsOf(pool: readonly WizardOption[], values: readonly string[]): str
     .filter((label): label is string => label !== undefined);
 }
 
+/** 고른 항목들의 검색어를 한 뭉치로 모은다. 중복은 지운다. */
+function keywordsOf(pool: readonly WizardOption[], values: readonly string[]): string[] {
+  return [
+    ...new Set(values.flatMap((value) => findOption(pool, value)?.keywords ?? [])),
+  ];
+}
+
 /** "가, 나, 다" — 마지막만 '와/과' 로 잇지 않는다. 목록은 쉼표가 읽기 쉽다. */
 function joinKorean(parts: readonly string[]): string {
   return parts.join(', ');
@@ -466,18 +508,40 @@ export function answersAsSimilarityInput(
   answers: WizardAnswers,
   draft: DemandDraft,
 ): SimilarityInput {
+  const taskWords = keywordsOf(TASK_KINDS, [answers.taskKind]);
+  const inputWords = keywordsOf(INPUT_KINDS, answers.inputKinds);
+  const outputWords = keywordsOf(OUTPUT_KINDS, answers.outputKinds);
+
+  /*
+   * 검색어를 각 칸에 함께 실어 보낸다.
+   *
+   * 라벨만 보내면 도구를 못 찾는다. "녹음·영상"과 "회의 녹취록 텍스트"는
+   * 같은 것을 가리키는데 글자가 하나도 안 겹치기 때문이다. 실제로 이것 때문에
+   * 정확한 답을 고른 사람에게도 추천이 0건이었다.
+   *
+   * 자리를 지켜서 넣는 것이 중요하다 — `compareLexically` 가 칸마다 다른
+   * 가중치를 주므로, 입력 자료 검색어는 입력 자리에, 결과 검색어는 출력
+   * 자리에 있어야 제 몫을 한다.
+   */
   return {
     id: 'wizard',
     name: draft.title,
-    problemStatement: `${draft.currentWorkDescription} ${draft.mostPainfulStep}`,
-    keyFeatures: draft.requiredFeatures,
-    inputData: draft.inputMaterials,
-    outputData: draft.desiredOutcome,
+    problemStatement: [
+      draft.currentWorkDescription,
+      draft.mostPainfulStep,
+      ...taskWords,
+    ].join(' '),
+    keyFeatures: [...draft.requiredFeatures, ...taskWords],
+    inputData: [draft.inputMaterials, ...inputWords].join(' '),
+    outputData: [draft.desiredOutcome, ...outputWords].join(' '),
     categoryName: '',
     tags: [
       ...labelsOf(TASK_KINDS, [answers.taskKind]),
       ...labelsOf(INPUT_KINDS, answers.inputKinds),
       ...labelsOf(OUTPUT_KINDS, answers.outputKinds),
+      ...taskWords,
+      ...inputWords,
+      ...outputWords,
     ],
   };
 }

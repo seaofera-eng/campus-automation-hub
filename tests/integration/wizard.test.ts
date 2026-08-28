@@ -6,6 +6,7 @@ import { demandPublishSchema } from '@/lib/validation/demand';
 import { emptyDemandForm } from '@/lib/validation/demand';
 import type { WizardAnswers } from '@/domain/wizard';
 import { emptyWizardAnswers } from '@/domain/wizard';
+import { sampleWizardAnswers } from '@/lib/demo/samples';
 import { demoProfile, setupIsolatedStore, teardownIsolatedStore } from './helpers';
 
 /**
@@ -139,5 +140,38 @@ describe('비슷한 도구 찾기', () => {
         expect(suggestion.averageOverallScore).toBeNull();
       }
     }
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 시연 예시가 실제로 도구를 찾아내는가                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * 이 묶음이 없어서 결함을 놓쳤다.
+ *
+ * 처음 만들 때 "관계없는 답에는 억지로 채우지 않는다"만 확인하고 **"맞는
+ * 답에는 실제로 찾아내는가"를 확인하지 않았다.** 그래서 추천이 항상 0건인
+ * 채로 테스트가 통과했다.
+ *
+ * 원인은 마법사 답이 선택지 라벨("녹음·영상")이고 도구 설명은 사람이 쓴
+ * 문장("회의 녹취록 텍스트")이라 글자가 만날 수 없었던 것이다.
+ * 선택지마다 검색어를 붙이고, 길이 차이에 벌점이 없는 계산으로 바꿔서 고쳤다.
+ */
+describe('시연용 예시 답', () => {
+  it('회의록 도구를 찾아낸다', async () => {
+    const result = await suggestTools(sampleWizardAnswers());
+
+    expect(result.tools.length).toBeGreaterThan(0);
+    // 시연에서 "이미 이런 도구가 있습니다"가 나와야 마법사의 값어치가 드러난다.
+    expect(result.tools[0]?.name).toContain('회의록');
+  });
+
+  it('관계없는 답에는 여전히 아무것도 주지 않는다', async () => {
+    // 문턱을 낮춰서 맞춘 것이 아니라는 확인. 이쪽이 무너지면 추천을 못 믿는다.
+    const result = await suggestTools(
+      answers({ taskKind: 'ANSWER', inputKinds: ['IMAGE'], outputKinds: ['CHART'] }),
+    );
+    expect(result.tools).toEqual([]);
   });
 });
