@@ -3,12 +3,20 @@
 화면을 직접 눌러 보며 전체 흐름을 확인하는 순서입니다.
 E2E 테스트(`e2e/full-workflow.spec.ts`)가 자동으로 하는 것과 같은 흐름입니다.
 
+> **대회 시연이라면 [DEMO-SCRIPT.md](DEMO-SCRIPT.md) 를 보세요.**
+> 7분짜리 발표용 순서와 대사, 화면 그림 20장이 들어 있습니다.
+> 이 문서는 기능을 하나씩 눌러 확인하는 점검용입니다.
+
 ## 준비
 
 ```powershell
 pnpm demo:reset
-pnpm dev
+pnpm build
+pnpm start
 ```
+
+> `pnpm dev` 는 쓰지 마세요 — Next 16 개발 모드가 이 환경에서 불안정합니다.
+> 자세한 건 [NEXT-SESSION.md](NEXT-SESSION.md) 2절.
 
 http://localhost:3000
 
