@@ -20,6 +20,7 @@ import { DetailAccordion } from '@/components/tools/detail-accordion';
 import { FieldList, FieldRow } from '@/components/tools/detail-field';
 import { NewVersionButton } from '@/components/tools/new-version-button';
 import { ToolAccessPanel } from '@/components/tools/tool-access-panel';
+import { DeleteEntityButton } from '@/components/common/delete-entity-button';
 import { StatusTransitionDialog } from '@/components/tools/status-transition-dialog';
 import { ToolDetailTabs, type DetailTab } from '@/components/tools/tool-detail-tabs';
 import { Alert } from '@/components/ui/alert';
@@ -491,6 +492,26 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ id:
                 </Link>
               </Button>
             ) : null}
+            {/*
+              삭제 (리뷰 2026-08-30).
+
+              자격이 있으면 언제나 보여 준다. 지금 지울 수 없는 상태면 창에서
+              왜 안 되는지 설명한다 — 버튼을 감추면 "삭제가 없는 서비스"로 읽힌다.
+            */}
+            {permissions.canDelete ? (
+              <DeleteEntityButton
+                kind="tool"
+                id={tool.id}
+                name={tool.name}
+                blockedReason={detail.deleteBlockedReason}
+                effects={[
+                  '목록과 검색에서 사라집니다',
+                  '이 도구를 가리키는 평가와 개선 요청도 함께 보이지 않게 됩니다',
+                  '누가 언제 지웠는지는 관리 기록에 남습니다',
+                ]}
+              />
+            ) : null}
+
             {/* 검토를 통과한 도구는 새 버전을 만들어 고친다 (리뷰 3절) */}
             {permissions.canStartNewVersion ? (
               <NewVersionButton

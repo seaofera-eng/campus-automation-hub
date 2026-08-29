@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { deleteDemand } from '@/application/demands/delete';
 import { joinDemand, linkToolToDemand, unlinkToolFromDemand } from '@/application/demands/match';
 import { saveDemandDraft, transitionDemand } from '@/application/demands/register';
 import { withAudit } from '@/application/shared/audit';
@@ -22,6 +23,7 @@ import {
 import { parseOrThrow } from '@/lib/validation/common';
 import { addDemandCommentSchema, deleteDemandCommentSchema } from '@/lib/validation/demand';
 import {
+  demandIdSchema,
   demandTransitionSchema,
   joinDemandSchema,
   linkToolSchema,
@@ -299,5 +301,33 @@ export async function removeDemandAttachmentAction(
 
     revalidateDemand(data.demandId);
     return listDemandAttachments(data.demandId);
+  });
+}
+
+/**
+ * 수요 삭제 (리뷰 2026-08-30).
+ *
+ * 도구 삭제와 같다. 줄을 지우지 않고 감추기만 하고, 감사 로그에는 남긴다.
+ * 어느 상태에서 지울 수 있는지는 `domain/demand/deletion.ts` 가 정한다.
+ */
+export async function deleteDemandAction(input: unknown): Promise<ActionResult<null>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const data = parseOrThrow(demandIdSchema, input);
+
+    await withAudit(
+      actor,
+      {
+        action: 'demand.delete',
+        targetType: 'demand',
+        targetId: data.demandId,
+        changedFields: ['deletedAt'],
+        summary: '업무 수요를 삭제했습니다.',
+      },
+      () => deleteDemand(actor, data.demandId),
+    );
+
+    revalidateDemand(data.demandId);
+    return null;
   });
 }

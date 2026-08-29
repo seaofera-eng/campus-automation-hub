@@ -14,6 +14,7 @@ export const PERMISSION_ACTIONS = [
   'tool:transition',
   'tool:suspend',
   'tool:retire',
+  'tool:delete',
   'tool:attach',
 
   // 검토
@@ -29,6 +30,7 @@ export const PERMISSION_ACTIONS = [
   'demand:transition',
   'demand:match',
   'demand:participate',
+  'demand:delete',
 
   // 평가
   'evaluation:create',

@@ -75,6 +75,11 @@ export const publishDemandSchema = z.object({
   form: demandPublishSchema,
 });
 
+/** 수요 하나를 가리키기만 하는 입력 (삭제 등) */
+export const demandIdSchema = z.object({
+  demandId: z.string().min(1),
+});
+
 export const demandTransitionSchema = z.object({
   demandId: z.string().min(1),
   toStatus: z.enum(DEMAND_STATUSES),

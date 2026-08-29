@@ -16,6 +16,7 @@ import { MatchToolDialog, UnlinkToolButton } from '@/components/demands/match-to
 import { FieldList, FieldRow, NumberValue } from '@/components/tools/detail-field';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { DeleteEntityButton } from '@/components/common/delete-entity-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -64,14 +65,31 @@ export default async function DemandDetailPage({ params }: { params: Promise<{ i
           </p>
         </div>
 
-        {permissions.canEdit ? (
-          <Button variant="secondary" asChild>
-            <Link href={`/demands/${demand.id}/edit`}>
-              <Pencil aria-hidden="true" />
-              수정
-            </Link>
-          </Button>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          {permissions.canEdit ? (
+            <Button variant="secondary" asChild>
+              <Link href={`/demands/${demand.id}/edit`}>
+                <Pencil aria-hidden="true" />
+                수정
+              </Link>
+            </Button>
+          ) : null}
+
+          {/* 삭제 (리뷰 2026-08-30). 안 되는 상태면 창에서 이유를 설명한다. */}
+          {permissions.canDelete ? (
+            <DeleteEntityButton
+              kind="demand"
+              id={demand.id}
+              name={demand.title}
+              blockedReason={detail.deleteBlockedReason}
+              effects={[
+                '목록과 검색에서 사라집니다',
+                '이 수요에 달린 문의와 참여 신청도 함께 보이지 않게 됩니다',
+                '누가 언제 지웠는지는 관리 기록에 남습니다',
+              ]}
+            />
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_340px]">

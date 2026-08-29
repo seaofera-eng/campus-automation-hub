@@ -10,6 +10,7 @@ import {
   startNewVersion,
   submitTool,
 } from '@/application/tools/register';
+import { deleteTool } from '@/application/tools/delete';
 import { recordToolLaunch } from '@/application/tools/usage';
 import { validationFailed } from '@/domain/shared/errors';
 import { asId } from '@/domain/shared/ids';
@@ -223,6 +224,43 @@ export async function recordToolLaunchAction(input: unknown): Promise<ActionResu
     const { toolId } = parseOrThrow(toolIdSchema, input);
 
     await recordToolLaunch(actor, asId<ToolId>(toolId));
+    return null;
+  });
+}
+
+/**
+ * 도구 삭제 (리뷰 2026-08-30).
+ *
+ * "자기가 올린 수요나 도구를 삭제할 수 있는 기능을 넣을 수 없을까?"
+ *
+ * 줄을 지우지 않고 감추기만 한다. **감사 로그에는 남는다** — 누가 무엇을
+ * 지웠는지 답할 수 없으면 관리 기록의 의미가 없다 (요구사항 18번).
+ *
+ * 요약에 도구 이름을 넣지 않는다. 감사 로그에는 **바뀐 필드 이름만** 남기는
+ * 것이 이 저장소의 규칙이고, 무엇을 지웠는지는 `targetId` 가 가리킨다.
+ */
+export async function deleteToolAction(input: unknown): Promise<ActionResult<null>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const data = parseOrThrow(toolIdSchema, input);
+
+    await withAudit(
+      actor,
+      {
+        action: 'tool.delete',
+        targetType: 'tool',
+        targetId: data.toolId,
+        changedFields: ['deletedAt'],
+        summary: '도구를 삭제했습니다.',
+      },
+      () => deleteTool(actor, data.toolId),
+    );
+
+    revalidatePath('/tools');
+    revalidatePath(`/tools/${data.toolId}`);
+    revalidatePath('/reviews');
+    revalidatePath('/dashboard');
+    revalidatePath('/ranking');
     return null;
   });
 }

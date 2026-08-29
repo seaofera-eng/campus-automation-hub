@@ -1,4 +1,5 @@
 import 'server-only';
+import { hasAdminPermission } from '@/domain/authz/accounts';
 import { can } from '@/domain/authz/policies';
 import type { Actor } from '@/domain/authz/policies';
 import { summarizeEvaluations } from '@/domain/evaluation/scoring';
@@ -9,6 +10,7 @@ import { notFound } from '@/domain/shared/errors';
 import { asId } from '@/domain/shared/ids';
 import type { CategoryId, ToolId } from '@/domain/shared/ids';
 import type { Page } from '@/domain/shared/pagination';
+import { ownerDeleteBlockReason } from '@/domain/tool/deletion';
 import { MAX_PAGE_SIZE, paginate } from '@/domain/shared/pagination';
 import type { RiskChecklist } from '@/domain/tool/risk-checklist-rules';
 import { availableTransitions } from '@/domain/tool/status-machine';
@@ -278,7 +280,17 @@ export interface ToolDetail {
      * 되돌린 뒤 고치고 다시 신청한다.
      */
     canStartNewVersion: boolean;
+    /**
+     * 삭제 버튼을 보여 줄 것인가 (리뷰 2026-08-30).
+     *
+     * 자격만 본다. **지금 지울 수 있는지는 `deleteBlockedReason` 이 따로 답한다** —
+     * 버튼을 감추면 "삭제가 없는 서비스"로 보이므로, 자격이 있으면 보여 주고
+     * 안 되는 이유를 창에서 설명한다.
+     */
+    canDelete: boolean;
   };
+  /** 지금 지울 수 없는 이유. 지울 수 있으면 null. */
+  deleteBlockedReason: string | null;
   /** 이 도구를 실제로 쓸 수 있는 방법. 없으면 빈 배열이다. */
   access: ToolAccessKind[];
 }
@@ -397,7 +409,16 @@ export async function loadToolDetail(toolId: string): Promise<ToolDetail> {
         (tool.status === 'PILOT' || tool.status === 'APPROVED'),
       canRequestImprovement:
         can(actor, 'improvement:create') && tool.status !== 'RETIRED',
+      canDelete: can(actor, 'tool:delete', readContext(tool)),
     },
+    // 운영 권한자는 상태와 무관하게 지울 수 있다. 서비스가 같은 판단을 다시 한다.
+    deleteBlockedReason: hasAdminPermission(
+      profile.accountType,
+      profile.adminPermissions,
+      'MANAGE_TOOLS',
+    )
+      ? null
+      : ownerDeleteBlockReason(tool.status),
     access: availableAccess({
       serviceUrl: version.serviceUrl,
       repositoryUrl: version.repositoryUrl,

@@ -98,6 +98,11 @@ export function can(actor: Actor, action: PermissionAction, context: ResourceCon
       // 남이 쓰고 있는 도구를 내리는 일이라 운영 권한이 따로 필요하다.
       return may(actor, 'MANAGE_TOOLS');
 
+    case 'tool:delete':
+      // 자기가 올린 것은 자기가 치운다. 잘못 올라온 것을 치우는 것은 운영의 일이다.
+      // **어느 상태에서 지울 수 있는지는 여기서 판단하지 않는다** — domain/tool/deletion.ts 가 정한다.
+      return isOwnerOrDeveloper(actor, context) || may(actor, 'MANAGE_TOOLS');
+
     /* ---------------------------------------------------------------- 검토 */
     case 'review:list':
     case 'review:comment':
@@ -127,6 +132,11 @@ export function can(actor: Actor, action: PermissionAction, context: ResourceCon
     case 'demand:match':
       // 수요와 도구를 잇는 판단은 검토 권한을 받은 사람이 한다.
       return may(actor, 'REVIEW');
+
+    case 'demand:delete':
+      // 올린 사람 본인, 또는 잘못 올라온 것을 치우는 운영 권한자.
+      // 어느 상태에서 지울 수 있는지는 domain/demand/deletion.ts 가 정한다.
+      return context.ownerId === actor.id || may(actor, 'MANAGE_TOOLS');
 
     /* ---------------------------------------------------------------- 평가 */
     case 'evaluation:read':

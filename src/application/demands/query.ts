@@ -1,5 +1,6 @@
 import 'server-only';
 import { assertCan, can } from '@/domain/authz/policies';
+import { ownerDeleteBlockReason } from '@/domain/demand/deletion';
 import { availableDemandTransitions } from '@/domain/demand/status-machine';
 import type { DemandTransitionRule } from '@/domain/demand/status-machine';
 import type {
@@ -111,7 +112,11 @@ export interface DemandDetail {
     canMatch: boolean;
     canJoin: boolean;
     alreadyJoined: boolean;
+    /** 삭제 버튼을 보여 줄 자격이 있는가. 지금 지울 수 있는지는 아래가 답한다. */
+    canDelete: boolean;
   };
+  /** 지금 지울 수 없는 이유. 지울 수 있으면 null. */
+  deleteBlockedReason: string | null;
   /** 미리 돌려 둔 매칭 분석. 돌린 적이 없으면 null. */
   analysis: DemandAnalysisView | null;
 }
@@ -178,6 +183,7 @@ export async function loadDemandDetail(demandId: string): Promise<DemandDetail> 
         can(toActor(actor), 'demand:update', { ownerId: demand.requesterUserId }) &&
         (demand.status === 'DRAFT' || demand.status === 'OPEN'),
       canMatch,
+      canDelete: can(toActor(actor), 'demand:delete', { ownerId: demand.requesterUserId }),
       canJoin:
         can(toActor(actor), 'demand:participate') &&
         demand.status !== 'DRAFT' &&
@@ -186,6 +192,14 @@ export async function loadDemandDetail(demandId: string): Promise<DemandDetail> 
         !participants.some((participant) => participant.userId === actor.id),
       alreadyJoined: participants.some((participant) => participant.userId === actor.id),
     },
+    // 운영 권한자는 상태와 무관하게 지울 수 있다. 서비스가 같은 판단을 다시 한다.
+    deleteBlockedReason: hasAdminPermission(
+      actor.accountType,
+      actor.adminPermissions,
+      'MANAGE_TOOLS',
+    )
+      ? null
+      : ownerDeleteBlockReason(demand.status),
     analysis,
   };
 }
