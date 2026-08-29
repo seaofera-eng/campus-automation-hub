@@ -7,6 +7,8 @@ import {
   saveRiskChecklist,
   transitionToolStatus,
 } from '@/application/reviews/workflow';
+import { runToolAnalysis } from '@/application/analysis/run';
+import type { RunAnalysisResult } from '@/application/analysis/run';
 import { withAudit } from '@/application/shared/audit';
 import { TOOL_STATUS_LABELS } from '@/domain/tool/types';
 import { run, type ActionResult } from '@/lib/actions/result';
@@ -16,6 +18,7 @@ import {
   assignReviewerSchema,
   reviewCommentSchema,
   riskChecklistSchema,
+  runAnalysisSchema,
   transitionStatusSchema,
 } from '@/lib/validation/review';
 
@@ -135,5 +138,39 @@ export async function saveRiskChecklistAction(
 
     revalidateTool(data.toolId);
     return { riskLevel: checklist.riskLevel };
+  });
+}
+
+/**
+ * AI 분석 실행 (리뷰 2026-08-30).
+ *
+ * 화면에서 모델을 부르는 **유일한** 관리자 경로다. 버튼을 눌러야만 돌고,
+ * 결과는 저장된 뒤 전과 똑같이 읽기만 한다.
+ *
+ * 실행 코드가 틀린 시도도 감사 로그에 실패로 남는다 — 누가 몇 번 눌러 봤는지
+ * 확인할 수 있어야 한다.
+ */
+export async function runToolAnalysisAction(
+  input: unknown,
+): Promise<ActionResult<RunAnalysisResult>> {
+  return run(async () => {
+    const actor = await requireUser();
+    const data = parseOrThrow(runAnalysisSchema, input);
+
+    const result = await withAudit(
+      actor,
+      {
+        action: 'analysis.run',
+        targetType: 'tool',
+        targetId: data.toolId,
+        // 실행 코드는 값이므로 절대 남기지 않는다.
+        changedFields: ['duplicateAnalysis', 'riskAnalysis', 'qualityReview'],
+        summary: 'AI 분석을 실행했습니다.',
+      },
+      () => runToolAnalysis(actor, data),
+    );
+
+    revalidateTool(data.toolId);
+    return result;
   });
 }

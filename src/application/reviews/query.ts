@@ -1,5 +1,5 @@
 import 'server-only';
-import { assertCan } from '@/domain/authz/policies';
+import { assertCan, can } from '@/domain/authz/policies';
 import type { Profile } from '@/domain/identity/types';
 import { hasAdminPermission } from '@/domain/authz/accounts';
 import { notFound } from '@/domain/shared/errors';
@@ -193,6 +193,13 @@ export interface ReviewDetail {
   transitions: TransitionRule[];
   reviewers: { id: string; name: string }[];
   canAssignSelf: boolean;
+  /**
+   * 화면에서 AI 분석을 돌릴 수 있는 자격이 있는가 (리뷰 2026-08-30).
+   *
+   * 자격만 본다. **실행 코드가 맞는지는 서버가 누를 때 판단한다** —
+   * 정답을 화면으로 내려보내지 않는다.
+   */
+  canRunAnalysis: boolean;
   /** 미리 돌려 둔 중복 분석. 돌린 적이 없으면 null. */
   duplicateAnalysis: DuplicateAnalysisView | null;
   /** 미리 돌려 둔 위험도 분석. 체크리스트를 미리 채우는 데 쓴다. */
@@ -273,6 +280,7 @@ export async function loadReviewDetail(toolId: string): Promise<ReviewDetail> {
     canAssignSelf:
       assignment?.reviewerUserId !== actor.id &&
       (tool.status === 'SUBMITTED' || tool.status === 'HUMAN_REVIEW'),
+    canRunAnalysis: can(toActor(actor), 'analysis:run'),
     duplicateAnalysis,
     riskAnalysis,
     qualityReview,

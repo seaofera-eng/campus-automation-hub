@@ -77,3 +77,14 @@ export const riskChecklistSchema = z
   });
 
 export type RiskChecklistFormInput = z.output<typeof riskChecklistSchema>;
+
+/**
+ * 화면에서 AI 분석 돌리기 (리뷰 2026-08-30).
+ *
+ * 코드 자체는 여기서 검사하지 않는다. **맞는지 아닌지는 서버만 안다** —
+ * 정답을 클라이언트 번들에 넣지 않기 위해서다. 여기서는 빈 값만 거른다.
+ */
+export const runAnalysisSchema = z.object({
+  toolId: z.string().min(1),
+  accessCode: requiredText('실행 코드', 1, 200),
+});

@@ -12,6 +12,7 @@ import {
   ToolStatusBadge,
 } from '@/components/common/status-badge';
 import { ReviewActionsPanel } from '@/components/reviews/review-actions-panel';
+import { RunAnalysisPanel } from '@/components/analysis/run-analysis-panel';
 import { ReviewWizard } from '@/components/reviews/review-wizard';
 import { RiskChecklistForm } from '@/components/reviews/risk-checklist-form';
 import { DetailAccordion } from '@/components/tools/detail-accordion';
@@ -30,6 +31,14 @@ import { guardPage } from '@/lib/auth/page-guard';
 import { formatDateTime } from '@/lib/utils/datetime';
 
 export const metadata: Metadata = { title: '도구 검토' };
+
+/**
+ * AI 분석을 화면에서 돌릴 때 모델 호출이 30초쯤 걸린다 (리뷰 2026-08-30).
+ *
+ * 서버리스 기본 제한(10초)에 걸려 잘리므로 이 화면만 늘려 둔다.
+ * 다른 화면은 기본값 그대로다 — 오래 도는 것을 기본으로 열어 둘 이유가 없다.
+ */
+export const maxDuration = 60;
 
 /**
  * 검토 화면 (리뷰 2026-08-28 · 2026-08-29 5절 반영).
@@ -357,6 +366,7 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
         <div className="flex flex-col gap-3">
           {historyNode}
           {commentsNode}
+          {detail.canRunAnalysis ? <RunAnalysisPanel toolId={tool.id} /> : null}
         </div>
       </div>
     );
@@ -389,6 +399,7 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
             canAssignSelf={detail.canAssignSelf}
             hasChecklist={checklist !== null}
           />
+          {detail.canRunAnalysis ? <RunAnalysisPanel toolId={tool.id} /> : null}
         </div>
       </div>
     </div>

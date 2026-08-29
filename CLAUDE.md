@@ -49,8 +49,14 @@ pnpm demo:reset
 - **모델에 보내는 payload 는 `adapters/ai/live/redact.ts` 만 거칩니다.**
   허용 목록 방식입니다. 도메인 타입에 필드가 생겨도 여기 적지 않으면 안 나갑니다.
   다른 경로로 payload 를 만들지 마세요.
-- **화면·서버 액션에서 `analyze*` 를 부르지 마세요.** 분석은 `pnpm ai:analyze`
-  스크립트가 미리 돌리고, 앱은 `repositories.analyses` 에서 읽기만 합니다.
+- **화면을 열 때 `analyze*` 를 부르지 마세요.** 화면은 `repositories.analyses` 에서
+  읽기만 합니다. 분석을 만드는 길은 **둘뿐**입니다.
+  1. `pnpm ai:analyze` 스크립트
+  2. `application/analysis/run.ts` — 검토 화면의 '분석 돌리기' 버튼
+     (검토 권한 + `AI_RUN_CODE` + 1분 쿨다운. 2026-08-30 에 추가)
+
+  새 호출 경로를 여기 말고 다른 곳에 만들지 마세요. 특히 **페이지 로더나
+  목록 조회에서 부르면 안 됩니다** — 열 때마다 결과가 달라지고 비용이 샙니다.
 - **`src/repositories/demo/seed-analyses.ts` 를 손으로 고치지 마세요.**
   스크립트가 통째로 덮어씁니다.
 - **AI 제안으로 위험 체크리스트를 자동으로 채우지 마세요.** 채워 두면 검토자가

@@ -22,6 +22,7 @@ export const PERMISSION_ACTIONS = [
   'review:assign',
   'review:comment',
   'review:checklist',
+  'analysis:run',
 
   // 수요
   'demand:create',

@@ -109,6 +109,11 @@ export function can(actor: Actor, action: PermissionAction, context: ResourceCon
     case 'review:checklist':
       return may(actor, 'REVIEW');
 
+    case 'analysis:run':
+      // 모델을 부르는 일이라 돈이 든다. 검토 권한자만 누를 수 있고,
+      // 그 위에 **실행 코드**를 한 번 더 받는다 (application/analysis/run.ts).
+      return may(actor, 'REVIEW');
+
     case 'review:assign':
       // 검토자는 자기 자신에게만 배정한다. 남에게 넘기는 것은 계정 관리 권한이 있어야 한다.
       if (!may(actor, 'REVIEW')) return false;
