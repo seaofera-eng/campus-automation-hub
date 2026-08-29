@@ -42,6 +42,7 @@ export function StatusTransitionDialog({
   label,
   destructive,
   requiresReason = true,
+  variant,
 }: {
   toolId: string;
   toStatus: ToolStatus;
@@ -49,6 +50,14 @@ export function StatusTransitionDialog({
   destructive: boolean;
   /** 왜 바꾸는지 물어야 하는가. 끄면 눌렀을 때 바로 실행한다. */
   requiresReason?: boolean;
+  /**
+   * 버튼 모양을 강제한다.
+   *
+   * 기본값은 되돌리기 어려우면 빨간색, 아니면 강조색이다. 그런데 나란히
+   * 놓이는 선택지가 둘이면 둘 다 강조색이 되어 어느 쪽이 진행이고 어느 쪽이
+   * 되돌리기인지 구분이 안 된다. 부르는 쪽에서 갈라 준다.
+   */
+  variant?: 'primary' | 'secondary' | 'danger';
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -57,6 +66,8 @@ export function StatusTransitionDialog({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
+
+  const buttonVariant = variant ?? (destructive ? 'danger' : 'primary');
 
   function submit() {
     setError(null);
@@ -90,12 +101,7 @@ export function StatusTransitionDialog({
   if (!requiresReason) {
     return (
       <div className="flex flex-col gap-1.5">
-        <Button
-          variant={destructive ? 'danger' : 'primary'}
-          size="sm"
-          onClick={submit}
-          disabled={pending}
-        >
+        <Button variant={buttonVariant} size="sm" onClick={submit} disabled={pending}>
           {pending ? '처리 중…' : label}
         </Button>
         {error ? <p className="text-xs text-danger">{error}</p> : null}
@@ -106,7 +112,7 @@ export function StatusTransitionDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant={destructive ? 'danger' : 'primary'} size="sm">
+        <Button variant={buttonVariant} size="sm">
           {label}
         </Button>
       </DialogTrigger>
@@ -166,11 +172,7 @@ export function StatusTransitionDialog({
               취소
             </Button>
           </DialogClose>
-          <Button
-            variant={destructive ? 'danger' : 'primary'}
-            onClick={submit}
-            disabled={pending}
-          >
+          <Button variant={buttonVariant} onClick={submit} disabled={pending}>
             {pending ? '처리 중…' : label}
           </Button>
         </DialogFooter>
